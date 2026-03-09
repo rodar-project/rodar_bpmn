@@ -52,13 +52,19 @@ case result do
 end
 ```
 
-### Resuming a User Task
+### Resuming Paused Tasks
+
+User tasks, manual tasks, and receive tasks all pause execution and return `{:manual, task_data}`. Resume them with input data:
 
 ```elixir
-# When a user task pauses execution, resume it with input data:
-{:manual, task_data} = Bpmn.execute(start_event, context)
-
+# User task — waiting for user input
 Bpmn.Activity.Task.User.resume(user_task_element, context, %{approved: true})
+
+# Manual task — waiting for external completion signal
+Bpmn.Activity.Task.Manual.resume(manual_task_element, context, %{signed: true})
+
+# Receive task — waiting for an external message
+Bpmn.Activity.Task.Receive.resume(receive_task_element, context, %{payment_id: "PAY-123"})
 ```
 
 ### Service Tasks
@@ -96,9 +102,9 @@ end
 |---------|--------|-------|
 | Exclusive Gateway | Implemented | Condition evaluation, default flow |
 | Parallel Gateway | Implemented | Fork/join with token synchronization |
-| Inclusive Gateway | Stub | |
-| Complex Gateway | Stub | |
-| Event-Based Gateway | Stub | |
+| Inclusive Gateway | Implemented | Fork/join with condition evaluation and activated-path tracking |
+| Complex Gateway | Stub | Needs Phase 5 event bus |
+| Event-Based Gateway | Stub | Needs Phase 5 event bus |
 
 ### Tasks
 
@@ -107,9 +113,9 @@ end
 | Script Task | Implemented | Elixir and JavaScript (via Node.js port) |
 | User Task | Implemented | Pause/resume with `{:manual, task_data}` |
 | Service Task | Implemented | Handler behaviour callback |
-| Send Task | Stub | |
-| Receive Task | Stub | |
-| Manual Task | Stub | |
+| Send Task | Implemented | Fire-and-forget; stores message metadata, releases token |
+| Receive Task | Implemented | Pause/resume like User Task; type `:receive_task` for event bus |
+| Manual Task | Implemented | Pause/resume like User Task; type `:manual_task` |
 
 ### Other
 
@@ -117,7 +123,7 @@ end
 |---------|--------|-------|
 | Sequence Flow | Implemented | Conditional expressions supported |
 | Subprocess | Stub | |
-| Embedded Subprocess | Stub | |
+| Embedded Subprocess | Implemented | Executes nested elements within parent context |
 
 ## Architecture
 
