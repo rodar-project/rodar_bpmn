@@ -1,4 +1,7 @@
 defmodule Bpmn.Port.Supervisor do
+  @moduledoc """
+  Supervisor for the Node.js port process.
+  """
   use Supervisor
 
   def start_link(_opts \\ []) do

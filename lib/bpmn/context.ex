@@ -86,16 +86,53 @@ defmodule Bpmn.Context do
   @doc """
   Check if the node is active
   """
-  @spec is_node_active(pid(), any()) :: boolean()
-  def is_node_active(context, key) do
+  @spec node_active?(pid(), any()) :: boolean()
+  def node_active?(context, key) do
     Agent.get(context, fn state -> state.nodes[key].active end)
   end
 
   @doc """
   Check if the node is completed
   """
-  @spec is_node_completed(pid(), any()) :: boolean()
-  def is_node_completed(context, key) do
+  @spec node_completed?(pid(), any()) :: boolean()
+  def node_completed?(context, key) do
     Agent.get(context, fn state -> state.nodes[key].completed end)
+  end
+
+  @doc """
+  Record a token arrival at a gateway from a specific incoming flow.
+  Returns the number of tokens that have arrived so far.
+  """
+  @spec record_token(pid(), String.t(), String.t()) :: non_neg_integer()
+  def record_token(context, gateway_id, flow_id) do
+    Agent.get_and_update(context, fn state ->
+      tokens_key = {:gateway_tokens, gateway_id}
+      current = Map.get(state.nodes, tokens_key, MapSet.new())
+      updated = MapSet.put(current, flow_id)
+      new_state = update_in(state.nodes, &Map.put(&1, tokens_key, updated))
+      {MapSet.size(updated), new_state}
+    end)
+  end
+
+  @doc """
+  Get the number of tokens that have arrived at a gateway.
+  """
+  @spec token_count(pid(), String.t()) :: non_neg_integer()
+  def token_count(context, gateway_id) do
+    Agent.get(context, fn state ->
+      tokens_key = {:gateway_tokens, gateway_id}
+      state.nodes |> Map.get(tokens_key, MapSet.new()) |> MapSet.size()
+    end)
+  end
+
+  @doc """
+  Clear recorded tokens for a gateway (after join completes).
+  """
+  @spec clear_tokens(pid(), String.t()) :: :ok
+  def clear_tokens(context, gateway_id) do
+    Agent.update(context, fn state ->
+      tokens_key = {:gateway_tokens, gateway_id}
+      update_in(state.nodes, &Map.delete(&1, tokens_key))
+    end)
   end
 end

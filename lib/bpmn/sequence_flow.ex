@@ -29,7 +29,6 @@ defmodule Bpmn.SequenceFlow do
     case Bpmn.Expression.execute(condition, context) do
       {:ok, true} -> token_out({:bpmn_sequence_flow, flow}, context)
       {:ok, false} -> {false}
-      _ -> {:error}
     end
   end
 

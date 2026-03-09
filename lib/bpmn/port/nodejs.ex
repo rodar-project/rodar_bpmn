@@ -1,4 +1,10 @@
 defmodule Bpmn.Port.Nodejs do
+  @moduledoc """
+  GenServer managing a Node.js child process via Erlang ports.
+
+  Communicates using a JSON protocol (via Jason) to evaluate JavaScript
+  expressions and scripts in the Node.js runtime.
+  """
   use GenServer
 
   def start_link(cmd \\ nil) do
@@ -53,18 +59,14 @@ defmodule Bpmn.Port.Nodejs do
         context: context
       })
 
-    result =
-      case Port.command(port, msg) do
-        true ->
-          receive do
-            {^port, {:data, result}} ->
-              {:ok, result}
-          after
-            5_000 -> {:error, :timed_out}
-          end
+    Port.command(port, msg)
 
-        false ->
-          {:error, :process_dead}
+    result =
+      receive do
+        {^port, {:data, result}} ->
+          {:ok, result}
+      after
+        5_000 -> {:error, :timed_out}
       end
 
     case result do

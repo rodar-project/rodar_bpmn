@@ -21,7 +21,7 @@ defmodule Bpmn.ContextTest do
     assert Context.get_meta(context, "start_node").active == true
     assert Context.get_meta(context, "start_node").completed == false
 
-    assert Context.is_node_active(context, "start_node") == true
-    assert Context.is_node_completed(context, "start_node") == false
+    assert Context.node_active?(context, "start_node") == true
+    assert Context.node_completed?(context, "start_node") == false
   end
 end

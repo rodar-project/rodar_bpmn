@@ -1,6 +1,6 @@
 defmodule Bpmn.Process do
   @moduledoc """
-
+  Process lifecycle management for BPMN process instances.
   """
 
   @doc """
