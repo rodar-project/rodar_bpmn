@@ -38,7 +38,7 @@ Implement the stub modules to support real process execution.
 
 - [x] **Exclusive Gateway** — Evaluate conditions on all outgoing sequence flows, route the token down the first matching path (or the default flow).
 - [x] **Parallel Gateway** — Fork: release tokens to all outgoing flows concurrently. Join: wait until tokens arrive on all incoming flows before continuing.
-- [ ] **Inclusive Gateway** — Fork: release tokens to all outgoing flows whose conditions evaluate to true. Join: synchronize all activated incoming paths.
+- [x] **Inclusive Gateway** — Fork: release tokens to all outgoing flows whose conditions evaluate to true. Join: synchronize all activated incoming paths.
 - [ ] **Complex Gateway** — Support custom activation rules.
 - [ ] **Event-Based Gateway** — Wait for one of several events and route based on which fires first.
 
@@ -47,13 +47,13 @@ Implement the stub modules to support real process execution.
 - [x] **Script Task** — Complete the implementation. Execute the script via `Bpmn.Port.Nodejs`, write results back to the context, and release the token to outgoing flows.
 - [x] **Service Task** — Define a behaviour/callback module that users implement. The engine invokes it, passing context data, and writes results back.
 - [x] **User Task** — Pause execution and return `{:manual, task_data}`. Provide a `resume/3` API to continue execution after external input is received.
-- [ ] **Send Task** — Emit a message into the event system.
-- [ ] **Receive Task** — Pause execution and wait for a matching message.
-- [ ] **Manual Task** — Similar to user task but with no engine interaction expected. Pause and wait for external completion signal.
+- [x] **Send Task** — Emit a message into the event system.
+- [x] **Receive Task** — Pause execution and wait for a matching message.
+- [x] **Manual Task** — Similar to user task but with no engine interaction expected. Pause and wait for external completion signal.
 
 ### Subprocesses
 
-- [ ] **Embedded Subprocess** — Execute a nested set of elements within the parent process context.
+- [x] **Embedded Subprocess** — Execute a nested set of elements within the parent process context.
 - [ ] **Call Activity** — Reference and execute an external process definition by ID.
 
 ## Phase 4: Execution Engine Improvements

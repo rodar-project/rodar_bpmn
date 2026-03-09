@@ -88,8 +88,9 @@ defmodule Bpmn.Engine.Diagram do
   defp map_process_elements(elems) do
     elems
     |> Enum.flat_map(&preload_element/1)
-    |> Enum.reduce(%{}, fn {_, attrs} = elem, acc ->
-      Map.put(acc, attrs[:id], elem)
+    |> Enum.reduce(%{}, fn
+      {_, attrs} = elem, acc -> Map.put(acc, attrs[:id], elem)
+      _non_element, acc -> acc
     end)
   end
 
@@ -364,6 +365,55 @@ defmodule Bpmn.Engine.Diagram do
 
   defp load_element("bpmn2:timerEventDefinition", attrs, elems),
     do: {:bpmn_event_definition_timer, Map.merge(attrs, %{_elems: elems})}
+
+  defp load_element("bpmn2:sendTask", attrs, elems),
+    do:
+      {:bpmn_activity_task_send,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems)
+       })}
+
+  defp load_element("bpmn2:receiveTask", attrs, elems),
+    do:
+      {:bpmn_activity_task_receive,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems)
+       })}
+
+  defp load_element("bpmn2:manualTask", attrs, elems),
+    do:
+      {:bpmn_activity_task_manual,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems)
+       })}
+
+  defp load_element("bpmn2:subProcess", attrs, elems),
+    do:
+      {:bpmn_activity_subprocess_embeded,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems),
+         elements: map_process_elements(elems)
+       })}
+
+  defp load_element("bpmn2:boundaryEvent", attrs, elems),
+    do:
+      {:bpmn_event_boundary,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems),
+         conditionalEventDefinition:
+           load_first_element("bpmn2:conditionalEventDefinition", elems),
+         compensateEventDefinition: load_first_element("bpmn2:compensateEventDefinition", elems),
+         escalationEventDefinition: load_first_element("bpmn2:escalationEventDefinition", elems),
+         errorEventDefinition: load_first_element("bpmn2:errorEventDefinition", elems),
+         messageEventDefinition: load_first_element("bpmn2:messageEventDefinition", elems),
+         signalEventDefinition: load_first_element("bpmn2:signalEventDefinition", elems),
+         timerEventDefinition: load_first_element("bpmn2:timerEventDefinition", elems)
+       })}
 
   defp load_element("bpmn2:extensionElements", attrs, elems),
     do: {:bpmn_extension_elements, Map.merge(attrs, %{_elems: elems})}

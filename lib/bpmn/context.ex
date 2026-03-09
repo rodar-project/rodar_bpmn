@@ -135,4 +135,47 @@ defmodule Bpmn.Context do
       update_in(state.nodes, &Map.delete(&1, tokens_key))
     end)
   end
+
+  @doc """
+  Record which outgoing flows were activated at an inclusive gateway fork.
+  """
+  @spec record_activated_paths(pid(), String.t(), [String.t()]) :: :ok
+  def record_activated_paths(context, gateway_id, flow_ids) do
+    Agent.update(context, fn state ->
+      key = {:gateway_activated_paths, gateway_id}
+      update_in(state.nodes, &Map.put(&1, key, flow_ids))
+    end)
+  end
+
+  @doc """
+  Retrieve the list of activated flows for an inclusive gateway.
+  """
+  @spec get_activated_paths(pid(), String.t()) :: [String.t()] | nil
+  def get_activated_paths(context, gateway_id) do
+    Agent.get(context, fn state ->
+      key = {:gateway_activated_paths, gateway_id}
+      Map.get(state.nodes, key)
+    end)
+  end
+
+  @doc """
+  Clear activated paths for a gateway (after join completes).
+  """
+  @spec clear_activated_paths(pid(), String.t()) :: :ok
+  def clear_activated_paths(context, gateway_id) do
+    Agent.update(context, fn state ->
+      key = {:gateway_activated_paths, gateway_id}
+      update_in(state.nodes, &Map.delete(&1, key))
+    end)
+  end
+
+  @doc """
+  Swap the current process definition. Returns the old process for later restoration.
+  """
+  @spec swap_process(pid(), map()) :: map()
+  def swap_process(context, new_process) do
+    Agent.get_and_update(context, fn state ->
+      {state.process, %{state | process: new_process}}
+    end)
+  end
 end
