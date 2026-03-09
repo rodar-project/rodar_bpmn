@@ -47,7 +47,7 @@ defmodule Bpmn.Port.Nodejs do
 
   defp send_request({type, script, context}, _, port) do
     msg =
-      Poison.encode!(%{
+      Jason.encode!(%{
         type: type,
         script: script,
         context: context
@@ -69,7 +69,7 @@ defmodule Bpmn.Port.Nodejs do
 
     case result do
       {:error, reason} -> {:stop, reason, nil}
-      {:ok, x} -> {:reply, Poison.decode!(x), port}
+      {:ok, x} -> {:reply, Jason.decode!(x), port}
     end
   end
 end
