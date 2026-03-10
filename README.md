@@ -486,12 +486,13 @@ Tests cover:
 
 This project follows [Semantic Versioning](https://semver.org/). The current version lives in the `VERSION` file at the project root and is read by `mix.exs` at compile time.
 
-- **Development versions** use a `-dev` suffix (e.g., `0.2.0-dev`)
-- **Releases** are created with `mix rodar_bpmn.release <patch|minor|major>`
+- **Development** happens on `develop` with a `-dev` suffix (e.g., `1.0.0-dev`)
+- **Releases** are cut on `main` after merging `develop`:
+  1. Merge `develop` into `main`
+  2. Run `mix rodar_bpmn.release <patch|minor|major>` on `main`
+  3. Merge `main` back into `develop` to pick up the version bump
 - **Changelog** follows [Keep a Changelog](https://keepachangelog.com/) format in `CHANGELOG.md`
-- **Git tags** use the `v{version}` format (e.g., `v0.1.0`)
-
-The release task handles the full workflow: updates VERSION and CHANGELOG, commits, tags, and bumps to the next dev version.
+- **Git tags** use the `v{version}` format (e.g., `v1.0.0`)
 
 ## Acknowledgments
 

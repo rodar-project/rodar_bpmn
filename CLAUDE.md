@@ -27,12 +27,16 @@ mix rodar_bpmn.release patch --dry-run                   # Preview release
 
 The project follows [Semantic Versioning](https://semver.org/). The single source of truth for the current version is the `VERSION` file at the project root, read by `mix.exs` at compile time. Development versions use a `-dev` suffix (e.g., `0.1.0-dev`).
 
-**Release workflow** (`mix rodar_bpmn.release <bump>`):
-1. Strips `-dev` from VERSION to get the release version
-2. Updates CHANGELOG.md with the release date
-3. Commits and tags `v{version}`
-4. Bumps VERSION to the next dev version based on bump type
-5. Commits the new dev version
+**Release workflow**:
+1. All development happens on `develop` (VERSION keeps `-dev` suffix)
+2. When ready to release, merge `develop` into `main`
+3. Run `mix rodar_bpmn.release <patch|minor|major>` on `main`:
+   - Strips `-dev` from VERSION to get the release version
+   - Updates CHANGELOG.md with the release date
+   - Commits and tags `v{version}`
+   - Bumps VERSION to the next dev version based on bump type
+   - Commits the new dev version
+4. Merge `main` back into `develop` to pick up the version bump
 
 **Changelog**: `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) format. All notable changes go under `## [Unreleased]` during development. The release task promotes unreleased entries to a versioned section.
 

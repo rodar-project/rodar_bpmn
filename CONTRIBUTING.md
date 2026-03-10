@@ -164,7 +164,9 @@ Maintainers will promote unreleased entries to a versioned section when cutting 
 
 ### Versioning
 
-The project follows [Semantic Versioning](https://semver.org/). The current version is stored in the `VERSION` file at the project root and read by `mix.exs` at compile time. Development versions use a `-dev` suffix (e.g., `0.2.0-dev`). Git tags use the `v{version}` format (e.g., `v0.1.0`).
+The project follows [Semantic Versioning](https://semver.org/). The current version is stored in the `VERSION` file at the project root and read by `mix.exs` at compile time. Development versions use a `-dev` suffix (e.g., `1.1.0-dev`). Git tags use the `v{version}` format (e.g., `v1.0.0`).
+
+Releases are cut on `main` after merging `develop`. The release task (`mix rodar_bpmn.release <patch|minor|major>`) handles the full workflow: strips `-dev`, updates CHANGELOG, commits, tags, bumps to next dev version, then `main` is merged back into `develop`.
 
 ## <a name="commit"></a> Commit Message Guidelines
 
