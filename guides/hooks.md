@@ -14,16 +14,16 @@ The hook system lets you observe BPMN execution without modifying the engine or 
 ## Registering Hooks
 
 ```elixir
-{:ok, context} = Bpmn.Context.start_link(process, %{})
+{:ok, context} = RodarBpmn.Context.start_link(process, %{})
 
 # Log every node entry
-Bpmn.Hooks.register(context, :before_node, fn meta ->
+RodarBpmn.Hooks.register(context, :before_node, fn meta ->
   IO.puts("Entering node: #{meta.node_id} (#{meta.node_type})")
   :ok
 end)
 
 # Track completion
-Bpmn.Hooks.register(context, :on_complete, fn meta ->
+RodarBpmn.Hooks.register(context, :on_complete, fn meta ->
   IO.puts("Process completed at: #{meta.node_id}")
   :ok
 end)
@@ -34,8 +34,8 @@ end)
 You can register multiple hooks for the same event. They are called in registration order:
 
 ```elixir
-Bpmn.Hooks.register(context, :after_node, &MyApp.Metrics.record/1)
-Bpmn.Hooks.register(context, :after_node, &MyApp.AuditLog.write/1)
+RodarBpmn.Hooks.register(context, :after_node, &MyApp.Metrics.record/1)
+RodarBpmn.Hooks.register(context, :after_node, &MyApp.AuditLog.write/1)
 ```
 
 ## Removing Hooks
@@ -43,7 +43,7 @@ Bpmn.Hooks.register(context, :after_node, &MyApp.AuditLog.write/1)
 Remove all hooks for a specific event:
 
 ```elixir
-Bpmn.Hooks.unregister(context, :before_node)
+RodarBpmn.Hooks.unregister(context, :before_node)
 ```
 
 ## Error Safety

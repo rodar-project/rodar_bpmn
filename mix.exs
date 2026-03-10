@@ -1,11 +1,11 @@
-defmodule Bpmn.MixProject do
+defmodule RodarBpmn.MixProject do
   use Mix.Project
 
   @version "0.1.0-dev"
 
   def project do
     [
-      app: :bpmn,
+      app: :rodar_bpmn,
       version: @version,
       elixir: "~> 1.16",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -26,7 +26,7 @@ defmodule Bpmn.MixProject do
 
   defp package do
     [
-      name: "bpmn",
+      name: "rodar_bpmn",
       files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Cosmin Harangus"],
       licenses: ["Apache-2.0"],
@@ -41,7 +41,7 @@ defmodule Bpmn.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Bpmn.Application, []}
+      mod: {RodarBpmn.Application, []}
     ]
   end
 
@@ -78,50 +78,60 @@ defmodule Bpmn.MixProject do
         Guides: ~r/guides\/.*/
       ],
       groups_for_modules: [
-        Core: [Bpmn, Bpmn.Token, Bpmn.Context, Bpmn.Process, Bpmn.Registry],
+        Core: [
+          RodarBpmn,
+          RodarBpmn.Token,
+          RodarBpmn.Context,
+          RodarBpmn.Process,
+          RodarBpmn.Registry
+        ],
         Events: [
-          Bpmn.Event.Start,
-          Bpmn.Event.End,
-          Bpmn.Event.Intermediate.Throw,
-          Bpmn.Event.Intermediate.Catch,
-          Bpmn.Event.Boundary,
-          Bpmn.Event.Bus,
-          Bpmn.Event.Timer
+          RodarBpmn.Event.Start,
+          RodarBpmn.Event.End,
+          RodarBpmn.Event.Intermediate.Throw,
+          RodarBpmn.Event.Intermediate.Catch,
+          RodarBpmn.Event.Boundary,
+          RodarBpmn.Event.Bus,
+          RodarBpmn.Event.Timer
         ],
         Gateways: [
-          Bpmn.Gateway.Exclusive,
-          Bpmn.Gateway.Parallel,
-          Bpmn.Gateway.Inclusive,
-          Bpmn.Gateway.Complex,
-          Bpmn.Gateway.Exclusive.Event
+          RodarBpmn.Gateway.Exclusive,
+          RodarBpmn.Gateway.Parallel,
+          RodarBpmn.Gateway.Inclusive,
+          RodarBpmn.Gateway.Complex,
+          RodarBpmn.Gateway.Exclusive.Event
         ],
         Tasks: [
-          Bpmn.Activity.Task.Script,
-          Bpmn.Activity.Task.User,
-          Bpmn.Activity.Task.Service,
-          Bpmn.Activity.Task.Send,
-          Bpmn.Activity.Task.Receive,
-          Bpmn.Activity.Task.Manual
+          RodarBpmn.Activity.Task.Script,
+          RodarBpmn.Activity.Task.User,
+          RodarBpmn.Activity.Task.Service,
+          RodarBpmn.Activity.Task.Send,
+          RodarBpmn.Activity.Task.Receive,
+          RodarBpmn.Activity.Task.Manual
         ],
-        Extensions: [Bpmn.TaskHandler, Bpmn.TaskRegistry, Bpmn.Hooks],
-        Observability: [Bpmn.Telemetry, Bpmn.Telemetry.LogHandler, Bpmn.Observability],
+        Extensions: [RodarBpmn.TaskHandler, RodarBpmn.TaskRegistry, RodarBpmn.Hooks],
+        Observability: [
+          RodarBpmn.Telemetry,
+          RodarBpmn.Telemetry.LogHandler,
+          RodarBpmn.Observability
+        ],
         Persistence: [
-          Bpmn.Persistence,
-          Bpmn.Persistence.Serializer,
-          Bpmn.Persistence.Adapter.ETS
+          RodarBpmn.Persistence,
+          RodarBpmn.Persistence.Serializer,
+          RodarBpmn.Persistence.Adapter.ETS
         ],
         Internals: [
-          Bpmn.Engine.Diagram,
-          Bpmn.Engine.Diagram.Export,
-          Bpmn.Expression,
-          Bpmn.Expression.Sandbox,
-          Bpmn.Expression.Feel,
-          Bpmn.Expression.Feel.Parser,
-          Bpmn.Expression.Feel.Evaluator,
-          Bpmn.Expression.Feel.Functions,
-          Bpmn.Validation,
-          Bpmn.Collaboration,
-          Bpmn.SequenceFlow
+          RodarBpmn.Engine.Diagram,
+          RodarBpmn.Engine.Diagram.Export,
+          RodarBpmn.Expression,
+          RodarBpmn.Expression.Sandbox,
+          RodarBpmn.Expression.Feel,
+          RodarBpmn.Expression.Feel.Parser,
+          RodarBpmn.Expression.Feel.Evaluator,
+          RodarBpmn.Expression.Feel.Functions,
+          RodarBpmn.Validation,
+          RodarBpmn.Collaboration,
+          RodarBpmn.SequenceFlow
         ]
       ]
     ]

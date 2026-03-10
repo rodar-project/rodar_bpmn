@@ -1,20 +1,20 @@
 # Task Handlers
 
-The `Bpmn.TaskHandler` behaviour lets you register custom task types or override specific task instances without modifying the engine.
+The `RodarBpmn.TaskHandler` behaviour lets you register custom task types or override specific task instances without modifying the engine.
 
 ## Defining a Handler
 
-Implement the `Bpmn.TaskHandler` behaviour with a `token_in/2` callback:
+Implement the `RodarBpmn.TaskHandler` behaviour with a `token_in/2` callback:
 
 ```elixir
 defmodule MyApp.ApprovalHandler do
-  @behaviour Bpmn.TaskHandler
+  @behaviour RodarBpmn.TaskHandler
 
   @impl true
   def token_in({_type, %{id: id}} = _element, context) do
     # Your business logic here
-    Bpmn.Context.put_data(context, "approved", true)
-    Bpmn.release_token(["next_flow"], context)
+    RodarBpmn.Context.put_data(context, "approved", true)
+    RodarBpmn.release_token(["next_flow"], context)
   end
 end
 ```
@@ -28,7 +28,7 @@ The callback receives the BPMN element tuple and the context pid, and should ret
 Register a handler for all tasks of a custom type:
 
 ```elixir
-Bpmn.TaskRegistry.register(:my_approval_task, MyApp.ApprovalHandler)
+RodarBpmn.TaskRegistry.register(:my_approval_task, MyApp.ApprovalHandler)
 ```
 
 Any element with type `:my_approval_task` will be dispatched to this handler.
@@ -38,7 +38,7 @@ Any element with type `:my_approval_task` will be dispatched to this handler.
 Register a handler for a specific task instance:
 
 ```elixir
-Bpmn.TaskRegistry.register("Task_approval_1", MyApp.ApprovalHandler)
+RodarBpmn.TaskRegistry.register("Task_approval_1", MyApp.ApprovalHandler)
 ```
 
 ### Lookup Priority
@@ -55,14 +55,14 @@ This lets you override individual tasks while keeping a generic handler for the 
 
 ```elixir
 # List all registered handlers
-Bpmn.TaskRegistry.list()
+RodarBpmn.TaskRegistry.list()
 # => [{:my_task, MyApp.Handler}, {"Task_1", MyApp.Other}]
 
 # Remove a registration
-Bpmn.TaskRegistry.unregister(:my_task)
+RodarBpmn.TaskRegistry.unregister(:my_task)
 
 # Check if a handler exists
-case Bpmn.TaskRegistry.lookup(:my_task) do
+case RodarBpmn.TaskRegistry.lookup(:my_task) do
   {:ok, module} -> # handler found
   :error -> # no handler registered
 end
@@ -72,17 +72,17 @@ end
 
 ```elixir
 defmodule MyApp.HttpTask do
-  @behaviour Bpmn.TaskHandler
+  @behaviour RodarBpmn.TaskHandler
 
   @impl true
   def token_in({_type, %{id: _id, outgoing: outgoing} = attrs}, context) do
-    url = Map.get(attrs, :url, Bpmn.Context.get_data(context, "request_url"))
+    url = Map.get(attrs, :url, RodarBpmn.Context.get_data(context, "request_url"))
     # Perform HTTP request...
-    Bpmn.Context.put_data(context, "response", %{status: 200})
-    Bpmn.release_token(outgoing, context)
+    RodarBpmn.Context.put_data(context, "response", %{status: 200})
+    RodarBpmn.release_token(outgoing, context)
   end
 end
 
 # Register for all :http_task elements
-Bpmn.TaskRegistry.register(:http_task, MyApp.HttpTask)
+RodarBpmn.TaskRegistry.register(:http_task, MyApp.HttpTask)
 ```

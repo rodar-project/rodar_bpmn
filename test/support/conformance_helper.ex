@@ -1,7 +1,7 @@
-defmodule Bpmn.Conformance.TestHelper do
+defmodule RodarBpmn.Conformance.TestHelper do
   @moduledoc false
 
-  alias Bpmn.{Context, Engine.Diagram}
+  alias RodarBpmn.{Context, Engine.Diagram}
 
   @fixture_base "test/fixtures/conformance"
 
@@ -27,7 +27,7 @@ defmodule Bpmn.Conformance.TestHelper do
     end)
 
     start = find_start_event(elements)
-    result = Bpmn.execute(start, context)
+    result = RodarBpmn.execute(start, context)
     {result, context}
   end
 
@@ -85,19 +85,19 @@ defmodule Bpmn.Conformance.TestHelper do
   end
 end
 
-defmodule Bpmn.Conformance.PassThroughHandler do
+defmodule RodarBpmn.Conformance.PassThroughHandler do
   @moduledoc false
-  @behaviour Bpmn.TaskHandler
+  @behaviour RodarBpmn.TaskHandler
 
   @impl true
   def token_in({_type, %{outgoing: outgoing}}, context) do
-    Bpmn.release_token(outgoing, context)
+    RodarBpmn.release_token(outgoing, context)
   end
 end
 
-defmodule Bpmn.Conformance.ErrorHandler do
+defmodule RodarBpmn.Conformance.ErrorHandler do
   @moduledoc false
-  @behaviour Bpmn.TaskHandler
+  @behaviour RodarBpmn.TaskHandler
 
   @impl true
   def token_in(_elem, _context) do

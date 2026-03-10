@@ -2,11 +2,11 @@
 
 ## Installation
 
-Add `bpmn` to your list of dependencies in `mix.exs`:
+Add `rodar_bpmn` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:bpmn, "~> 0.1.0-dev"}]
+  [{:rodar_bpmn, "~> 0.1.0-dev"}]
 end
 ```
 
@@ -17,36 +17,36 @@ Requires Elixir ~> 1.16 and OTP 27+.
 ### 1. Load and Parse a BPMN Diagram
 
 ```elixir
-diagram = Bpmn.Engine.Diagram.load(File.read!("my_process.bpmn"))
+diagram = RodarBpmn.Engine.Diagram.load(File.read!("my_process.bpmn"))
 {:bpmn_process, _attrs, _elements} = process = hd(diagram.processes)
 ```
 
 ### 2. Register and Run
 
 ```elixir
-Bpmn.Registry.register("my-process", process)
-{:ok, pid} = Bpmn.Process.create_and_run("my-process", %{"username" => "alice"})
+RodarBpmn.Registry.register("my-process", process)
+{:ok, pid} = RodarBpmn.Process.create_and_run("my-process", %{"username" => "alice"})
 ```
 
 ### 3. Check Results
 
 ```elixir
-Bpmn.Process.status(pid)
+RodarBpmn.Process.status(pid)
 # => :completed
 
-context = Bpmn.Process.get_context(pid)
-Bpmn.Context.get_data(context, "result")
+context = RodarBpmn.Process.get_context(pid)
+RodarBpmn.Context.get_data(context, "result")
 ```
 
 ## Basic Concepts
 
 ### Token-Based Execution
 
-The engine uses a token-based model. A `Bpmn.Token` struct tracks the execution pointer (current node, state, parent token for forks). Each BPMN node implements `token_in/2` to receive a token and routes it to the next node(s) via `Bpmn.release_token/2`.
+The engine uses a token-based model. A `RodarBpmn.Token` struct tracks the execution pointer (current node, state, parent token for forks). Each BPMN node implements `token_in/2` to receive a token and routes it to the next node(s) via `RodarBpmn.release_token/2`.
 
 ### Context
 
-`Bpmn.Context` is a GenServer that holds the process state: initial data, current data, process definition, node metadata, and execution history.
+`RodarBpmn.Context` is a GenServer that holds the process state: initial data, current data, process definition, node metadata, and execution history.
 
 ### Result Types
 
@@ -63,7 +63,7 @@ Node execution returns one of:
 Validate your BPMN diagrams before execution:
 
 ```elixir
-case Bpmn.Validation.validate(elements) do
+case RodarBpmn.Validation.validate(elements) do
   {:ok, _} -> IO.puts("Valid!")
   {:error, issues} -> Enum.each(issues, &IO.puts(&1.message))
 end
@@ -72,7 +72,7 @@ end
 Or from the command line:
 
 ```shell
-mix bpmn.validate my_process.bpmn
+mix rodar_bpmn.validate my_process.bpmn
 ```
 
 ## Next Steps
