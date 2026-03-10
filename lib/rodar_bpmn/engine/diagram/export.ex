@@ -307,8 +307,6 @@ defmodule RodarBpmn.Engine.Diagram.Export do
     ]
   end
 
-  defp build_event_def(_key, _attrs, _depth) when false, do: []
-
   defp build_event_def(:messageEventDefinition, attrs, depth) do
     case Map.get(attrs, :messageEventDefinition) do
       nil ->
