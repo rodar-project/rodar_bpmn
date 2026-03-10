@@ -76,6 +76,90 @@ defmodule Bpmn.Engine.DiagramTest do
     end
   end
 
+  describe "parser support for callActivity" do
+    test "parses callActivity as :bpmn_activity_subprocess" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:callActivity id="Call_1" name="Invoke Sub" calledElement="SubProcess_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+          </bpmn:callActivity>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_subprocess, attrs} = elements["Call_1"]
+      assert attrs.calledElement == "SubProcess_1"
+      assert attrs.incoming == ["Flow_1"]
+      assert attrs.outgoing == ["Flow_2"]
+    end
+  end
+
+  describe "parser support for collaboration" do
+    test "parses collaboration with participants and message flows" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:collaboration id="Collab_1">
+          <bpmn:participant id="Part_A" name="Process A" processRef="Process_A" />
+          <bpmn:participant id="Part_B" name="Process B" processRef="Process_B" />
+          <bpmn:messageFlow id="MF_1" name="Order" sourceRef="Throw_1" targetRef="Catch_1" />
+        </bpmn:collaboration>
+        <bpmn:process id="Process_A" isExecutable="true">
+          <bpmn:startEvent id="Start_A">
+            <bpmn:outgoing>Flow_A1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+        <bpmn:process id="Process_B" isExecutable="true">
+          <bpmn:startEvent id="Start_B">
+            <bpmn:outgoing>Flow_B1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      diagram = Bpmn.Engine.Diagram.load(xml)
+      assert diagram.collaboration != nil
+      assert diagram.collaboration.id == "Collab_1"
+
+      assert length(diagram.collaboration.participants) == 2
+      [p1, p2] = diagram.collaboration.participants
+      assert p1.id == "Part_A"
+      assert p1.processRef == "Process_A"
+      assert p2.id == "Part_B"
+      assert p2.processRef == "Process_B"
+
+      assert length(diagram.collaboration.message_flows) == 1
+      [mf] = diagram.collaboration.message_flows
+      assert mf.id == "MF_1"
+      assert mf.name == "Order"
+      assert mf.sourceRef == "Throw_1"
+      assert mf.targetRef == "Catch_1"
+
+      assert length(diagram.processes) == 2
+    end
+
+    test "collaboration is nil for single-process diagrams" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:startEvent id="Start_1">
+            <bpmn:outgoing>Flow_1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      diagram = Bpmn.Engine.Diagram.load(xml)
+      assert diagram.collaboration == nil
+    end
+  end
+
   defp load_elements do
     Bpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
   end

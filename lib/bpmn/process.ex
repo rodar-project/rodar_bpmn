@@ -218,44 +218,13 @@ defmodule Bpmn.Process do
   def handle_call(:activate, _from, %{status: :created} = state) do
     process_map = Bpmn.Context.get(state.context, :process)
 
-    case find_start_event(process_map) do
-      nil ->
+    case maybe_validate(process_map) do
+      {:error, issues} ->
         state = %{state | status: :error}
-        {:reply, {:error, "No start event found"}, state}
+        {:reply, {:error, {:validation_failed, issues}}, state}
 
-      start_event ->
-        token = Bpmn.Token.new()
-        state = %{state | status: :running, root_token: token}
-        start_time = System.monotonic_time()
-        Bpmn.Telemetry.process_started(state.instance_id, state.process_id)
-
-        result = Bpmn.execute(start_event, state.context, token)
-
-        state =
-          case result do
-            {:ok, _} ->
-              %{state | status: :completed}
-
-            {:error, _} ->
-              %{state | status: :error}
-
-            {:manual, _} ->
-              state = %{state | status: :suspended}
-              maybe_auto_dehydrate(state)
-              state
-
-            _ ->
-              %{state | status: :error}
-          end
-
-        Bpmn.Telemetry.process_stopped(
-          state.instance_id,
-          state.process_id,
-          state.status,
-          start_time
-        )
-
-        {:reply, :ok, state}
+      :ok ->
+        do_activate(process_map, state)
     end
   end
 
@@ -307,6 +276,64 @@ defmodule Bpmn.Process do
   end
 
   # --- Private helpers ---
+
+  defp do_activate(process_map, state) do
+    case find_start_event(process_map) do
+      nil ->
+        state = %{state | status: :error}
+        {:reply, {:error, "No start event found"}, state}
+
+      start_event ->
+        state = run_from_start(start_event, state)
+        {:reply, :ok, state}
+    end
+  end
+
+  defp run_from_start(start_event, state) do
+    token = Bpmn.Token.new()
+    state = %{state | status: :running, root_token: token}
+    start_time = System.monotonic_time()
+    Bpmn.Telemetry.process_started(state.instance_id, state.process_id)
+
+    result = Bpmn.execute(start_event, state.context, token)
+
+    state =
+      case result do
+        {:ok, _} ->
+          %{state | status: :completed}
+
+        {:error, _} ->
+          %{state | status: :error}
+
+        {:manual, _} ->
+          state = %{state | status: :suspended}
+          maybe_auto_dehydrate(state)
+          state
+
+        _ ->
+          %{state | status: :error}
+      end
+
+    Bpmn.Telemetry.process_stopped(
+      state.instance_id,
+      state.process_id,
+      state.status,
+      start_time
+    )
+
+    state
+  end
+
+  defp maybe_validate(process_map) do
+    if Application.get_env(:bpmn, :validate_on_activate, false) do
+      case Bpmn.Validation.validate(process_map) do
+        {:ok, _} -> :ok
+        {:error, _} = err -> err
+      end
+    else
+      :ok
+    end
+  end
 
   defp find_start_event(process_map) do
     Enum.find_value(process_map, fn

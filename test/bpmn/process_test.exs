@@ -154,4 +154,39 @@ defmodule Bpmn.ProcessTest do
       assert "end_1" in node_ids
     end
   end
+
+  describe "validation on activate" do
+    setup do
+      # Enable validation for this test
+      Application.put_env(:bpmn, :validate_on_activate, true)
+
+      on_exit(fn ->
+        Application.delete_env(:bpmn, :validate_on_activate)
+      end)
+    end
+
+    test "rejects invalid process with validation errors" do
+      # Register a process with no end event
+      elements = %{
+        "start_1" => {:bpmn_event_start, %{id: "start_1", incoming: [], outgoing: ["flow_1"]}}
+      }
+
+      definition = {:bpmn_process, %{id: "invalid_process"}, elements}
+      Registry.register("invalid_process", definition)
+
+      {:ok, pid} = Bpmn.Process.start_link("invalid_process")
+
+      assert {:error, {:validation_failed, issues}} = Bpmn.Process.activate(pid)
+      assert is_list(issues)
+      assert Enum.any?(issues, &(&1.rule == :end_event_exists))
+    end
+
+    test "valid process activates normally with validation enabled" do
+      register_simple_process()
+      {:ok, pid} = Bpmn.Process.start_link(@process_id)
+
+      assert :ok = Bpmn.Process.activate(pid)
+      assert Bpmn.Process.status(pid) == :completed
+    end
+  end
 end

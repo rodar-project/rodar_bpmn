@@ -41,7 +41,8 @@ defmodule Bpmn.Engine.Diagram do
       expression_language: attrs[:expressionLanguage] |> to_string,
       type_language: attrs[:typeLanguage] |> to_string,
       processes: load_processes(elems),
-      item_definitions: load_item_definitions(elems)
+      item_definitions: load_item_definitions(elems),
+      collaboration: load_collaboration(elems)
     }
   end
 
@@ -417,8 +418,72 @@ defmodule Bpmn.Engine.Diagram do
          timerEventDefinition: load_first_element("bpmn2:timerEventDefinition", elems)
        })}
 
+  defp load_element("bpmn2:callActivity", attrs, elems),
+    do:
+      {:bpmn_activity_subprocess,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems),
+         calledElement: (attrs[:calledElement] || "") |> to_string()
+       })}
+
   defp load_element("bpmn2:extensionElements", attrs, elems),
     do: {:bpmn_extension_elements, Map.merge(attrs, %{_elems: elems})}
 
   defp load_element(_type, _attrs, _elems), do: nil
+
+  # --- Collaboration parsing ---
+
+  defp load_collaboration(elems) do
+    Enum.find_value(elems, fn
+      {"bpmn2:collaboration", attrs, children} ->
+        attrs = format_attributes(attrs)
+
+        %{
+          id: attrs[:id] |> to_string(),
+          participants: load_participants(children),
+          message_flows: load_message_flows(children)
+        }
+
+      _ ->
+        nil
+    end)
+  end
+
+  defp load_participants(elems) do
+    Enum.flat_map(elems, fn
+      {"bpmn2:participant", attrs, _} ->
+        attrs = format_attributes(attrs)
+
+        [
+          %{
+            id: attrs[:id] |> to_string(),
+            name: (attrs[:name] || "") |> to_string(),
+            processRef: (attrs[:processRef] || "") |> to_string()
+          }
+        ]
+
+      _ ->
+        []
+    end)
+  end
+
+  defp load_message_flows(elems) do
+    Enum.flat_map(elems, fn
+      {"bpmn2:messageFlow", attrs, _} ->
+        attrs = format_attributes(attrs)
+
+        [
+          %{
+            id: attrs[:id] |> to_string(),
+            name: (attrs[:name] || "") |> to_string(),
+            sourceRef: attrs[:sourceRef] |> to_string(),
+            targetRef: attrs[:targetRef] |> to_string()
+          }
+        ]
+
+      _ ->
+        []
+    end)
+  end
 end

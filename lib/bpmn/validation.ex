@@ -1,0 +1,467 @@
+defmodule Bpmn.Validation do
+  @moduledoc """
+  Structural validation for parsed BPMN process element maps.
+
+  Validates a process map (`%{"id" => {type_atom, attrs_map}}`) against
+  structural rules before execution. Returns accumulated errors so users
+  see all issues at once.
+
+  ## Examples
+
+      iex> start = {:bpmn_event_start, %{id: "s", incoming: [], outgoing: ["f1"]}}
+      iex> end_ev = {:bpmn_event_end, %{id: "e", incoming: ["f1"], outgoing: []}}
+      iex> flow = {:bpmn_sequence_flow, %{id: "f1", sourceRef: "s", targetRef: "e", conditionExpression: nil}}
+      iex> process_map = %{"s" => start, "e" => end_ev, "f1" => flow}
+      iex> {:ok, ^process_map} = Bpmn.Validation.validate(process_map)
+      iex> true
+      true
+
+      iex> {:error, issues} = Bpmn.Validation.validate(%{})
+      iex> Enum.any?(issues, & &1.rule == :start_event_exists)
+      true
+
+  """
+
+  @type issue :: %{
+          rule: atom(),
+          node_id: String.t() | nil,
+          message: String.t(),
+          severity: :error | :warning
+        }
+
+  @doc """
+  Validate a parsed process element map.
+
+  Returns `{:ok, process_map}` when no `:error`-severity issues are found
+  (warnings are allowed). Returns `{:error, issues}` otherwise.
+  """
+  @spec validate(map()) :: {:ok, map()} | {:error, [issue()]}
+  def validate(process_map) do
+    issues =
+      [
+        &validate_start_event_exists/1,
+        &validate_start_event_outgoing/1,
+        &validate_end_event_exists/1,
+        &validate_end_event_incoming/1,
+        &validate_sequence_flow_refs/1,
+        &validate_orphan_nodes/1,
+        &validate_gateway_outgoing/1,
+        &validate_exclusive_gateway_default/1,
+        &validate_boundary_attachment/1
+      ]
+      |> Enum.flat_map(& &1.(process_map))
+
+    errors = Enum.filter(issues, &(&1.severity == :error))
+
+    if errors == [] do
+      {:ok, process_map}
+    else
+      {:error, issues}
+    end
+  end
+
+  @doc """
+  Validate a parsed process element map, raising on errors.
+  """
+  @spec validate!(map()) :: map()
+  def validate!(process_map) do
+    case validate(process_map) do
+      {:ok, map} -> map
+      {:error, issues} -> raise "Validation failed: #{inspect(issues)}"
+    end
+  end
+
+  @doc """
+  Validate collaboration structure against its processes.
+
+  Checks that participant processRefs match process IDs, and that
+  message flow source/target refs exist in some process.
+  """
+  @spec validate_collaboration(map(), [tuple()]) :: {:ok, map()} | {:error, [issue()]}
+  def validate_collaboration(collaboration, processes) do
+    issues =
+      [
+        &validate_participant_refs(&1, &2),
+        &validate_message_flow_refs(&1, &2),
+        &validate_message_flow_cross_process(&1, &2)
+      ]
+      |> Enum.flat_map(& &1.(collaboration, processes))
+
+    errors = Enum.filter(issues, &(&1.severity == :error))
+
+    if errors == [] do
+      {:ok, collaboration}
+    else
+      {:error, issues}
+    end
+  end
+
+  # --- Helpers ---
+
+  @doc false
+  def elements_by_type(process_map, type) do
+    Enum.filter(process_map, fn
+      {_id, {^type, _attrs}} -> true
+      _ -> false
+    end)
+  end
+
+  @doc false
+  def sequence_flows(process_map) do
+    elements_by_type(process_map, :bpmn_sequence_flow)
+  end
+
+  # --- Validation rules ---
+
+  defp validate_start_event_exists(process_map) do
+    case elements_by_type(process_map, :bpmn_event_start) do
+      [] ->
+        [
+          %{
+            rule: :start_event_exists,
+            node_id: nil,
+            message: "Process has no start event",
+            severity: :error
+          }
+        ]
+
+      _ ->
+        []
+    end
+  end
+
+  defp validate_start_event_outgoing(process_map) do
+    process_map
+    |> elements_by_type(:bpmn_event_start)
+    |> Enum.flat_map(fn {id, {_, attrs}} ->
+      if empty_list?(Map.get(attrs, :outgoing, [])) do
+        [
+          %{
+            rule: :start_event_outgoing,
+            node_id: id,
+            message: "Start event '#{id}' has no outgoing flows",
+            severity: :error
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp validate_end_event_exists(process_map) do
+    case elements_by_type(process_map, :bpmn_event_end) do
+      [] ->
+        [
+          %{
+            rule: :end_event_exists,
+            node_id: nil,
+            message: "Process has no end event",
+            severity: :error
+          }
+        ]
+
+      _ ->
+        []
+    end
+  end
+
+  defp validate_end_event_incoming(process_map) do
+    process_map
+    |> elements_by_type(:bpmn_event_end)
+    |> Enum.flat_map(fn {id, {_, attrs}} ->
+      if empty_list?(Map.get(attrs, :incoming, [])) do
+        [
+          %{
+            rule: :end_event_incoming,
+            node_id: id,
+            message: "End event '#{id}' has no incoming flows",
+            severity: :error
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp validate_sequence_flow_refs(process_map) do
+    process_map
+    |> sequence_flows()
+    |> Enum.flat_map(fn {id, {_, attrs}} ->
+      source_issues =
+        if Map.has_key?(process_map, attrs[:sourceRef]) do
+          []
+        else
+          [
+            %{
+              rule: :sequence_flow_refs,
+              node_id: id,
+              message:
+                "Sequence flow '#{id}' references non-existent source '#{attrs[:sourceRef]}'",
+              severity: :error
+            }
+          ]
+        end
+
+      target_issues =
+        if Map.has_key?(process_map, attrs[:targetRef]) do
+          []
+        else
+          [
+            %{
+              rule: :sequence_flow_refs,
+              node_id: id,
+              message:
+                "Sequence flow '#{id}' references non-existent target '#{attrs[:targetRef]}'",
+              severity: :error
+            }
+          ]
+        end
+
+      source_issues ++ target_issues
+    end)
+  end
+
+  defp validate_orphan_nodes(process_map) do
+    flow_targets =
+      process_map
+      |> sequence_flows()
+      |> Enum.map(fn {_id, {_, attrs}} -> attrs[:targetRef] end)
+      |> MapSet.new()
+
+    process_map
+    |> Enum.flat_map(fn
+      {id, {:bpmn_event_start, _}} ->
+        # Start events don't need incoming
+        if id, do: [], else: []
+
+      {id, {:bpmn_event_boundary, _}} ->
+        # Boundary events don't need incoming flows
+        if id, do: [], else: []
+
+      {_id, {:bpmn_sequence_flow, _}} ->
+        []
+
+      {id, {_type, _attrs}} ->
+        if MapSet.member?(flow_targets, id) do
+          []
+        else
+          [
+            %{
+              rule: :orphan_nodes,
+              node_id: id,
+              message: "Node '#{id}' is not targeted by any sequence flow",
+              severity: :error
+            }
+          ]
+        end
+
+      _ ->
+        []
+    end)
+  end
+
+  @gateway_types [
+    :bpmn_gateway_exclusive,
+    :bpmn_gateway_inclusive,
+    :bpmn_gateway_complex,
+    :bpmn_gateway_parallel
+  ]
+
+  defp validate_gateway_outgoing(process_map) do
+    process_map
+    |> Enum.flat_map(fn
+      {id, {type, attrs}} when type in @gateway_types ->
+        incoming = Map.get(attrs, :incoming, [])
+        outgoing = Map.get(attrs, :outgoing, [])
+
+        # A fork gateway has <=1 incoming flow
+        if length(incoming) <= 1 and length(outgoing) < 2 do
+          [
+            %{
+              rule: :gateway_outgoing,
+              node_id: id,
+              message: "Fork gateway '#{id}' must have at least 2 outgoing flows",
+              severity: :error
+            }
+          ]
+        else
+          []
+        end
+
+      _ ->
+        []
+    end)
+  end
+
+  defp validate_exclusive_gateway_default(process_map) do
+    process_map
+    |> elements_by_type(:bpmn_gateway_exclusive)
+    |> Enum.flat_map(fn {id, {_, attrs}} ->
+      outgoing = Map.get(attrs, :outgoing, [])
+      has_default = Map.has_key?(attrs, :default) and attrs[:default] != nil
+      has_conditional = has_conditional_flow?(outgoing, process_map)
+
+      if has_conditional and not has_default do
+        [
+          %{
+            rule: :exclusive_gateway_default,
+            node_id: id,
+            message: "Exclusive gateway '#{id}' has conditional flows but no default",
+            severity: :warning
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp has_conditional_flow?(outgoing, process_map) do
+    Enum.any?(outgoing, fn flow_id ->
+      case Map.get(process_map, flow_id) do
+        {:bpmn_sequence_flow, flow_attrs} -> flow_attrs[:conditionExpression] != nil
+        _ -> false
+      end
+    end)
+  end
+
+  defp validate_boundary_attachment(process_map) do
+    process_map
+    |> elements_by_type(:bpmn_event_boundary)
+    |> Enum.flat_map(fn {id, {_, attrs}} ->
+      attached_to = Map.get(attrs, :attachedToRef)
+
+      cond do
+        attached_to == nil ->
+          [
+            %{
+              rule: :boundary_attachment,
+              node_id: id,
+              message: "Boundary event '#{id}' has no attachedToRef",
+              severity: :error
+            }
+          ]
+
+        not Map.has_key?(process_map, attached_to) ->
+          [
+            %{
+              rule: :boundary_attachment,
+              node_id: id,
+              message: "Boundary event '#{id}' attached to non-existent node '#{attached_to}'",
+              severity: :error
+            }
+          ]
+
+        true ->
+          []
+      end
+    end)
+  end
+
+  # --- Collaboration validation rules ---
+
+  defp validate_participant_refs(collaboration, processes) do
+    process_ids =
+      Enum.map(processes, fn {:bpmn_process, attrs, _} -> attrs[:id] |> to_string() end)
+      |> MapSet.new()
+
+    (collaboration[:participants] || [])
+    |> Enum.flat_map(fn participant ->
+      if participant.processRef == "" or MapSet.member?(process_ids, participant.processRef) do
+        []
+      else
+        [
+          %{
+            rule: :participant_process_ref,
+            node_id: participant.id,
+            message:
+              "Participant '#{participant.id}' references non-existent process '#{participant.processRef}'",
+            severity: :error
+          }
+        ]
+      end
+    end)
+  end
+
+  defp validate_message_flow_refs(collaboration, processes) do
+    all_element_ids = collect_all_element_ids(processes)
+
+    (collaboration[:message_flows] || [])
+    |> Enum.flat_map(fn flow ->
+      source_issues =
+        if MapSet.member?(all_element_ids, flow.sourceRef) do
+          []
+        else
+          [
+            %{
+              rule: :message_flow_refs,
+              node_id: flow.id,
+              message:
+                "Message flow '#{flow.id}' references non-existent source '#{flow.sourceRef}'",
+              severity: :error
+            }
+          ]
+        end
+
+      target_issues =
+        if MapSet.member?(all_element_ids, flow.targetRef) do
+          []
+        else
+          [
+            %{
+              rule: :message_flow_refs,
+              node_id: flow.id,
+              message:
+                "Message flow '#{flow.id}' references non-existent target '#{flow.targetRef}'",
+              severity: :error
+            }
+          ]
+        end
+
+      source_issues ++ target_issues
+    end)
+  end
+
+  defp validate_message_flow_cross_process(collaboration, processes) do
+    element_to_process = build_element_to_process_map(processes)
+
+    (collaboration[:message_flows] || [])
+    |> Enum.flat_map(fn flow ->
+      source_process = Map.get(element_to_process, flow.sourceRef)
+      target_process = Map.get(element_to_process, flow.targetRef)
+
+      if source_process != nil and target_process != nil and source_process == target_process do
+        [
+          %{
+            rule: :message_flow_cross_process,
+            node_id: flow.id,
+            message: "Message flow '#{flow.id}' source and target must be in different processes",
+            severity: :error
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp collect_all_element_ids(processes) do
+    Enum.flat_map(processes, fn {:bpmn_process, _attrs, elements} ->
+      Map.keys(elements)
+    end)
+    |> MapSet.new()
+  end
+
+  defp build_element_to_process_map(processes) do
+    Enum.flat_map(processes, fn {:bpmn_process, attrs, elements} ->
+      process_id = attrs[:id] |> to_string()
+      Enum.map(Map.keys(elements), fn elem_id -> {elem_id, process_id} end)
+    end)
+    |> Map.new()
+  end
+
+  defp empty_list?([]), do: true
+  defp empty_list?(_), do: false
+end
