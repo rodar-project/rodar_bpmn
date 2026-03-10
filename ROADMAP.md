@@ -79,7 +79,7 @@ Add publish/subscribe infrastructure for BPMN events.
 - [x] **Escalation events** — Broadcast escalations to subscribing boundary events.
 - [ ] **Conditional events** — Re-evaluate conditions when context data changes.
 - [ ] **Message correlation keys** — Advanced routing beyond name matching.
-- [ ] **Timer cycle parsing** — ISO 8601 repeating intervals.
+- [x] **Timer cycle parsing** — ISO 8601 repeating intervals (`R3/PT10S`, `R/PT1M`, bare duration). Parser extracts `timeDuration`, `timeCycle`, `timeDate` from XML sub-elements.
 - [ ] **Signal/message-triggered start events** — Auto-create process instances on event.
 
 ## Phase 6: Expression Engine

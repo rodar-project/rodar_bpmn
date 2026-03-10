@@ -105,33 +105,70 @@ defmodule Bpmn.Event.Intermediate.Catch do
 
     Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
 
-    duration_expr = Map.get(def_attrs, :timeDuration)
+    cond do
+      Map.has_key?(def_attrs, :timeCycle) ->
+        schedule_cycle_timer(id, def_attrs.timeCycle, outgoing, context)
 
-    case duration_expr do
-      nil ->
+      Map.has_key?(def_attrs, :timeDuration) ->
+        schedule_duration_timer(id, def_attrs.timeDuration, outgoing, context)
+
+      true ->
         {:manual, %{id: id, type: :timer_catch, outgoing: outgoing, context: context}}
+    end
+  end
 
-      duration when is_binary(duration) ->
-        case Bpmn.Event.Timer.parse_duration(duration) do
-          {:ok, ms} ->
-            timer_ref = Bpmn.Event.Timer.schedule(ms, context, id, outgoing)
+  defp schedule_duration_timer(id, nil, outgoing, context) do
+    {:manual, %{id: id, type: :timer_catch, outgoing: outgoing, context: context}}
+  end
 
-            Bpmn.Context.put_meta(context, id, %{
-              active: true,
-              completed: false,
-              type: :catch_event,
-              timer_ref: timer_ref
-            })
+  defp schedule_duration_timer(id, duration, outgoing, context) when is_binary(duration) do
+    case Bpmn.Event.Timer.parse_duration(duration) do
+      {:ok, ms} ->
+        timer_ref = Bpmn.Event.Timer.schedule(ms, context, id, outgoing)
 
-            {:manual,
-             %{id: id, type: :timer_catch, duration_ms: ms, outgoing: outgoing, context: context}}
+        Bpmn.Context.put_meta(context, id, %{
+          active: true,
+          completed: false,
+          type: :catch_event,
+          timer_ref: timer_ref
+        })
 
-          {:error, reason} ->
-            {:error, "Catch event '#{id}': invalid timer duration — #{reason}"}
-        end
+        {:manual,
+         %{id: id, type: :timer_catch, duration_ms: ms, outgoing: outgoing, context: context}}
 
-      _ ->
-        {:manual, %{id: id, type: :timer_catch, outgoing: outgoing, context: context}}
+      {:error, reason} ->
+        {:error, "Catch event '#{id}': invalid timer duration — #{reason}"}
+    end
+  end
+
+  defp schedule_duration_timer(id, _other, outgoing, context) do
+    {:manual, %{id: id, type: :timer_catch, outgoing: outgoing, context: context}}
+  end
+
+  defp schedule_cycle_timer(id, cycle_expr, outgoing, context) do
+    case Bpmn.Event.Timer.parse_cycle(cycle_expr) do
+      {:ok, %{repetitions: reps, duration_ms: ms}} ->
+        timer_ref = Bpmn.Event.Timer.schedule_cycle(ms, context, id, outgoing, reps)
+
+        Bpmn.Context.put_meta(context, id, %{
+          active: true,
+          completed: false,
+          type: :catch_event,
+          timer_ref: timer_ref
+        })
+
+        {:manual,
+         %{
+           id: id,
+           type: :timer_cycle_catch,
+           duration_ms: ms,
+           repetitions: reps,
+           outgoing: outgoing,
+           context: context
+         }}
+
+      {:error, reason} ->
+        {:error, "Catch event '#{id}': invalid timer cycle — #{reason}"}
     end
   end
 end

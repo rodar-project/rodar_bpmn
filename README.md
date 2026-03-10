@@ -181,7 +181,7 @@ end
 | Call Activity (Subprocess) | Implemented | Looks up external process from registry, executes in child context |
 | Embedded Subprocess | Implemented | Executes nested elements within parent context; error boundary event propagation |
 | Event Bus | Implemented | Registry-based pub/sub for message (point-to-point), signal/escalation (broadcast) |
-| Timer | Implemented | ISO 8601 duration parsing (`PT5S`, `PT1H30M`), `Process.send_after` scheduling |
+| Timer | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
 | Telemetry | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus |
 | Observability | Implemented | Query APIs for running/waiting instances, execution history, health checks |
 | Validation | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1` |

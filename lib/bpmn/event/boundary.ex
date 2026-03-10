@@ -111,29 +111,59 @@ defmodule Bpmn.Event.Boundary do
 
     Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :boundary_event})
 
-    duration_expr = Map.get(def_attrs, :timeDuration)
+    if Map.has_key?(def_attrs, :timeCycle) do
+      schedule_boundary_cycle(id, def_attrs.timeCycle, outgoing, context)
+    else
+      schedule_boundary_duration(id, Map.get(def_attrs, :timeDuration), outgoing, context)
+    end
+  end
 
-    case duration_expr do
-      duration when is_binary(duration) ->
-        case Bpmn.Event.Timer.parse_duration(duration) do
-          {:ok, ms} ->
-            timer_ref = Bpmn.Event.Timer.schedule(ms, context, id, outgoing)
+  defp schedule_boundary_duration(id, duration, outgoing, context) when is_binary(duration) do
+    case Bpmn.Event.Timer.parse_duration(duration) do
+      {:ok, ms} ->
+        timer_ref = Bpmn.Event.Timer.schedule(ms, context, id, outgoing)
 
-            Bpmn.Context.put_meta(context, id, %{
-              active: true,
-              completed: false,
-              type: :boundary_event,
-              timer_ref: timer_ref
-            })
+        Bpmn.Context.put_meta(context, id, %{
+          active: true,
+          completed: false,
+          type: :boundary_event,
+          timer_ref: timer_ref
+        })
 
-            {:manual, %{id: id, type: :timer_boundary, duration_ms: ms, context: context}}
+        {:manual, %{id: id, type: :timer_boundary, duration_ms: ms, context: context}}
 
-          {:error, reason} ->
-            {:error, "Boundary event '#{id}': invalid timer duration — #{reason}"}
-        end
+      {:error, reason} ->
+        {:error, "Boundary event '#{id}': invalid timer duration — #{reason}"}
+    end
+  end
 
-      _ ->
-        {:manual, %{id: id, type: :timer_boundary, context: context}}
+  defp schedule_boundary_duration(id, _other, _outgoing, context) do
+    {:manual, %{id: id, type: :timer_boundary, context: context}}
+  end
+
+  defp schedule_boundary_cycle(id, cycle_expr, outgoing, context) do
+    case Bpmn.Event.Timer.parse_cycle(cycle_expr) do
+      {:ok, %{repetitions: reps, duration_ms: ms}} ->
+        timer_ref = Bpmn.Event.Timer.schedule_cycle(ms, context, id, outgoing, reps)
+
+        Bpmn.Context.put_meta(context, id, %{
+          active: true,
+          completed: false,
+          type: :boundary_event,
+          timer_ref: timer_ref
+        })
+
+        {:manual,
+         %{
+           id: id,
+           type: :timer_cycle_boundary,
+           duration_ms: ms,
+           repetitions: reps,
+           context: context
+         }}
+
+      {:error, reason} ->
+        {:error, "Boundary event '#{id}': invalid timer cycle — #{reason}"}
     end
   end
 

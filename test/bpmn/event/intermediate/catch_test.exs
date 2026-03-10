@@ -107,6 +107,90 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
     end
   end
 
+  describe "timer cycle catch event" do
+    test "returns manual with cycle info for valid cycle" do
+      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+
+      elem =
+        {:bpmn_event_intermediate_catch,
+         %{
+           id: "catch_cycle",
+           outgoing: ["flow_out"],
+           messageEventDefinition: nil,
+           signalEventDefinition: nil,
+           timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "R3/PT10S"}}
+         }}
+
+      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert task_data.type == :timer_cycle_catch
+      assert task_data.duration_ms == 10_000
+      assert task_data.repetitions == 3
+
+      meta = Bpmn.Context.get_meta(context, "catch_cycle")
+      Bpmn.Event.Timer.cancel(meta.timer_ref)
+    end
+
+    test "returns manual with infinite cycle for bare duration" do
+      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+
+      elem =
+        {:bpmn_event_intermediate_catch,
+         %{
+           id: "catch_cycle2",
+           outgoing: ["flow_out"],
+           messageEventDefinition: nil,
+           signalEventDefinition: nil,
+           timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "PT5S"}}
+         }}
+
+      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert task_data.type == :timer_cycle_catch
+      assert task_data.repetitions == :infinite
+
+      meta = Bpmn.Context.get_meta(context, "catch_cycle2")
+      Bpmn.Event.Timer.cancel(meta.timer_ref)
+    end
+
+    test "returns error for invalid cycle expression" do
+      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+
+      elem =
+        {:bpmn_event_intermediate_catch,
+         %{
+           id: "catch_cycle3",
+           outgoing: ["flow_out"],
+           messageEventDefinition: nil,
+           signalEventDefinition: nil,
+           timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "R3/invalid"}}
+         }}
+
+      assert {:error, msg} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert msg =~ "invalid timer cycle"
+    end
+
+    test "timeCycle takes priority over timeDuration" do
+      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+
+      elem =
+        {:bpmn_event_intermediate_catch,
+         %{
+           id: "catch_both",
+           outgoing: ["flow_out"],
+           messageEventDefinition: nil,
+           signalEventDefinition: nil,
+           timerEventDefinition:
+             {:bpmn_event_definition_timer, %{timeCycle: "R2/PT1S", timeDuration: "PT5S"}}
+         }}
+
+      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert task_data.type == :timer_cycle_catch
+      assert task_data.repetitions == 2
+
+      meta = Bpmn.Context.get_meta(context, "catch_both")
+      Bpmn.Event.Timer.cancel(meta.timer_ref)
+    end
+  end
+
   describe "unsupported catch event" do
     test "returns error for catch event without known definition" do
       {:ok, context} = Bpmn.Context.start_link(%{}, %{})

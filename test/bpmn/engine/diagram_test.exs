@@ -160,6 +160,93 @@ defmodule Bpmn.Engine.DiagramTest do
     end
   end
 
+  describe "parser support for timer event definitions" do
+    test "extracts timeDuration from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeDuration>PT5S</bpmn:timeDuration>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDuration == "PT5S"
+    end
+
+    test "extracts timeCycle from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeCycle>R3/PT10S</bpmn:timeCycle>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeCycle == "R3/PT10S"
+    end
+
+    test "extracts timeDate from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeDate>2025-12-31T23:59:59Z</bpmn:timeDate>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDate == "2025-12-31T23:59:59Z"
+    end
+
+    test "existing elements.bpmn timeDuration is extracted correctly" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_start, attrs} = elements["StartEvent_1tyknaj"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDuration == "PT1H"
+    end
+
+    test "existing elements.bpmn timeCycle is extracted correctly" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["IntermediateThrowEvent_188s9i3"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeCycle == "P1MT14H"
+    end
+  end
+
   defp load_elements do
     Bpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
   end

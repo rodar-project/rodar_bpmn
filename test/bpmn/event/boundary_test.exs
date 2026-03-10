@@ -112,6 +112,33 @@ defmodule Bpmn.Event.BoundaryTest do
     end
   end
 
+  describe "timer cycle boundary event" do
+    test "schedules cycle timer and returns manual" do
+      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+
+      elem =
+        {:bpmn_event_boundary,
+         %{
+           id: "b_cycle",
+           outgoing: ["flow"],
+           attachedToRef: "task1",
+           errorEventDefinition: nil,
+           messageEventDefinition: nil,
+           signalEventDefinition: nil,
+           timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "R3/PT10S"}},
+           escalationEventDefinition: nil
+         }}
+
+      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert task_data.type == :timer_cycle_boundary
+      assert task_data.duration_ms == 10_000
+      assert task_data.repetitions == 3
+
+      meta = Bpmn.Context.get_meta(context, "b_cycle")
+      Bpmn.Event.Timer.cancel(meta.timer_ref)
+    end
+  end
+
   describe "escalation boundary event" do
     test "subscribes to event bus and returns manual" do
       {:ok, context} = Bpmn.Context.start_link(make_process(), %{})

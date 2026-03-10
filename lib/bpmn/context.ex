@@ -329,6 +329,34 @@ defmodule Bpmn.Context do
     {:noreply, new_state}
   end
 
+  def handle_info({:timer_cycle_fired, node_id, outgoing, remaining, duration_ms}, state) do
+    context = self()
+    spawn(fn -> Bpmn.release_token(outgoing, context) end)
+
+    new_state =
+      if remaining == 0 do
+        nodes =
+          Map.put(state.nodes, node_id, %{active: false, completed: true, type: :catch_event})
+
+        %{state | nodes: nodes}
+      else
+        timer_ref =
+          Bpmn.Event.Timer.schedule_cycle(duration_ms, context, node_id, outgoing, remaining)
+
+        nodes =
+          Map.put(state.nodes, node_id, %{
+            active: true,
+            completed: false,
+            type: :catch_event,
+            timer_ref: timer_ref
+          })
+
+        %{state | nodes: nodes}
+      end
+
+    {:noreply, new_state}
+  end
+
   def handle_info({:bpmn_event, _type, _name, _payload, metadata}, state) do
     %{node_id: node_id, outgoing: outgoing, context: context} = metadata
     nodes = Map.put(state.nodes, node_id, %{active: false, completed: true, type: :catch_event})

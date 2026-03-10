@@ -366,8 +366,17 @@ defmodule Bpmn.Engine.Diagram do
   defp load_element("bpmn2:terminateEventDefinition", attrs, elems),
     do: {:bpmn_event_definition_terminate, Map.merge(attrs, %{_elems: elems})}
 
-  defp load_element("bpmn2:timerEventDefinition", attrs, elems),
-    do: {:bpmn_event_definition_timer, Map.merge(attrs, %{_elems: elems})}
+  defp load_element("bpmn2:timerEventDefinition", attrs, elems) do
+    timer_attrs =
+      Enum.reduce(elems, %{}, fn
+        {"bpmn2:timeDuration", _, [value]}, acc -> Map.put(acc, :timeDuration, to_string(value))
+        {"bpmn2:timeCycle", _, [value]}, acc -> Map.put(acc, :timeCycle, to_string(value))
+        {"bpmn2:timeDate", _, [value]}, acc -> Map.put(acc, :timeDate, to_string(value))
+        _, acc -> acc
+      end)
+
+    {:bpmn_event_definition_timer, Map.merge(attrs, timer_attrs)}
+  end
 
   defp load_element("bpmn2:sendTask", attrs, elems),
     do:
