@@ -97,9 +97,10 @@ Replace the current `Code.eval_string` approach with something safe and extensib
 
 Support processes that span hours, days, or weeks.
 
-- [ ] **State serialization** — Define a serialization format for process instance state (context data, token positions, node metadata).
-- [ ] **Storage adapter behaviour** — Define a behaviour for persistence backends. Implement an ETS adapter (for development) and a PostgreSQL adapter (for production).
-- [ ] **Dehydration/rehydration** — When a process reaches a wait state (user task, receive task, timer), serialize and store its state. When the external event arrives, reload and resume.
+- [x] **State serialization** — `Bpmn.Persistence.Serializer` converts live process state into persistable snapshots. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` to preserve tuples, atoms, and complex BPMN element structures natively.
+- [x] **Storage adapter behaviour** — `Bpmn.Persistence` defines the adapter callback contract (`save/2`, `load/1`, `delete/1`, `list/0`) with a facade that delegates to the configured adapter via `Application.get_env(:bpmn, :persistence)`. ETS adapter implemented (`Bpmn.Persistence.Adapter.ETS`) for development/testing.
+- [x] **Dehydration/rehydration** — `Bpmn.Process.dehydrate/1` saves process state to the persistence adapter. `Bpmn.Process.rehydrate/1` restores from a snapshot: starts a new supervised context, replaces state via `Context.restore_state/2`, and re-subscribes to the event bus for active catch/boundary events. Auto-dehydrate on `{:manual, _}` is configurable via `auto_dehydrate: true|false`.
+- [ ] **PostgreSQL adapter** — Production persistence backend.
 - [ ] **Process migration** — Handle deploying a new version of a process definition while instances of the old version are still running.
 
 ## Phase 8: Observability and Operations
