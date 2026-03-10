@@ -80,7 +80,7 @@ Add publish/subscribe infrastructure for BPMN events.
 - [ ] **Conditional events** — Re-evaluate conditions when context data changes.
 - [ ] **Message correlation keys** — Advanced routing beyond name matching.
 - [x] **Timer cycle parsing** — ISO 8601 repeating intervals (`R3/PT10S`, `R/PT1M`, bare duration). Parser extracts `timeDuration`, `timeCycle`, `timeDate` from XML sub-elements.
-- [ ] **Signal/message-triggered start events** — Auto-create process instances on event.
+- [x] **Signal/message-triggered start events** — `Bpmn.Event.Start.Trigger` auto-creates process instances when a matching message or signal is published. Subscribes to event bus, spawns `Bpmn.Process.create_and_run/2` with event payload as init data. Re-subscribes for messages (point-to-point consumed).
 
 ## Phase 6: Expression Engine
 

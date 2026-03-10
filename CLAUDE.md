@@ -49,6 +49,7 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - **`Bpmn.TaskHandler`** — Behaviour for custom task handlers. Single `token_in/2` callback matching existing handler signature.
 - **`Bpmn.TaskRegistry`** — GenServer for task handler registrations. `register/2` (atom type or string ID → module), `unregister/1`, `lookup/1`, `list/0`. Lookup priority: task ID first, then type.
 - **`Bpmn.Hooks`** — Per-context hook system. `register/3`, `unregister/2`, `notify/3`. Events: `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Observational-only, exceptions caught.
+- **`Bpmn.Event.Start.Trigger`** — GenServer for signal/message-triggered start events. `register/1` scans a process definition for message/signal start events and subscribes to the event bus. Auto-creates process instances via `Bpmn.Process.create_and_run/2` when matching events fire.
 - **`Bpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`, returns process maps keyed by element ID. Splits `intermediateThrowEvent` → `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` → `:bpmn_event_intermediate_catch`. Emits condition expressions as `{:bpmn_expression, {lang, expr}}`. Parses `collaboration`, `participant`, `messageFlow`, and `callActivity` elements. Extracts `timeDuration`, `timeCycle`, `timeDate` from timer event definitions.
 - **`Bpmn.Persistence`** — Behaviour defining adapter callbacks (`save/2`, `load/1`, `delete/1`, `list/0`) and facade delegating to the configured adapter. Reads config from `Application.get_env(:bpmn, :persistence)`.
 - **`Bpmn.Persistence.Serializer`** — Converts live process state to persistable snapshots and back. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` for binary serialization.
@@ -59,7 +60,7 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 
 ### Supervision Tree
 
-`Bpmn.Application` starts: `Bpmn.ProcessRegistry` (Elixir Registry, `:unique`), `Bpmn.EventRegistry` (Elixir Registry, `:duplicate`), `Bpmn.Registry`, `Bpmn.TaskRegistry`, `Bpmn.ContextSupervisor` (DynamicSupervisor), `Bpmn.ProcessSupervisor` (DynamicSupervisor), and conditionally the persistence adapter (e.g., `Bpmn.Persistence.Adapter.ETS`) if `:persistence` config is set.
+`Bpmn.Application` starts: `Bpmn.ProcessRegistry` (Elixir Registry, `:unique`), `Bpmn.EventRegistry` (Elixir Registry, `:duplicate`), `Bpmn.Registry`, `Bpmn.TaskRegistry`, `Bpmn.ContextSupervisor` (DynamicSupervisor), `Bpmn.ProcessSupervisor` (DynamicSupervisor), `Bpmn.Event.Start.Trigger`, and conditionally the persistence adapter (e.g., `Bpmn.Persistence.Adapter.ETS`) if `:persistence` config is set.
 
 ### Module Organization
 

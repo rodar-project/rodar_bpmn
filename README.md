@@ -118,6 +118,20 @@ Bpmn.Event.Bus.publish(:signal, "system_alert", %{data: %{level: "warning"}})
 # Receive tasks auto-subscribe when messageRef is set
 ```
 
+### Triggered Start Events
+
+Auto-create process instances when a message or signal fires:
+
+```elixir
+# Register a process that has a message start event
+Bpmn.Registry.register("order-process", process_definition)
+Bpmn.Event.Start.Trigger.register("order-process")
+
+# Publishing the matching message auto-creates a new instance
+Bpmn.Event.Bus.publish(:message, "new_order", %{data: %{"item" => "widget"}})
+# => A new "order-process" instance runs with %{"item" => "widget"} as init data
+```
+
 ### Service Tasks
 
 Define a handler module implementing the `Bpmn.Activity.Task.Service.Handler` behaviour:
@@ -181,6 +195,7 @@ end
 | Call Activity (Subprocess) | Implemented | Looks up external process from registry, executes in child context |
 | Embedded Subprocess | Implemented | Executes nested elements within parent context; error boundary event propagation |
 | Event Bus | Implemented | Registry-based pub/sub for message (point-to-point), signal/escalation (broadcast) |
+| Triggered Start Events | Implemented | Auto-create process instances on matching message/signal via `Bpmn.Event.Start.Trigger` |
 | Timer | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
 | Telemetry | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus |
 | Observability | Implemented | Query APIs for running/waiting instances, execution history, health checks |
@@ -264,7 +279,8 @@ Bpmn.Supervisor (one_for_one)
 ├── Bpmn.Registry (GenServer for process definitions)
 ├── Bpmn.TaskRegistry (GenServer for custom task handler registrations)
 ├── Bpmn.ContextSupervisor (DynamicSupervisor for context processes)
-└── Bpmn.ProcessSupervisor (DynamicSupervisor for process instances)
+├── Bpmn.ProcessSupervisor (DynamicSupervisor for process instances)
+└── Bpmn.Event.Start.Trigger (GenServer for signal/message-triggered start events)
 ```
 
 ## Validation

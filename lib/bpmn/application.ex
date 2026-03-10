@@ -12,7 +12,8 @@ defmodule Bpmn.Application do
         Bpmn.Registry,
         Bpmn.TaskRegistry,
         {DynamicSupervisor, name: Bpmn.ContextSupervisor, strategy: :one_for_one},
-        {DynamicSupervisor, name: Bpmn.ProcessSupervisor, strategy: :one_for_one}
+        {DynamicSupervisor, name: Bpmn.ProcessSupervisor, strategy: :one_for_one},
+        Bpmn.Event.Start.Trigger
       ] ++ persistence_children()
 
     opts = [strategy: :one_for_one, name: Bpmn.Supervisor]
