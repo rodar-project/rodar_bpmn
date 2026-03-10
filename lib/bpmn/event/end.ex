@@ -35,16 +35,25 @@ defmodule Bpmn.Event.End do
   """
   @spec token_in(Bpmn.element(), Bpmn.context()) :: Bpmn.result()
   def token_in({:bpmn_event_end, attrs} = _elem, context) do
-    cond do
-      has_error_definition?(attrs) ->
-        handle_error(attrs, context)
+    result =
+      cond do
+        has_error_definition?(attrs) ->
+          handle_error(attrs, context)
 
-      has_terminate_definition?(attrs) ->
-        handle_terminate(context)
+        has_terminate_definition?(attrs) ->
+          handle_terminate(context)
 
-      true ->
-        {:ok, context}
+        true ->
+          {:ok, context}
+      end
+
+    node_id = Map.get(attrs, :id)
+
+    if match?({:ok, _}, result) do
+      Bpmn.Hooks.notify(context, :on_complete, %{node_id: node_id})
     end
+
+    result
   end
 
   defp has_error_definition?(attrs) do

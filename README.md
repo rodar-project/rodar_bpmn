@@ -11,14 +11,17 @@ A BPMN 2.0 execution engine for Elixir. Parses BPMN 2.0 XML diagrams and execute
 2. [Usage](#usage)
 3. [Supported BPMN Elements](#supported-bpmn-elements)
 4. [Architecture](#architecture)
-5. [Validation](#validation)
-6. [Collaboration](#collaboration)
-7. [Observability](#observability)
-8. [Development](#development)
-9. [Contributing](CONTRIBUTING.md)
-10. [Code of Conduct](CODE_OF_CONDUCT.md)
-11. [License](#license)
-12. [References](#references)
+5. [Task Handlers](#task-handlers)
+6. [Hooks](#hooks)
+7. [Validation](#validation)
+8. [Collaboration](#collaboration)
+9. [Observability](#observability)
+10. [CLI Tools](#cli-tools)
+11. [Development](#development)
+12. [Contributing](CONTRIBUTING.md)
+13. [Code of Conduct](CODE_OF_CONDUCT.md)
+14. [License](#license)
+15. [References](#references)
 
 ## Installation
 
@@ -184,6 +187,50 @@ end
 | Validation | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1` |
 | Collaboration | Implemented | Multi-pool/multi-participant orchestration with message flow wiring |
 
+## Task Handlers
+
+Register custom task types or override specific task instances:
+
+```elixir
+defmodule MyApp.ApprovalHandler do
+  @behaviour Bpmn.TaskHandler
+
+  @impl true
+  def token_in({_type, %{id: _id, outgoing: outgoing}}, context) do
+    Bpmn.Context.put_data(context, "approved", true)
+    Bpmn.release_token(outgoing, context)
+  end
+end
+
+# Register for a custom type atom
+Bpmn.TaskRegistry.register(:approval_task, MyApp.ApprovalHandler)
+
+# Or override a specific task by ID
+Bpmn.TaskRegistry.register("Task_approval_1", MyApp.ApprovalHandler)
+```
+
+Lookup priority: task ID (string) first, then task type (atom), then built-in handlers.
+
+## Hooks
+
+Per-context hooks for observing execution without modifying flow:
+
+```elixir
+{:ok, context} = Bpmn.Context.start_link(process, %{})
+
+Bpmn.Hooks.register(context, :before_node, fn meta ->
+  IO.puts("Entering: #{meta.node_id}")
+  :ok
+end)
+
+Bpmn.Hooks.register(context, :on_complete, fn meta ->
+  IO.puts("Done at: #{meta.node_id}")
+  :ok
+end)
+```
+
+Events: `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Hook exceptions are caught and logged — they never break execution.
+
 ## Architecture
 
 The engine uses a **token-based execution model**. A `Bpmn.Token` struct tracks the execution pointer (current node, state, parent token for forks). Each BPMN node implements `token_in/2` to receive a token and routes it to the next node(s) via `Bpmn.release_token/2`.
@@ -205,6 +252,8 @@ The engine uses a **token-based execution model**. A `Bpmn.Token` struct tracks 
 - **`Bpmn.Observability`** — Read-only query APIs for running instances, waiting tasks, execution history, and health checks.
 - **`Bpmn.Validation`** — Structural validation for process maps. 9 rules + collaboration validation. Opt-in via config.
 - **`Bpmn.Collaboration`** — Multi-participant orchestration. Starts processes, wires message flows, activates all.
+- **`Bpmn.TaskHandler`** — Behaviour for custom task handlers. Register by type atom or task ID string via `Bpmn.TaskRegistry`.
+- **`Bpmn.Hooks`** — Per-context hook system for observing execution (before/after node, on error, on complete).
 
 ### Supervision Tree
 
@@ -213,6 +262,7 @@ Bpmn.Supervisor (one_for_one)
 ├── Bpmn.ProcessRegistry (Elixir Registry, :unique keys)
 ├── Bpmn.EventRegistry (Elixir Registry, :duplicate keys — event bus pub/sub)
 ├── Bpmn.Registry (GenServer for process definitions)
+├── Bpmn.TaskRegistry (GenServer for custom task handler registrations)
 ├── Bpmn.ContextSupervisor (DynamicSupervisor for context processes)
 └── Bpmn.ProcessSupervisor (DynamicSupervisor for process instances)
 ```
@@ -319,6 +369,27 @@ Logger metadata is automatically set during execution:
 - `bpmn_node_id`, `bpmn_node_type`, `bpmn_token_id` — set in `Bpmn.execute/3`
 - `bpmn_instance_id`, `bpmn_process_id` — set in `Bpmn.Process` init
 
+## CLI Tools
+
+### Validate a BPMN file
+
+```shell
+mix bpmn.validate path/to/process.bpmn
+```
+
+### Inspect parsed structure
+
+```shell
+mix bpmn.inspect path/to/process.bpmn
+```
+
+### Execute a process
+
+```shell
+mix bpmn.run path/to/process.bpmn
+mix bpmn.run path/to/process.bpmn --data '{"username": "alice"}'
+```
+
 ## Development
 
 ```shell
@@ -328,6 +399,9 @@ mix test              # Run tests
 mix credo             # Lint
 mix dialyzer          # Static analysis
 mix docs              # Generate documentation
+mix bpmn.validate <file>   # Validate a BPMN file
+mix bpmn.inspect <file>    # Inspect parsed structure
+mix bpmn.run <file>        # Execute a process
 ```
 
 ## License

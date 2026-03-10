@@ -10,6 +10,7 @@ defmodule Bpmn.Application do
         {Registry, keys: :unique, name: Bpmn.ProcessRegistry},
         {Registry, keys: :duplicate, name: Bpmn.EventRegistry},
         Bpmn.Registry,
+        Bpmn.TaskRegistry,
         {DynamicSupervisor, name: Bpmn.ContextSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Bpmn.ProcessSupervisor, strategy: :one_for_one}
       ] ++ persistence_children()

@@ -125,8 +125,8 @@ Improve spec compliance and catch errors early.
 
 Make the library easy to adopt and extend.
 
-- [ ] **Task behaviour** — Define a `Bpmn.Task` behaviour with `execute/2` callback. Let users register custom task implementations by type or by task ID.
-- [ ] **Listener/hook system** — Allow users to register callbacks for process events (before/after node execution, on error, on completion).
-- [ ] **Mix tasks** — `mix bpmn.validate <file>` to validate a BPMN file, `mix bpmn.run <file>` to execute a process from the command line, `mix bpmn.inspect <file>` to print the parsed structure.
-- [ ] **LiveView dashboard** — A Phoenix LiveView component that visualizes running process instances, token positions, and execution history in real time.
-- [ ] **Documentation** — Comprehensive HexDocs with guides for each node type, examples, and architecture overview.
+- [x] **Task behaviour** — `Bpmn.TaskHandler` behaviour with `token_in/2` callback. `Bpmn.TaskRegistry` allows registering custom task implementations by type atom or task ID string. Lookup priority: task ID first, then type.
+- [x] **Listener/hook system** — `Bpmn.Hooks` — per-context hooks for `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Observational-only (cannot modify execution). Hook exceptions are caught and logged.
+- [x] **Mix tasks** — `mix bpmn.validate <file>` validates structural rules, `mix bpmn.inspect <file>` prints parsed structure, `mix bpmn.run <file> [--data '{}']` executes a process.
+- [ ] **LiveView dashboard** — A Phoenix LiveView component that visualizes running process instances, token positions, and execution history in real time. (Planned as separate package.)
+- [x] **Documentation** — ExDoc guides for getting started, task handlers, hooks, and CLI. Module groups for organized HexDocs.

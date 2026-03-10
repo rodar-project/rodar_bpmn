@@ -62,7 +62,61 @@ defmodule Bpmn.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "DEVELOPER.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"]
+      extras: [
+        "README.md",
+        "DEVELOPER.md",
+        "CONTRIBUTING.md",
+        "CODE_OF_CONDUCT.md",
+        "guides/getting_started.md",
+        "guides/task_handlers.md",
+        "guides/hooks.md",
+        "guides/cli.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r/guides\/.*/
+      ],
+      groups_for_modules: [
+        Core: [Bpmn, Bpmn.Token, Bpmn.Context, Bpmn.Process, Bpmn.Registry],
+        Events: [
+          Bpmn.Event.Start,
+          Bpmn.Event.End,
+          Bpmn.Event.Intermediate.Throw,
+          Bpmn.Event.Intermediate.Catch,
+          Bpmn.Event.Boundary,
+          Bpmn.Event.Bus,
+          Bpmn.Event.Timer
+        ],
+        Gateways: [
+          Bpmn.Gateway.Exclusive,
+          Bpmn.Gateway.Parallel,
+          Bpmn.Gateway.Inclusive,
+          Bpmn.Gateway.Complex,
+          Bpmn.Gateway.Exclusive.Event
+        ],
+        Tasks: [
+          Bpmn.Activity.Task.Script,
+          Bpmn.Activity.Task.User,
+          Bpmn.Activity.Task.Service,
+          Bpmn.Activity.Task.Send,
+          Bpmn.Activity.Task.Receive,
+          Bpmn.Activity.Task.Manual
+        ],
+        Extensions: [Bpmn.TaskHandler, Bpmn.TaskRegistry, Bpmn.Hooks],
+        Observability: [Bpmn.Telemetry, Bpmn.Telemetry.LogHandler, Bpmn.Observability],
+        Persistence: [
+          Bpmn.Persistence,
+          Bpmn.Persistence.Serializer,
+          Bpmn.Persistence.Adapter.ETS
+        ],
+        Internals: [
+          Bpmn.Engine.Diagram,
+          Bpmn.Expression,
+          Bpmn.Expression.Sandbox,
+          Bpmn.Validation,
+          Bpmn.Collaboration,
+          Bpmn.SequenceFlow
+        ]
+      ]
     ]
   end
 end

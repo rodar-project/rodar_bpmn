@@ -157,16 +157,38 @@ defmodule Bpmn do
 
     Logger.metadata(bpmn_node_id: id, bpmn_node_type: type, bpmn_token_id: token.id)
     span_metadata = %{node_id: id, node_type: type, token_id: token.id}
+
+    Bpmn.Hooks.notify(context, :before_node, %{node_id: id, node_type: type, token: token})
+
     result = Bpmn.Telemetry.node_span(span_metadata, fn -> dispatch(elem, context) end)
+
+    Bpmn.Hooks.notify(context, :after_node, %{
+      node_id: id,
+      node_type: type,
+      token: token,
+      result: result
+    })
 
     result_type =
       case result do
-        {:ok, _} -> :ok
-        {:error, _} -> :error
-        {:manual, _} -> :manual
-        {:fatal, _} -> :fatal
-        {:not_implemented} -> :not_implemented
-        _ -> :unknown
+        {:ok, _} ->
+          :ok
+
+        {:error, reason} ->
+          Bpmn.Hooks.notify(context, :on_error, %{node_id: id, error: reason})
+          :error
+
+        {:manual, _} ->
+          :manual
+
+        {:fatal, _} ->
+          :fatal
+
+        {:not_implemented} ->
+          :not_implemented
+
+        _ ->
+          :unknown
       end
 
     Bpmn.Context.record_completion(context, id, token.id, result_type)
@@ -239,6 +261,19 @@ defmodule Bpmn do
 
   defp dispatch({:bpmn_sequence_flow, _} = elem, context),
     do: Bpmn.SequenceFlow.token_in(elem, context)
+
+  defp dispatch({type, %{id: id}} = elem, context) do
+    case Bpmn.TaskRegistry.lookup(id) do
+      {:ok, handler} ->
+        handler.token_in(elem, context)
+
+      :error ->
+        case Bpmn.TaskRegistry.lookup(type) do
+          {:ok, handler} -> handler.token_in(elem, context)
+          :error -> nil
+        end
+    end
+  end
 
   defp dispatch(_elem, _context), do: nil
 
