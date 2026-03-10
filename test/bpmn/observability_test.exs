@@ -1,6 +1,12 @@
 defmodule Bpmn.ObservabilityTest do
   use ExUnit.Case, async: false
 
+  setup do
+    # Ensure supervision tree is fully started
+    _ = Application.ensure_all_started(:bpmn)
+    :ok
+  end
+
   describe "health/0" do
     test "returns map with expected keys" do
       health = Bpmn.Observability.health()
