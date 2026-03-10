@@ -1,6 +1,6 @@
-# Hashiru BPMN Tutorial
+# Rodar BPMN Tutorial
 
-Hashiru BPMN is an Elixir execution engine for BPMN 2.0 process definitions. It parses BPMN XML files into Elixir data structures and executes them by passing tokens through process nodes.
+Rodar BPMN is an Elixir execution engine for BPMN 2.0 process definitions. It parses BPMN XML files into Elixir data structures and executes them by passing tokens through process nodes.
 
 ## BPMN Primer for Elixir Developers
 
@@ -16,7 +16,7 @@ If you're familiar with OTP but new to BPMN, here are the core concepts:
 
 ## Current Status
 
-This library is at version `0.1.0-dev` targeting Elixir ~> 1.16 with OTP 27+. The following are fully implemented: start events, end events (plain, error, terminate), intermediate throw/catch events (message, signal, escalation, timer), boundary events (error, message, signal, timer, escalation), sequence flows with condition expressions, exclusive/parallel/inclusive/complex/event-based gateways, script/user/service/manual/send/receive tasks, embedded subprocesses (with error boundary event propagation), call activities (external process lookup via registry), token-based execution tracking, process registry, process lifecycle management, context supervision, execution history, a Registry-based event bus for pub/sub messaging, persistence (serialization, ETS adapter, dehydrate/rehydrate), telemetry instrumentation, structured logging, and observability APIs (dashboard queries and health checks).
+This library is at version `0.1.0-dev` targeting Elixir ~> 1.16 with OTP 27+. The following are fully implemented: start events, end events (plain, error, terminate), intermediate throw/catch events (message, signal, escalation, timer), boundary events (error, message, signal, timer, escalation), sequence flows with condition expressions, exclusive/parallel/inclusive/complex/event-based gateways, script/user/service/manual/send/receive tasks, embedded subprocesses (with error boundary event propagation), call activities (external process lookup via registry), token-based execution tracking, process registry, process lifecycle management, context supervision, execution history, a Registry-based event bus for pub/sub messaging, persistence (serialization, ETS adapter, dehydrate/rehydrate), telemetry instrumentation, structured logging, observability APIs (dashboard queries and health checks), structural diagram validation (9 rules + collaboration validation), and multi-pool/multi-participant collaboration orchestration with message flow wiring.
 
 ## Setup
 
@@ -60,7 +60,8 @@ The returned map has this shape:
       ...
     }}
   ],
-  item_definitions: %{}
+  item_definitions: %{},
+  collaboration: nil  # or %{id: "...", participants: [...], message_flows: [...]}
 }
 ```
 
@@ -69,6 +70,7 @@ Key points:
 - `processes` is a list of `{:bpmn_process, attrs, elements}` tuples.
 - `elements` is a map from node ID (string) to its tuple representation.
 - Each node tuple follows the pattern `{:bpmn_<type>, %{id: ..., incoming: [...], outgoing: [...], ...}}`.
+- `collaboration` is `nil` for single-process diagrams, or a map with `id`, `participants`, and `message_flows` for multi-pool diagrams.
 
 ### The `user_login.bpmn` Example
 
@@ -324,8 +326,8 @@ start_event = elements["StartEvent_1"]
 result = Bpmn.execute(start_event, context)
 # The start event releases a token to SequenceFlow_0u2ggjm,
 # which leads to the "CHECK USER EXISTS" script task.
-# Since script tasks are partially implemented, you'll likely see
-# {:not_implemented} as the result.
+# The script task evaluates its expression via the sandboxed evaluator
+# and routes the token through the exclusive gateway based on the result.
 
 # 7. To test with a simpler process, build one manually:
 process = %{
@@ -393,6 +395,10 @@ Bpmn.execute(start, ctx)
 - `Bpmn.Telemetry` — Telemetry event definitions and helpers; `node_span/2` uses `:telemetry.span/3`
 - `Bpmn.Telemetry.LogHandler` — Default handler converting telemetry events to structured Logger output
 - `Bpmn.Observability` — Read-only query APIs: `running_instances/0`, `waiting_instances/0`, `execution_history/1`, `health/0`
+
+**Validation & Collaboration:**
+- `Bpmn.Validation` — Structural validation (9 rules + collaboration validation); `validate/1`, `validate!/1`, `validate_collaboration/2`
+- `Bpmn.Collaboration` — Multi-participant orchestration; `start/2` wires message flows and activates processes, `stop/1` terminates all
 
 ## Event Bus Usage
 
@@ -479,5 +485,63 @@ Logger metadata is automatically set during execution so all log messages within
 - `bpmn_instance_id`, `bpmn_process_id` — set by `Bpmn.Process` on init
 
 This works with any Logger backend that outputs metadata (e.g., JSON formatters for log aggregation).
+
+## Diagram Validation
+
+`Bpmn.Validation` checks a parsed process map for structural issues before execution:
+
+```elixir
+# Validate a process map
+case Bpmn.Validation.validate(elements) do
+  {:ok, ^elements} -> IO.puts("Valid!")
+  {:error, issues} -> IO.inspect(issues)
+end
+
+# Or raise on errors
+Bpmn.Validation.validate!(elements)
+```
+
+Validation checks 9 rules: start/end event existence, start event outgoing flows, end event incoming flows, sequence flow ref integrity, orphan node detection, gateway fork outgoing counts, exclusive gateway default flows (warning), and boundary event attachment.
+
+Enable automatic validation on `Bpmn.Process.activate/1`:
+
+```elixir
+# In config/config.exs
+config :bpmn, :validate_on_activate, true
+
+# Now activate will reject invalid processes
+{:error, {:validation_failed, issues}} = Bpmn.Process.activate(pid)
+```
+
+### Collaboration Validation
+
+For multi-pool diagrams, validate collaboration structure:
+
+```elixir
+Bpmn.Validation.validate_collaboration(collaboration, processes)
+# Checks: participant processRefs, message flow refs, cross-process constraints
+```
+
+## Multi-Pool Collaboration
+
+`Bpmn.Collaboration` orchestrates multiple BPMN processes that communicate via message flows:
+
+```elixir
+# Parse a collaboration diagram
+diagram = Bpmn.Engine.Diagram.load(File.read!("order_process.bpmn"))
+
+# Start all participants — registers processes, wires message flows, activates all
+{:ok, result} = Bpmn.Collaboration.start(diagram)
+# => %{collaboration_id: "Collab_1", instances: %{"OrderProcess" => pid1, "PaymentProcess" => pid2}}
+
+# Check individual process status
+Bpmn.Process.status(result.instances["OrderProcess"])
+# => :completed
+
+# Stop all processes
+Bpmn.Collaboration.stop(result)
+```
+
+Message flows are pre-wired before process activation via `Bpmn.Event.Bus.subscribe/3`, ensuring messages aren't lost if a throw event fires before its corresponding catch event subscribes.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on extending the library.

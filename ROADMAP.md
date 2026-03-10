@@ -116,10 +116,10 @@ Make the engine observable and operable in production.
 
 Improve spec compliance and catch errors early.
 
-- [ ] **Diagram validation** — Before execution, validate structural rules: every start event has outgoing flows, gateways have correct incoming/outgoing counts, all sequence flow refs point to existing nodes, no orphan nodes.
+- [x] **Diagram validation** — `Bpmn.Validation` validates structural rules before execution: start/end event existence and connectivity, sequence flow ref integrity, orphan node detection, gateway outgoing counts, exclusive gateway defaults, boundary event attachment. Returns accumulated errors. Opt-in at `activate/1` via `config :bpmn, :validate_on_activate, true`.
+- [x] **Multi-pool/multi-participant** — `Bpmn.Collaboration` orchestrates multi-participant collaboration diagrams. Parser handles `<bpmn:collaboration>`, `<bpmn:participant>`, `<bpmn:messageFlow>`, and `<bpmn:callActivity>`. Message flows pre-wired via `Bpmn.Event.Bus` before activation. Collaboration validation checks participant refs, message flow refs, and cross-process constraints.
 - [ ] **BPMN 2.0 XML export** — Serialize a running or completed process instance back to BPMN 2.0 XML for interoperability with other tools.
 - [ ] **BPMN conformance tests** — Implement test cases from the BPMN Model Interchange Working Group (MIWG) conformance test suite.
-- [ ] **Multi-pool/multi-participant** — Support collaboration diagrams with message flows between pools.
 
 ## Phase 10: Developer Experience
 

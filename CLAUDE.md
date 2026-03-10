@@ -32,7 +32,7 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - **`Bpmn.Token`** — Execution token struct (id, current_node, state, parent_id, created_at). `new/1` generates UUID, `fork/1` creates child tokens for parallel branches.
 - **`Bpmn.Context`** — GenServer-based state management with `get/2`, `put_data/3`, `get_data/2`, `put_meta/3`, `get_meta/2`, `record_token/3`, `token_count/2`, `record_activated_paths/3`, `swap_process/2`, `get_state/1`, `restore_state/2`, `start_supervised/2`. Includes execution history API: `record_visit/2`, `record_completion/4`, `get_history/1`, `get_node_history/2`. Handles `{:timer_fired, ...}` and `{:bpmn_event, ...}` via `handle_info`.
 - **`Bpmn.Registry`** — GenServer + Elixir Registry for process definition storage. `register/2`, `lookup/1`, `unregister/1`, `list/0`.
-- **`Bpmn.Process`** — Process lifecycle GenServer. `start_link/2`, `create_and_run/2`, `activate/1`, `suspend/1`, `resume/1`, `terminate/1`, `status/1`, `get_context/1`, `dehydrate/1`, `rehydrate/1`. Auto-dehydrates on `{:manual, _}` when configured.
+- **`Bpmn.Process`** — Process lifecycle GenServer. `start_link/2`, `create_and_run/2`, `activate/1`, `suspend/1`, `resume/1`, `terminate/1`, `status/1`, `get_context/1`, `dehydrate/1`, `rehydrate/1`. Auto-dehydrates on `{:manual, _}` when configured. Optional validation gate on activate via `config :bpmn, :validate_on_activate, true`.
 - **`Bpmn.Event.Bus`** — Registry-based pub/sub using `Bpmn.EventRegistry` (`:duplicate` keys). `subscribe/3`, `unsubscribe/2`, `publish/3` (message=point-to-point, signal/escalation=broadcast), `subscriptions/2`.
 - **`Bpmn.Event.Timer`** — ISO 8601 duration parsing (`parse_duration/1`), `schedule/4` via `Process.send_after`, `cancel/1`.
 - **`Bpmn.Event.Intermediate.Throw`** — Publishes message/signal/escalation to event bus, releases token.
@@ -41,7 +41,9 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - **`Bpmn.Expression`** — Evaluates condition expressions on sequence flows using the sandbox evaluator. Accepts both `{:bpmn_expression, {lang, expr}}` and legacy `{:bpmn_condition_expression, %{...}}` formats.
 - **`Bpmn.Expression.Sandbox`** — AST-restricted Elixir expression evaluator. Parses via `Code.string_to_quoted`, walks AST against an allowlist, evaluates safe expressions via `Code.eval_quoted`. Prevents arbitrary code execution.
 - **`Bpmn.Expression.TestHelpers`** — Convenience functions for evaluating expressions against sample data without a full process context, and for validating expression safety.
-- **`Bpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`, returns process maps keyed by element ID. Splits `intermediateThrowEvent` → `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` → `:bpmn_event_intermediate_catch`. Emits condition expressions as `{:bpmn_expression, {lang, expr}}`.
+- **`Bpmn.Validation`** — Structural validation for parsed process maps. `validate/1` returns accumulated `{:ok, map} | {:error, [issue]}`. `validate!/1` raises. `validate_collaboration/2` checks participant refs and message flow refs. 9 rules covering start/end events, sequence flow refs, orphan nodes, gateway outgoing, exclusive gateway defaults, boundary attachment.
+- **`Bpmn.Collaboration`** — Multi-participant orchestration. `start/2` registers processes, creates instances, wires message flows via event bus, activates all. `stop/1` terminates all instances. Uses existing `Bpmn.Event.Bus` for inter-process messaging.
+- **`Bpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`, returns process maps keyed by element ID. Splits `intermediateThrowEvent` → `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` → `:bpmn_event_intermediate_catch`. Emits condition expressions as `{:bpmn_expression, {lang, expr}}`. Parses `collaboration`, `participant`, `messageFlow`, and `callActivity` elements.
 - **`Bpmn.Persistence`** — Behaviour defining adapter callbacks (`save/2`, `load/1`, `delete/1`, `list/0`) and facade delegating to the configured adapter. Reads config from `Application.get_env(:bpmn, :persistence)`.
 - **`Bpmn.Persistence.Serializer`** — Converts live process state to persistable snapshots and back. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` for binary serialization.
 - **`Bpmn.Persistence.Adapter.ETS`** — GenServer owning a named ETS table (`:bpmn_persistence`). Implements `Bpmn.Persistence` behaviour. Suitable for development/testing.
@@ -62,6 +64,8 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - `lib/bpmn/persistence/` — Persistence behaviour, serializer, and adapters (ETS)
 - `lib/bpmn/telemetry/` — Telemetry event definitions, helpers, and default log handler
 - `lib/bpmn/observability.ex` — Dashboard query APIs and health checks
+- `lib/bpmn/validation.ex` — Structural validation (9 rules + collaboration validation)
+- `lib/bpmn/collaboration.ex` — Multi-pool/multi-participant orchestration
 
 ### Testing Conventions
 

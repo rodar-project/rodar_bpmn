@@ -11,12 +11,14 @@ A BPMN 2.0 execution engine for Elixir. Parses BPMN 2.0 XML diagrams and execute
 2. [Usage](#usage)
 3. [Supported BPMN Elements](#supported-bpmn-elements)
 4. [Architecture](#architecture)
-5. [Observability](#observability)
-6. [Development](#development)
-7. [Contributing](CONTRIBUTING.md)
-8. [Code of Conduct](CODE_OF_CONDUCT.md)
-9. [License](#license)
-10. [References](#references)
+5. [Validation](#validation)
+6. [Collaboration](#collaboration)
+7. [Observability](#observability)
+8. [Development](#development)
+9. [Contributing](CONTRIBUTING.md)
+10. [Code of Conduct](CODE_OF_CONDUCT.md)
+11. [License](#license)
+12. [References](#references)
 
 ## Installation
 
@@ -179,6 +181,8 @@ end
 | Timer | Implemented | ISO 8601 duration parsing (`PT5S`, `PT1H30M`), `Process.send_after` scheduling |
 | Telemetry | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus |
 | Observability | Implemented | Query APIs for running/waiting instances, execution history, health checks |
+| Validation | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1` |
+| Collaboration | Implemented | Multi-pool/multi-participant orchestration with message flow wiring |
 
 ## Architecture
 
@@ -199,6 +203,8 @@ The engine uses a **token-based execution model**. A `Bpmn.Token` struct tracks 
 - **`Bpmn.Telemetry`** — Telemetry event definitions and helpers; wraps node execution with `:telemetry.span/3`.
 - **`Bpmn.Telemetry.LogHandler`** — Default handler that converts telemetry events to structured `Logger` output.
 - **`Bpmn.Observability`** — Read-only query APIs for running instances, waiting tasks, execution history, and health checks.
+- **`Bpmn.Validation`** — Structural validation for process maps. 9 rules + collaboration validation. Opt-in via config.
+- **`Bpmn.Collaboration`** — Multi-participant orchestration. Starts processes, wires message flows, activates all.
 
 ### Supervision Tree
 
@@ -210,6 +216,55 @@ Bpmn.Supervisor (one_for_one)
 ├── Bpmn.ContextSupervisor (DynamicSupervisor for context processes)
 └── Bpmn.ProcessSupervisor (DynamicSupervisor for process instances)
 ```
+
+## Validation
+
+Validate parsed process maps for structural issues before execution:
+
+```elixir
+{:bpmn_process, _attrs, elements} = hd(diagram.processes)
+
+case Bpmn.Validation.validate(elements) do
+  {:ok, _} -> IO.puts("Process is valid")
+  {:error, issues} -> Enum.each(issues, &IO.puts(&1.message))
+end
+```
+
+Enable automatic validation on `Bpmn.Process.activate/1`:
+
+```elixir
+# In config/config.exs
+config :bpmn, :validate_on_activate, true
+```
+
+Checks 9 rules: start/end event existence and connectivity, sequence flow ref integrity, orphan nodes, gateway outgoing counts, exclusive gateway defaults (warning), and boundary event attachment.
+
+For collaboration diagrams, validate cross-process constraints:
+
+```elixir
+Bpmn.Validation.validate_collaboration(diagram.collaboration, diagram.processes)
+```
+
+## Collaboration
+
+Orchestrate multi-pool BPMN diagrams with message flows between participants:
+
+```elixir
+# Parse a collaboration diagram with multiple pools
+diagram = Bpmn.Engine.Diagram.load(File.read!("order_fulfillment.bpmn"))
+
+# Start all participants — registers, wires message flows, activates
+{:ok, result} = Bpmn.Collaboration.start(diagram)
+# => %{collaboration_id: "Collab_1", instances: %{"OrderProcess" => pid1, "PaymentProcess" => pid2}}
+
+# Check individual process status
+Bpmn.Process.status(result.instances["OrderProcess"])
+
+# Stop all processes
+Bpmn.Collaboration.stop(result)
+```
+
+Message flows are pre-wired via `Bpmn.Event.Bus` before process activation, ensuring messages aren't lost if a throw event fires before its corresponding catch event subscribes.
 
 ## Observability
 
