@@ -50,3 +50,20 @@ mix bpmn.run path/to/process.bpmn --data '{"username": "alice"}'
 Starts the application, registers the first process in the file, creates an instance, and runs it. Prints the final status and context data.
 
 The `--data` flag accepts a JSON object that is passed as initial data to the process context.
+
+## `mix bpmn.export`
+
+Export a BPMN file as normalized BPMN 2.0 XML:
+
+```shell
+mix bpmn.export path/to/process.bpmn
+mix bpmn.export path/to/process.bpmn --output normalized.bpmn
+```
+
+Parses the input file and re-exports it as normalized BPMN 2.0 XML. This is useful for:
+
+- Normalizing XML formatting across different BPMN editors
+- Stripping vendor-specific extensions (e.g., Camunda, Drools attributes)
+- Verifying round-trip fidelity of the parser
+
+Prints to stdout by default. Use `--output` to write to a file instead.

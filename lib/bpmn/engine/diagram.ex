@@ -22,6 +22,8 @@ defmodule Bpmn.Engine.Diagram do
     load_definition(bpmn)
   end
 
+  defdelegate export(diagram), to: Bpmn.Engine.Diagram.Export, as: :to_xml
+
   defp format_tag(name, _namespace, []) do
     "#{name}"
   end

@@ -112,6 +112,7 @@ defmodule Bpmn.MixProject do
         ],
         Internals: [
           Bpmn.Engine.Diagram,
+          Bpmn.Engine.Diagram.Export,
           Bpmn.Expression,
           Bpmn.Expression.Sandbox,
           Bpmn.Expression.Feel,

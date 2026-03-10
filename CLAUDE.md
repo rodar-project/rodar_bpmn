@@ -55,7 +55,8 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - **`Bpmn.TaskRegistry`** — GenServer for task handler registrations. `register/2` (atom type or string ID → module), `unregister/1`, `lookup/1`, `list/0`. Lookup priority: task ID first, then type.
 - **`Bpmn.Hooks`** — Per-context hook system. `register/3`, `unregister/2`, `notify/3`. Events: `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Observational-only, exceptions caught.
 - **`Bpmn.Event.Start.Trigger`** — GenServer for signal/message-triggered start events. `register/1` scans a process definition for message/signal start events and subscribes to the event bus. Auto-creates process instances via `Bpmn.Process.create_and_run/2` when matching events fire.
-- **`Bpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`, returns process maps keyed by element ID. Splits `intermediateThrowEvent` → `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` → `:bpmn_event_intermediate_catch`. Emits condition expressions as `{:bpmn_expression, {lang, expr}}`. Parses `collaboration`, `participant`, `messageFlow`, and `callActivity` elements. Extracts `timeDuration`, `timeCycle`, `timeDate` from timer event definitions.
+- **`Bpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`, returns process maps keyed by element ID. Splits `intermediateThrowEvent` → `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` → `:bpmn_event_intermediate_catch`. Emits condition expressions as `{:bpmn_expression, {lang, expr}}`. Parses `collaboration`, `participant`, `messageFlow`, and `callActivity` elements. Extracts `timeDuration`, `timeCycle`, `timeDate` from timer event definitions. `export/1` delegates to `Bpmn.Engine.Diagram.Export.to_xml/1`.
+- **`Bpmn.Engine.Diagram.Export`** — IO list-based BPMN 2.0 XML builder. Inverse of `Diagram.load/1`. Exports all element types (events, gateways, tasks, sequence flows, subprocesses), event definitions, collaboration, item definitions. Strips vendor-specific attributes and `_elems`. Deterministic output with sorted attributes and element ordering (sequence flows last).
 - **`Bpmn.Persistence`** — Behaviour defining adapter callbacks (`save/2`, `load/1`, `delete/1`, `list/0`) and facade delegating to the configured adapter. Reads config from `Application.get_env(:bpmn, :persistence)`.
 - **`Bpmn.Persistence.Serializer`** — Converts live process state to persistable snapshots and back. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` for binary serialization.
 - **`Bpmn.Persistence.Adapter.ETS`** — GenServer owning a named ETS table (`:bpmn_persistence`). Implements `Bpmn.Persistence` behaviour. Suitable for development/testing.
@@ -76,6 +77,7 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - `lib/bpmn/persistence/` — Persistence behaviour, serializer, and adapters (ETS)
 - `lib/bpmn/telemetry/` — Telemetry event definitions, helpers, and default log handler
 - `lib/bpmn/observability.ex` — Dashboard query APIs and health checks
+- `lib/bpmn/engine/` — BPMN 2.0 XML parser (`diagram.ex`) and exporter (`diagram/export.ex`)
 - `lib/bpmn/validation.ex` — Structural validation (9 rules + collaboration validation)
 - `lib/bpmn/collaboration.ex` — Multi-pool/multi-participant orchestration
 
