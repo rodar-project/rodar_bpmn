@@ -1,0 +1,60 @@
+defmodule RodarBpmn.Persistence.Adapter.ETS do
+  @moduledoc """
+  ETS-based persistence adapter for BPMN process snapshots.
+
+  Stores serialized snapshots in a named ETS table owned by this GenServer.
+  Suitable for development and testing — data is lost when the BEAM stops.
+  """
+
+  use GenServer
+  @behaviour RodarBpmn.Persistence
+
+  alias RodarBpmn.Persistence.Serializer
+
+  @table :rodar_bpmn_persistence
+
+  # --- Client API ---
+
+  def start_link(opts \\ []) do
+    name = Keyword.get(opts, :name, __MODULE__)
+    GenServer.start_link(__MODULE__, opts, name: name)
+  end
+
+  @impl RodarBpmn.Persistence
+  def save(instance_id, snapshot) do
+    binary = Serializer.serialize(snapshot)
+    :ets.insert(@table, {instance_id, binary})
+    :ok
+  end
+
+  @impl RodarBpmn.Persistence
+  def load(instance_id) do
+    case :ets.lookup(@table, instance_id) do
+      [{^instance_id, binary}] ->
+        {:ok, Serializer.deserialize(binary)}
+
+      [] ->
+        {:error, :not_found}
+    end
+  end
+
+  @impl RodarBpmn.Persistence
+  def delete(instance_id) do
+    :ets.delete(@table, instance_id)
+    :ok
+  end
+
+  @impl RodarBpmn.Persistence
+  def list do
+    :ets.tab2list(@table)
+    |> Enum.map(fn {id, _binary} -> id end)
+  end
+
+  # --- GenServer Callbacks ---
+
+  @impl true
+  def init(_opts) do
+    table = :ets.new(@table, [:named_table, :public, :set])
+    {:ok, %{table: table}}
+  end
+end

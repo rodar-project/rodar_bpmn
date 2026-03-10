@@ -1,0 +1,256 @@
+defmodule RodarBpmn.Engine.DiagramTest do
+  use ExUnit.Case, async: true
+
+  alias RodarBpmn.Engine.Diagram
+
+  doctest RodarBpmn.Engine.Diagram
+
+  describe "parser support for task types" do
+    test "parses sendTask elements" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_task_send, attrs} = elements["Task_10yp281"]
+      assert is_list(attrs.incoming)
+      assert is_list(attrs.outgoing)
+    end
+
+    test "parses receiveTask elements" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_task_receive, attrs} = elements["Task_0k0tvr8"]
+      assert is_list(attrs.incoming)
+      assert is_list(attrs.outgoing)
+    end
+
+    test "parses subProcess elements" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_subprocess_embeded, attrs} = elements["Task_188rh46"]
+      assert is_list(attrs.incoming)
+      assert is_list(attrs.outgoing)
+      assert is_map(attrs.elements)
+    end
+  end
+
+  describe "parser support for inline BPMN" do
+    test "parses manualTask elements" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:manualTask id="ManualTask_1" name="Sign Doc">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+          </bpmn:manualTask>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_task_manual, attrs} = elements["ManualTask_1"]
+      assert attrs.incoming == ["Flow_1"]
+      assert attrs.outgoing == ["Flow_2"]
+    end
+
+    test "parses boundaryEvent elements" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:userTask id="Task_1" name="Do Work">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+          </bpmn:userTask>
+          <bpmn:boundaryEvent id="Boundary_1" attachedToRef="Task_1" cancelActivity="true">
+            <bpmn:outgoing>Flow_3</bpmn:outgoing>
+            <bpmn:timerEventDefinition id="Timer_1" />
+          </bpmn:boundaryEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_event_boundary, attrs} = elements["Boundary_1"]
+      assert attrs.outgoing == ["Flow_3"]
+      assert attrs.attachedToRef == "Task_1"
+      assert attrs.cancelActivity == "true"
+    end
+  end
+
+  describe "parser support for callActivity" do
+    test "parses callActivity as :bpmn_activity_subprocess" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:callActivity id="Call_1" name="Invoke Sub" calledElement="SubProcess_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+          </bpmn:callActivity>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      assert {:bpmn_activity_subprocess, attrs} = elements["Call_1"]
+      assert attrs.calledElement == "SubProcess_1"
+      assert attrs.incoming == ["Flow_1"]
+      assert attrs.outgoing == ["Flow_2"]
+    end
+  end
+
+  describe "parser support for collaboration" do
+    test "parses collaboration with participants and message flows" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:collaboration id="Collab_1">
+          <bpmn:participant id="Part_A" name="Process A" processRef="Process_A" />
+          <bpmn:participant id="Part_B" name="Process B" processRef="Process_B" />
+          <bpmn:messageFlow id="MF_1" name="Order" sourceRef="Throw_1" targetRef="Catch_1" />
+        </bpmn:collaboration>
+        <bpmn:process id="Process_A" isExecutable="true">
+          <bpmn:startEvent id="Start_A">
+            <bpmn:outgoing>Flow_A1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+        <bpmn:process id="Process_B" isExecutable="true">
+          <bpmn:startEvent id="Start_B">
+            <bpmn:outgoing>Flow_B1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      diagram = Diagram.load(xml)
+      assert diagram.collaboration != nil
+      assert diagram.collaboration.id == "Collab_1"
+
+      assert length(diagram.collaboration.participants) == 2
+      [p1, p2] = diagram.collaboration.participants
+      assert p1.id == "Part_A"
+      assert p1.processRef == "Process_A"
+      assert p2.id == "Part_B"
+      assert p2.processRef == "Process_B"
+
+      assert length(diagram.collaboration.message_flows) == 1
+      [mf] = diagram.collaboration.message_flows
+      assert mf.id == "MF_1"
+      assert mf.name == "Order"
+      assert mf.sourceRef == "Throw_1"
+      assert mf.targetRef == "Catch_1"
+
+      assert length(diagram.processes) == 2
+    end
+
+    test "collaboration is nil for single-process diagrams" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:startEvent id="Start_1">
+            <bpmn:outgoing>Flow_1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      diagram = Diagram.load(xml)
+      assert diagram.collaboration == nil
+    end
+  end
+
+  describe "parser support for timer event definitions" do
+    test "extracts timeDuration from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeDuration>PT5S</bpmn:timeDuration>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDuration == "PT5S"
+    end
+
+    test "extracts timeCycle from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeCycle>R3/PT10S</bpmn:timeCycle>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeCycle == "R3/PT10S"
+    end
+
+    test "extracts timeDate from timerEventDefinition" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:intermediateCatchEvent id="Catch_1">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+            <bpmn:timerEventDefinition>
+              <bpmn:timeDate>2025-12-31T23:59:59Z</bpmn:timeDate>
+            </bpmn:timerEventDefinition>
+          </bpmn:intermediateCatchEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDate == "2025-12-31T23:59:59Z"
+    end
+
+    test "existing elements.bpmn timeDuration is extracted correctly" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_start, attrs} = elements["StartEvent_1tyknaj"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeDuration == "PT1H"
+    end
+
+    test "existing elements.bpmn timeCycle is extracted correctly" do
+      %{processes: [process]} = load_elements()
+      {:bpmn_process, _, elements} = process
+      {:bpmn_event_intermediate_catch, attrs} = elements["IntermediateThrowEvent_188s9i3"]
+      {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
+      assert def_attrs.timeCycle == "P1MT14H"
+    end
+  end
+
+  defp load_elements do
+    Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
+  end
+end

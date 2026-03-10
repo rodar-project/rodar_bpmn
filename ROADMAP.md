@@ -6,8 +6,8 @@ This roadmap outlines the planned enhancements for the BPMN execution engine, or
 
 Fix critical issues that prevent the engine from working end-to-end.
 
-- [x] **Fix atom/string key mismatch** — The diagram parser (`Bpmn.Engine.Diagram`) produces string keys (`"outgoing"`, `"id"`) but `Bpmn.Event.Start` pattern-matches on atom keys (`:outgoing`). Standardize on one convention across the entire codebase.
-- [x] **Fix Node.js port hardcoded path** — `Bpmn.Port.Nodejs` defaults to `/Users/cosmin/Incubator/...`. Use `Application.app_dir/2` or application config.
+- [x] **Fix atom/string key mismatch** — The diagram parser (`RodarBpmn.Engine.Diagram`) produces string keys (`"outgoing"`, `"id"`) but `RodarBpmn.Event.Start` pattern-matches on atom keys (`:outgoing`). Standardize on one convention across the entire codebase.
+- [x] **Fix Node.js port hardcoded path** — `RodarBpmn.Port.Nodejs` defaults to `/Users/cosmin/Incubator/...`. Use `Application.app_dir/2` or application config.
 - [x] **Adopt Elixir naming conventions** — Rename `releaseToken/2` to `release_token/2`, `tokenIn/2` to `token_in/2`, `tokenOut/2` to `token_out/2`, `initData` to `init_data`, etc.
 - [x] **Add typespecs** — Define `@type` for node tuples, context state, and result tuples. Add `@spec` to all public functions.
 - [x] **Add an end-to-end integration test** — Load `user_login.bpmn`, create a context, execute, and assert the result. This becomes the regression baseline for all future work.
@@ -54,52 +54,52 @@ Implement the stub modules to support real process execution.
 ### Subprocesses
 
 - [x] **Embedded Subprocess** — Execute a nested set of elements within the parent process context.
-- [x] **Call Activity** — Reference and execute an external process definition by ID via `Bpmn.Registry`.
+- [x] **Call Activity** — Reference and execute an external process definition by ID via `RodarBpmn.Registry`.
 
 ## Phase 4: Execution Engine Improvements
 
 Enhance the execution runtime for correctness and reliability.
 
 - [x] **Token model** — Introduce a token struct with an ID, current node, state (active/completed/waiting), and parent token (for subprocess tracking). Replace the implicit "token as function call" model.
-- [x] **Process registry** — Implement the registry described in `Bpmn` moduledoc. Register loaded process definitions by ID so any node can look them up at runtime. Use Elixir's built-in `Registry` module.
-- [x] **Process lifecycle** — Implement `Bpmn.Process` with `activate/1`, `suspend/1`, `resume/1`, `terminate/1`. Track process instance state (created, running, suspended, completed, terminated).
+- [x] **Process registry** — Implement the registry described in `RodarBpmn` moduledoc. Register loaded process definitions by ID so any node can look them up at runtime. Use Elixir's built-in `Registry` module.
+- [x] **Process lifecycle** — Implement `RodarBpmn.Process` with `activate/1`, `suspend/1`, `resume/1`, `terminate/1`. Track process instance state (created, running, suspended, completed, terminated).
 - [x] **Context supervision** — Replace the plain Agent with a supervised GenServer. Handle crashes gracefully by restarting from the last known state.
 - [x] **Execution history** — Record each node visit, timestamp, input data, and output data. Useful for debugging and audit trails.
 - [x] **Error propagation** — Implement BPMN error handling: when an error is thrown, walk up the scope tree looking for a matching boundary error event. If none is found, propagate to the process level.
-- [x] **Compensation** — `Bpmn.Compensation` tracks completed activities and their compensation handlers (registered via boundary events). When a compensate event is triggered (intermediate throw or end event with `compensateEventDefinition`), handlers execute in reverse completion order. Supports `activityRef` for targeted compensation and `waitForCompletion` for sync/async behavior.
+- [x] **Compensation** — `RodarBpmn.Compensation` tracks completed activities and their compensation handlers (registered via boundary events). When a compensate event is triggered (intermediate throw or end event with `compensateEventDefinition`), handlers execute in reverse completion order. Supports `activityRef` for targeted compensation and `waitForCompletion` for sync/async behavior.
 
 ## Phase 5: Event System
 
 Add publish/subscribe infrastructure for BPMN events.
 
-- [x] **Event bus** — `Bpmn.Event.Bus` — Registry-based pub/sub using `Bpmn.EventRegistry` with `:duplicate` keys. Message (point-to-point), signal and escalation (broadcast).
+- [x] **Event bus** — `RodarBpmn.Event.Bus` — Registry-based pub/sub using `RodarBpmn.EventRegistry` with `:duplicate` keys. Message (point-to-point), signal and escalation (broadcast).
 - [x] **Message events** — Correlate incoming messages to waiting receive tasks or intermediate catch events by message name.
 - [x] **Signal events** — Broadcast signals to all waiting catch events and boundary events.
-- [x] **Timer events** — `Bpmn.Event.Timer` — ISO 8601 duration parsing, `Process.send_after/3` scheduling. Context handles `{:timer_fired, ...}` via `handle_info`.
+- [x] **Timer events** — `RodarBpmn.Event.Timer` — ISO 8601 duration parsing, `Process.send_after/3` scheduling. Context handles `{:timer_fired, ...}` via `handle_info`.
 - [x] **Escalation events** — Broadcast escalations to subscribing boundary events.
 - [x] **Conditional events** — Re-evaluate conditions when context data changes. Parser extracts `condition` from `conditionalEventDefinition`. Context manages conditional subscriptions, evaluates on `put_data`. Supported in intermediate catch and boundary events.
 - [x] **Message correlation keys** — Correlation-aware message routing beyond name matching. Subscribers and publishers include optional `correlation: %{key: ..., value: ...}` metadata. The bus matches on correlation key/value pairs, falling back to uncorrelated subscribers. Supported in intermediate catch/throw events, boundary events, send/receive tasks, and collaboration message flows via `correlationKey` attribute.
 - [x] **Timer cycle parsing** — ISO 8601 repeating intervals (`R3/PT10S`, `R/PT1M`, bare duration). Parser extracts `timeDuration`, `timeCycle`, `timeDate` from XML sub-elements.
-- [x] **Signal/message-triggered start events** — `Bpmn.Event.Start.Trigger` auto-creates process instances when a matching message or signal is published. Subscribes to event bus, spawns `Bpmn.Process.create_and_run/2` with event payload as init data. Re-subscribes for messages (point-to-point consumed).
+- [x] **Signal/message-triggered start events** — `RodarBpmn.Event.Start.Trigger` auto-creates process instances when a matching message or signal is published. Subscribes to event bus, spawns `RodarBpmn.Process.create_and_run/2` with event payload as init data. Re-subscribes for messages (point-to-point consumed).
 
 ## Phase 6: Expression Engine
 
 Replace the current `Code.eval_string` approach with something safe and extensible.
 
-- [x] **Sandboxed expression evaluator** — `Bpmn.Expression.Sandbox` — AST-restricted Elixir evaluator. Parses via `Code.string_to_quoted`, walks AST against allowlist, evaluates safe expressions via `Code.eval_quoted`. Rejects dangerous module calls (System, File, IO, Code, Process, Port, Node).
-- [x] **Parser format fix** — `Bpmn.Engine.Diagram` now emits `{:bpmn_expression, {lang, expr}}` directly (was `{:bpmn_condition_expression, %{...}}`). Backward compat maintained in `Bpmn.Expression`.
-- [x] **Remove Node.js port** — Deleted `Bpmn.Port.Nodejs`, `Bpmn.Port.Supervisor`, and `priv/scripts/node.js`. Only Elixir expressions are supported.
+- [x] **Sandboxed expression evaluator** — `RodarBpmn.Expression.Sandbox` — AST-restricted Elixir evaluator. Parses via `Code.string_to_quoted`, walks AST against allowlist, evaluates safe expressions via `Code.eval_quoted`. Rejects dangerous module calls (System, File, IO, Code, Process, Port, Node).
+- [x] **Parser format fix** — `RodarBpmn.Engine.Diagram` now emits `{:bpmn_expression, {lang, expr}}` directly (was `{:bpmn_condition_expression, %{...}}`). Backward compat maintained in `RodarBpmn.Expression`.
+- [x] **Remove Node.js port** — Deleted `RodarBpmn.Port.Nodejs`, `RodarBpmn.Port.Supervisor`, and `priv/scripts/node.js`. Only Elixir expressions are supported.
 - [x] **BPMN example expressions** — Rewrote JavaScript expressions in example BPMN files to Elixir equivalents.
-- [x] **Expression testing utilities** — `Bpmn.Expression.TestHelpers` with `eval_expression/2` and `validate/1`.
-- [x] **Multi-language support** — FEEL (Friendly Enough Expression Language) support via `Bpmn.Expression.Feel`.
+- [x] **Expression testing utilities** — `RodarBpmn.Expression.TestHelpers` with `eval_expression/2` and `validate/1`.
+- [x] **Multi-language support** — FEEL (Friendly Enough Expression Language) support via `RodarBpmn.Expression.Feel`.
 
 ## Phase 7: Persistence and Long-Running Processes
 
 Support processes that span hours, days, or weeks.
 
-- [x] **State serialization** — `Bpmn.Persistence.Serializer` converts live process state into persistable snapshots. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` to preserve tuples, atoms, and complex BPMN element structures natively.
-- [x] **Storage adapter behaviour** — `Bpmn.Persistence` defines the adapter callback contract (`save/2`, `load/1`, `delete/1`, `list/0`) with a facade that delegates to the configured adapter via `Application.get_env(:bpmn, :persistence)`. ETS adapter implemented (`Bpmn.Persistence.Adapter.ETS`) for development/testing.
-- [x] **Dehydration/rehydration** — `Bpmn.Process.dehydrate/1` saves process state to the persistence adapter. `Bpmn.Process.rehydrate/1` restores from a snapshot: starts a new supervised context, replaces state via `Context.restore_state/2`, and re-subscribes to the event bus for active catch/boundary events. Auto-dehydrate on `{:manual, _}` is configurable via `auto_dehydrate: true|false`.
+- [x] **State serialization** — `RodarBpmn.Persistence.Serializer` converts live process state into persistable snapshots. Handles MapSets (→ sorted lists), timer refs (stripped), Token structs (→ plain maps). Uses `:erlang.term_to_binary`/`binary_to_term` to preserve tuples, atoms, and complex BPMN element structures natively.
+- [x] **Storage adapter behaviour** — `RodarBpmn.Persistence` defines the adapter callback contract (`save/2`, `load/1`, `delete/1`, `list/0`) with a facade that delegates to the configured adapter via `Application.get_env(:bpmn, :persistence)`. ETS adapter implemented (`RodarBpmn.Persistence.Adapter.ETS`) for development/testing.
+- [x] **Dehydration/rehydration** — `RodarBpmn.Process.dehydrate/1` saves process state to the persistence adapter. `RodarBpmn.Process.rehydrate/1` restores from a snapshot: starts a new supervised context, replaces state via `Context.restore_state/2`, and re-subscribes to the event bus for active catch/boundary events. Auto-dehydrate on `{:manual, _}` is configurable via `auto_dehydrate: true|false`.
 - [ ] **PostgreSQL adapter** — Production persistence backend.
 - [ ] **Process migration** — Handle deploying a new version of a process definition while instances of the old version are still running.
 
@@ -107,26 +107,26 @@ Support processes that span hours, days, or weeks.
 
 Make the engine observable and operable in production.
 
-- [x] **Telemetry integration** — `Bpmn.Telemetry` centralizes 8 event definitions with typed helpers. `node_span/2` uses `:telemetry.span/3` for timed node execution. Token creation, process lifecycle, and event bus publish/subscribe all emit telemetry events.
-- [x] **Structured logging** — `Logger.metadata` in `execute/3` (node_id, node_type, token_id) and `Bpmn.Process.init` (instance_id, process_id). `Bpmn.Telemetry.LogHandler` provides a default handler converting telemetry to structured log output.
-- [x] **Dashboard data** — `Bpmn.Observability` exposes `running_instances/0`, `waiting_instances/0`, and `execution_history/1` by querying existing supervisors and registries.
-- [x] **Health checks** — `Bpmn.Observability.health/0` reports supervisor_alive, process_count, context_count, registry_definitions, and event_subscriptions.
+- [x] **Telemetry integration** — `RodarBpmn.Telemetry` centralizes 8 event definitions with typed helpers. `node_span/2` uses `:telemetry.span/3` for timed node execution. Token creation, process lifecycle, and event bus publish/subscribe all emit telemetry events.
+- [x] **Structured logging** — `Logger.metadata` in `execute/3` (node_id, node_type, token_id) and `RodarBpmn.Process.init` (instance_id, process_id). `RodarBpmn.Telemetry.LogHandler` provides a default handler converting telemetry to structured log output.
+- [x] **Dashboard data** — `RodarBpmn.Observability` exposes `running_instances/0`, `waiting_instances/0`, and `execution_history/1` by querying existing supervisors and registries.
+- [x] **Health checks** — `RodarBpmn.Observability.health/0` reports supervisor_alive, process_count, context_count, registry_definitions, and event_subscriptions.
 
 ## Phase 9: BPMN Compliance and Validation
 
 Improve spec compliance and catch errors early.
 
-- [x] **Diagram validation** — `Bpmn.Validation` validates structural rules before execution: start/end event existence and connectivity, sequence flow ref integrity, orphan node detection, gateway outgoing counts, exclusive gateway defaults, boundary event attachment. Returns accumulated errors. Opt-in at `activate/1` via `config :bpmn, :validate_on_activate, true`.
-- [x] **Multi-pool/multi-participant** — `Bpmn.Collaboration` orchestrates multi-participant collaboration diagrams. Parser handles `<bpmn:collaboration>`, `<bpmn:participant>`, `<bpmn:messageFlow>`, and `<bpmn:callActivity>`. Message flows pre-wired via `Bpmn.Event.Bus` before activation. Collaboration validation checks participant refs, message flow refs, and cross-process constraints.
-- [x] **BPMN 2.0 XML export** — `Bpmn.Engine.Diagram.Export` serializes parsed diagram maps back to BPMN 2.0 XML. IO list-based builder, no new dependencies. Accessible via `Diagram.export/1` delegate and `mix bpmn.export` CLI task.
+- [x] **Diagram validation** — `RodarBpmn.Validation` validates structural rules before execution: start/end event existence and connectivity, sequence flow ref integrity, orphan node detection, gateway outgoing counts, exclusive gateway defaults, boundary event attachment. Returns accumulated errors. Opt-in at `activate/1` via `config :rodar_bpmn, :validate_on_activate, true`.
+- [x] **Multi-pool/multi-participant** — `RodarBpmn.Collaboration` orchestrates multi-participant collaboration diagrams. Parser handles `<bpmn:collaboration>`, `<bpmn:participant>`, `<bpmn:messageFlow>`, and `<bpmn:callActivity>`. Message flows pre-wired via `RodarBpmn.Event.Bus` before activation. Collaboration validation checks participant refs, message flow refs, and cross-process constraints.
+- [x] **BPMN 2.0 XML export** — `RodarBpmn.Engine.Diagram.Export` serializes parsed diagram maps back to BPMN 2.0 XML. IO list-based builder, no new dependencies. Accessible via `Diagram.export/1` delegate and `mix rodar_bpmn.export` CLI task.
 - [ ] **BPMN conformance tests** — Implement test cases from the BPMN Model Interchange Working Group (MIWG) conformance test suite.
 
 ## Phase 10: Developer Experience
 
 Make the library easy to adopt and extend.
 
-- [x] **Task behaviour** — `Bpmn.TaskHandler` behaviour with `token_in/2` callback. `Bpmn.TaskRegistry` allows registering custom task implementations by type atom or task ID string. Lookup priority: task ID first, then type.
-- [x] **Listener/hook system** — `Bpmn.Hooks` — per-context hooks for `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Observational-only (cannot modify execution). Hook exceptions are caught and logged.
-- [x] **Mix tasks** — `mix bpmn.validate <file>` validates structural rules, `mix bpmn.inspect <file>` prints parsed structure, `mix bpmn.run <file> [--data '{}']` executes a process.
+- [x] **Task behaviour** — `RodarBpmn.TaskHandler` behaviour with `token_in/2` callback. `RodarBpmn.TaskRegistry` allows registering custom task implementations by type atom or task ID string. Lookup priority: task ID first, then type.
+- [x] **Listener/hook system** — `RodarBpmn.Hooks` — per-context hooks for `:before_node`, `:after_node`, `:on_error`, `:on_complete`. Observational-only (cannot modify execution). Hook exceptions are caught and logged.
+- [x] **Mix tasks** — `mix rodar_bpmn.validate <file>` validates structural rules, `mix rodar_bpmn.inspect <file>` prints parsed structure, `mix rodar_bpmn.run <file> [--data '{}']` executes a process.
 - [ ] **LiveView dashboard** — A Phoenix LiveView component that visualizes running process instances, token positions, and execution history in real time. (Planned as separate package.)
 - [x] **Documentation** — ExDoc guides for getting started, task handlers, hooks, and CLI. Module groups for organized HexDocs.
