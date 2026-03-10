@@ -1,6 +1,6 @@
 # Rodar BPMN Engine
 
-[![CI](https://github.com/Around25/rodar-bpmn/actions/workflows/ci.yml/badge.svg)](https://github.com/Around25/rodar-bpmn/actions/workflows/ci.yml)
+[![CI](https://github.com/rodgco/rodar-bpmn/actions/workflows/ci.yml/badge.svg)](https://github.com/rodgco/rodar-bpmn/actions/workflows/ci.yml)
 [![Hex Version](https://img.shields.io/hexpm/v/rodar_bpmn.svg)](https://hex.pm/packages/rodar_bpmn)
 
 A BPMN 2.0 execution engine for Elixir. Parses BPMN 2.0 XML diagrams and executes processes using a token-based flow model.
@@ -178,60 +178,60 @@ end
 
 ### Events
 
-| Element | Status | Notes |
-|---------|--------|-------|
-| Start Event | Implemented | Routes token to outgoing flows |
-| End Event (plain) | Implemented | Normal process completion |
-| End Event (error) | Implemented | Sets error state in context |
-| End Event (terminate) | Implemented | Marks process as terminated |
-| Intermediate Throw Event | Implemented | Publishes message/signal/escalation to event bus |
-| Intermediate Catch Event | Implemented | Subscribes to event bus or conditional evaluation; returns `{:manual, _}` |
-| Boundary Event (error) | Implemented | Activated by parent activity on error |
-| Boundary Event (message) | Implemented | Subscribes to event bus |
-| Boundary Event (signal) | Implemented | Subscribes to event bus |
-| Boundary Event (timer) | Implemented | Schedules via `Process.send_after` |
-| Boundary Event (escalation) | Implemented | Subscribes to event bus |
-| Boundary Event (conditional) | Implemented | Subscribes to context data changes; fires when condition becomes true |
-| Boundary Event (compensate) | Implemented | Passive — handler registration in dispatcher |
-| Intermediate Throw (compensate) | Implemented | Triggers compensation; supports `activityRef` and `waitForCompletion` |
-| End Event (compensate) | Implemented | Triggers compensation on process end |
+| Element                         | Status      | Notes                                                                     |
+| ------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| Start Event                     | Implemented | Routes token to outgoing flows                                            |
+| End Event (plain)               | Implemented | Normal process completion                                                 |
+| End Event (error)               | Implemented | Sets error state in context                                               |
+| End Event (terminate)           | Implemented | Marks process as terminated                                               |
+| Intermediate Throw Event        | Implemented | Publishes message/signal/escalation to event bus                          |
+| Intermediate Catch Event        | Implemented | Subscribes to event bus or conditional evaluation; returns `{:manual, _}` |
+| Boundary Event (error)          | Implemented | Activated by parent activity on error                                     |
+| Boundary Event (message)        | Implemented | Subscribes to event bus                                                   |
+| Boundary Event (signal)         | Implemented | Subscribes to event bus                                                   |
+| Boundary Event (timer)          | Implemented | Schedules via `Process.send_after`                                        |
+| Boundary Event (escalation)     | Implemented | Subscribes to event bus                                                   |
+| Boundary Event (conditional)    | Implemented | Subscribes to context data changes; fires when condition becomes true     |
+| Boundary Event (compensate)     | Implemented | Passive — handler registration in dispatcher                              |
+| Intermediate Throw (compensate) | Implemented | Triggers compensation; supports `activityRef` and `waitForCompletion`     |
+| End Event (compensate)          | Implemented | Triggers compensation on process end                                      |
 
 ### Gateways
 
-| Element | Status | Notes |
-|---------|--------|-------|
-| Exclusive Gateway | Implemented | Condition evaluation, default flow |
-| Parallel Gateway | Implemented | Fork/join with token synchronization |
-| Inclusive Gateway | Implemented | Fork/join with condition evaluation and activated-path tracking |
-| Complex Gateway | Implemented | Expression-based activation rules; configurable join condition |
-| Event-Based Gateway | Implemented | Returns `{:manual, _}` with downstream catch event info |
+| Element             | Status      | Notes                                                           |
+| ------------------- | ----------- | --------------------------------------------------------------- |
+| Exclusive Gateway   | Implemented | Condition evaluation, default flow                              |
+| Parallel Gateway    | Implemented | Fork/join with token synchronization                            |
+| Inclusive Gateway   | Implemented | Fork/join with condition evaluation and activated-path tracking |
+| Complex Gateway     | Implemented | Expression-based activation rules; configurable join condition  |
+| Event-Based Gateway | Implemented | Returns `{:manual, _}` with downstream catch event info         |
 
 ### Tasks
 
-| Element | Status | Notes |
-|---------|--------|-------|
-| Script Task | Implemented | Elixir (sandboxed AST evaluation), FEEL |
-| User Task | Implemented | Pause/resume with `{:manual, task_data}` |
-| Service Task | Implemented | Handler behaviour callback |
-| Send Task | Implemented | Publishes to event bus if `messageRef` present |
+| Element      | Status      | Notes                                                                 |
+| ------------ | ----------- | --------------------------------------------------------------------- |
+| Script Task  | Implemented | Elixir (sandboxed AST evaluation), FEEL                               |
+| User Task    | Implemented | Pause/resume with `{:manual, task_data}`                              |
+| Service Task | Implemented | Handler behaviour callback                                            |
+| Send Task    | Implemented | Publishes to event bus if `messageRef` present                        |
 | Receive Task | Implemented | Subscribes to event bus if `messageRef` present; auto-resume on match |
-| Manual Task | Implemented | Pause/resume like User Task; type `:manual_task` |
+| Manual Task  | Implemented | Pause/resume like User Task; type `:manual_task`                      |
 
 ### Other
 
-| Element | Status | Notes |
-|---------|--------|-------|
-| Sequence Flow | Implemented | Conditional expressions supported (Elixir + FEEL) |
-| Call Activity (Subprocess) | Implemented | Looks up external process from registry, executes in child context |
-| Embedded Subprocess | Implemented | Executes nested elements within parent context; error boundary event propagation |
-| Event Bus | Implemented | Registry-based pub/sub for message (point-to-point with correlation keys), signal/escalation (broadcast) |
-| Compensation | Implemented | Tracks completed activities; executes handlers in reverse order via `RodarBpmn.Compensation` |
-| Triggered Start Events | Implemented | Auto-create process instances on matching message/signal via `RodarBpmn.Event.Start.Trigger` |
-| Timer | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
-| Telemetry | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus |
-| Observability | Implemented | Query APIs for running/waiting instances, execution history, health checks |
-| Validation | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1` |
-| Collaboration | Implemented | Multi-pool/multi-participant orchestration with message flow wiring |
+| Element                    | Status      | Notes                                                                                                           |
+| -------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| Sequence Flow              | Implemented | Conditional expressions supported (Elixir + FEEL)                                                               |
+| Call Activity (Subprocess) | Implemented | Looks up external process from registry, executes in child context                                              |
+| Embedded Subprocess        | Implemented | Executes nested elements within parent context; error boundary event propagation                                |
+| Event Bus                  | Implemented | Registry-based pub/sub for message (point-to-point with correlation keys), signal/escalation (broadcast)        |
+| Compensation               | Implemented | Tracks completed activities; executes handlers in reverse order via `RodarBpmn.Compensation`                    |
+| Triggered Start Events     | Implemented | Auto-create process instances on matching message/signal via `RodarBpmn.Event.Start.Trigger`                    |
+| Timer                      | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
+| Telemetry                  | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus                            |
+| Observability              | Implemented | Query APIs for running/waiting instances, execution history, health checks                                      |
+| Validation                 | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1`                                           |
+| Collaboration              | Implemented | Multi-pool/multi-participant orchestration with message flow wiring                                             |
 
 ## Task Handlers
 
@@ -381,16 +381,16 @@ RodarBpmn.Telemetry.LogHandler.attach()
 
 Events emitted:
 
-| Event | Measurements | Metadata |
-|-------|-------------|----------|
-| `[:rodar_bpmn, :node, :start]` | `system_time` | `node_id`, `node_type`, `token_id` |
-| `[:rodar_bpmn, :node, :stop]` | `duration` | `node_id`, `node_type`, `token_id`, `result` |
-| `[:rodar_bpmn, :node, :exception]` | `duration` | `node_id`, `node_type`, `token_id`, `kind`, `reason` |
-| `[:rodar_bpmn, :process, :start]` | `system_time` | `instance_id`, `process_id` |
-| `[:rodar_bpmn, :process, :stop]` | `duration` | `instance_id`, `process_id`, `status` |
-| `[:rodar_bpmn, :token, :create]` | `system_time` | `token_id`, `parent_id`, `node_id` |
-| `[:rodar_bpmn, :event_bus, :publish]` | `system_time` | `event_type`, `event_name`, `subscriber_count` |
-| `[:rodar_bpmn, :event_bus, :subscribe]` | `system_time` | `event_type`, `event_name`, `node_id` |
+| Event                                   | Measurements  | Metadata                                             |
+| --------------------------------------- | ------------- | ---------------------------------------------------- |
+| `[:rodar_bpmn, :node, :start]`          | `system_time` | `node_id`, `node_type`, `token_id`                   |
+| `[:rodar_bpmn, :node, :stop]`           | `duration`    | `node_id`, `node_type`, `token_id`, `result`         |
+| `[:rodar_bpmn, :node, :exception]`      | `duration`    | `node_id`, `node_type`, `token_id`, `kind`, `reason` |
+| `[:rodar_bpmn, :process, :start]`       | `system_time` | `instance_id`, `process_id`                          |
+| `[:rodar_bpmn, :process, :stop]`        | `duration`    | `instance_id`, `process_id`, `status`                |
+| `[:rodar_bpmn, :token, :create]`        | `system_time` | `token_id`, `parent_id`, `node_id`                   |
+| `[:rodar_bpmn, :event_bus, :publish]`   | `system_time` | `event_type`, `event_name`, `subscriber_count`       |
+| `[:rodar_bpmn, :event_bus, :subscribe]` | `system_time` | `event_type`, `event_name`, `node_id`                |
 
 ### Dashboard Queries
 
