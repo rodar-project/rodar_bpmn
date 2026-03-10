@@ -155,6 +155,49 @@ defmodule Bpmn.ProcessTest do
     end
   end
 
+  describe "definition_version/1" do
+    test "returns the version number of the definition" do
+      register_simple_process()
+      {:ok, pid} = Bpmn.Process.start_link(@process_id)
+
+      assert Bpmn.Process.definition_version(pid) == 1
+    end
+
+    test "returns latest version after re-registration" do
+      register_simple_process()
+      # Re-register to get version 2
+      definition =
+        {:bpmn_process, %{id: @process_id},
+         %{
+           "start_1" => {:bpmn_event_start, %{id: "start_1", incoming: [], outgoing: ["flow_1"]}},
+           "end_1" => {:bpmn_event_end, %{id: "end_1", incoming: ["flow_1"], outgoing: []}},
+           "flow_1" =>
+             {:bpmn_sequence_flow,
+              %{
+                id: "flow_1",
+                sourceRef: "start_1",
+                targetRef: "end_1",
+                conditionExpression: nil,
+                isImmediate: nil
+              }}
+         }}
+
+      Registry.register(@process_id, definition)
+
+      {:ok, pid} = Bpmn.Process.start_link(@process_id)
+      assert Bpmn.Process.definition_version(pid) == 2
+    end
+  end
+
+  describe "process_id/1" do
+    test "returns the process ID string" do
+      register_simple_process()
+      {:ok, pid} = Bpmn.Process.start_link(@process_id)
+
+      assert Bpmn.Process.process_id(pid) == @process_id
+    end
+  end
+
   describe "validation on activate" do
     setup do
       # Enable validation for this test

@@ -19,15 +19,29 @@ defmodule Bpmn.Observability do
     |> Enum.flat_map(fn
       {:undefined, pid, :worker, _} when is_pid(pid) ->
         try do
-          instance_id = Bpmn.Process.instance_id(pid)
-          status = Bpmn.Process.status(pid)
-          [%{pid: pid, instance_id: instance_id, status: status}]
+          [build_instance_info(pid)]
         catch
           :exit, _ -> []
         end
 
       _ ->
         []
+    end)
+  end
+
+  @doc """
+  List process instances filtered by process ID and optional version.
+
+  When called with just a process ID, returns all instances of that process
+  across all versions. When called with a version, returns only instances
+  running that specific version.
+  """
+  @spec instances_by_version(String.t(), pos_integer() | nil) :: [map()]
+  def instances_by_version(process_id, version \\ nil) do
+    running_instances()
+    |> Enum.filter(fn instance ->
+      instance.process_id == process_id and
+        (is_nil(version) or instance.definition_version == version)
     end)
   end
 
@@ -93,6 +107,23 @@ defmodule Bpmn.Observability do
       context_count: context_count,
       registry_definitions: registry_definitions,
       event_subscriptions: event_subscriptions
+    }
+  end
+
+  # --- Private helpers ---
+
+  defp build_instance_info(pid) do
+    instance_id = Bpmn.Process.instance_id(pid)
+    status = Bpmn.Process.status(pid)
+    process_id = Bpmn.Process.process_id(pid)
+    definition_version = Bpmn.Process.definition_version(pid)
+
+    %{
+      pid: pid,
+      instance_id: instance_id,
+      status: status,
+      process_id: process_id,
+      definition_version: definition_version
     }
   end
 end

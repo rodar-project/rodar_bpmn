@@ -125,6 +125,33 @@ defmodule Bpmn.Process do
   end
 
   @doc """
+  Get the definition version of a process instance.
+  """
+  @spec definition_version(pid()) :: pos_integer() | nil
+  def definition_version(pid) do
+    GenServer.call(pid, :definition_version)
+  end
+
+  @doc """
+  Get the process ID string of a process instance.
+  """
+  @spec process_id(pid()) :: String.t()
+  def process_id(pid) do
+    GenServer.call(pid, :process_id)
+  end
+
+  @doc """
+  Update the definition version tracked by this process instance.
+
+  Used internally by `Bpmn.Migration` after swapping the process definition
+  in the context.
+  """
+  @spec update_definition_version(pid(), pos_integer()) :: :ok
+  def update_definition_version(pid, version) do
+    GenServer.call(pid, {:update_definition_version, version})
+  end
+
+  @doc """
   Dehydrate a process instance: save its state to persistence and return
   the instance ID.
   """
@@ -143,7 +170,7 @@ defmodule Bpmn.Process do
   @spec rehydrate(String.t()) :: {:ok, pid()} | {:error, any()}
   def rehydrate(instance_id) do
     with {:ok, snapshot} <- Persistence.load(instance_id),
-         {:ok, {_type, _attrs, elements}} <- lookup_registry(snapshot.process_id),
+         {:ok, {_type, _attrs, elements}} <- lookup_registry_versioned(snapshot),
          process_map <- build_process_map(elements),
          {:ok, context} <- Context.start_supervised(process_map, %{}),
          deserialized_state <- Serializer.deserialize_context_state(snapshot.context_state),
@@ -152,6 +179,7 @@ defmodule Bpmn.Process do
          restore_data <- %{
            instance_id: snapshot.instance_id,
            process_id: snapshot.process_id,
+           definition_version: Map.get(snapshot, :definition_version),
            status: snapshot.status,
            root_token: root_token
          },
@@ -181,6 +209,7 @@ defmodule Bpmn.Process do
        instance_id: restore_data.instance_id,
        process_id: restore_data.process_id,
        definition: nil,
+       definition_version: Map.get(restore_data, :definition_version),
        context: context,
        status: restore_data.status,
        root_token: restore_data.root_token
@@ -190,6 +219,7 @@ defmodule Bpmn.Process do
   def init({process_id, init_data}) do
     case Registry.lookup(process_id) do
       {:ok, {_type, attrs, elements}} ->
+        version = fetch_latest_version(process_id)
         process_map = build_process_map(elements)
 
         case Context.start_supervised(process_map, init_data) do
@@ -206,6 +236,7 @@ defmodule Bpmn.Process do
                instance_id: instance_id,
                process_id: process_id,
                definition: {attrs, elements},
+               definition_version: version,
                context: context,
                status: :created,
                root_token: nil
@@ -272,6 +303,18 @@ defmodule Bpmn.Process do
 
   def handle_call(:instance_id, _from, state) do
     {:reply, state.instance_id, state}
+  end
+
+  def handle_call(:definition_version, _from, state) do
+    {:reply, state.definition_version, state}
+  end
+
+  def handle_call(:process_id, _from, state) do
+    {:reply, state.process_id, state}
+  end
+
+  def handle_call({:update_definition_version, version}, _from, state) do
+    {:reply, :ok, %{state | definition_version: version}}
   end
 
   def handle_call(:dehydrate, _from, state) do
@@ -361,6 +404,13 @@ defmodule Bpmn.Process do
     Token.new().id
   end
 
+  defp fetch_latest_version(process_id) do
+    case Registry.latest_version(process_id) do
+      {:ok, version} -> version
+      :error -> nil
+    end
+  end
+
   defp maybe_auto_dehydrate(state) do
     if Persistence.auto_dehydrate?(), do: do_dehydrate(state)
   end
@@ -372,6 +422,19 @@ defmodule Bpmn.Process do
     end
   end
 
+  defp lookup_registry_versioned(snapshot) do
+    case Map.get(snapshot, :definition_version) do
+      nil ->
+        lookup_registry(snapshot.process_id)
+
+      version ->
+        case Registry.lookup(snapshot.process_id, version) do
+          {:ok, _} = result -> result
+          :error -> lookup_registry(snapshot.process_id)
+        end
+    end
+  end
+
   defp do_dehydrate(state) do
     context_state = Context.get_state(state.context)
 
@@ -379,6 +442,7 @@ defmodule Bpmn.Process do
       Serializer.snapshot(%{
         instance_id: state.instance_id,
         process_id: state.process_id,
+        definition_version: state.definition_version,
         status: state.status,
         root_token: state.root_token,
         context_state: context_state

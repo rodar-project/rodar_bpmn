@@ -101,7 +101,7 @@ Support processes that span hours, days, or weeks.
 - [x] **Storage adapter behaviour** — `Bpmn.Persistence` defines the adapter callback contract (`save/2`, `load/1`, `delete/1`, `list/0`) with a facade that delegates to the configured adapter via `Application.get_env(:bpmn, :persistence)`. ETS adapter implemented (`Bpmn.Persistence.Adapter.ETS`) for development/testing.
 - [x] **Dehydration/rehydration** — `Bpmn.Process.dehydrate/1` saves process state to the persistence adapter. `Bpmn.Process.rehydrate/1` restores from a snapshot: starts a new supervised context, replaces state via `Context.restore_state/2`, and re-subscribes to the event bus for active catch/boundary events. Auto-dehydrate on `{:manual, _}` is configurable via `auto_dehydrate: true|false`.
 - [ ] **PostgreSQL adapter** — Production persistence backend.
-- [ ] **Process migration** — Handle deploying a new version of a process definition while instances of the old version are still running.
+- [x] **Process migration** — `Bpmn.Migration` supports deploying new versions of process definitions while instances of old versions continue running. `Bpmn.Registry` tracks multiple versions with auto-increment, deprecation, and versioned lookup. `Bpmn.Process` tracks `definition_version`. `check_compatibility/2` validates active nodes against target version, `migrate/2` swaps definitions with optional `force: true`. Persistence snapshots include `definition_version` for versioned rehydration.
 
 ## Phase 8: Observability and Operations
 

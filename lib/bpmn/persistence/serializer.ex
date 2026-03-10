@@ -13,20 +13,15 @@ defmodule Bpmn.Persistence.Serializer do
   Build a snapshot map from process state components.
   """
   @spec snapshot(map()) :: map()
-  def snapshot(%{
-        instance_id: instance_id,
-        process_id: process_id,
-        status: status,
-        root_token: root_token,
-        context_state: context_state
-      }) do
+  def snapshot(state) do
     %{
       version: 1,
-      instance_id: instance_id,
-      process_id: process_id,
-      status: status,
-      root_token: serialize_token(root_token),
-      context_state: serialize_context_state(context_state),
+      instance_id: state.instance_id,
+      process_id: state.process_id,
+      definition_version: Map.get(state, :definition_version),
+      status: state.status,
+      root_token: serialize_token(state.root_token),
+      context_state: serialize_context_state(state.context_state),
       dehydrated_at: System.system_time(:millisecond)
     }
   end
