@@ -453,6 +453,23 @@ mix bpmn.inspect <file>    # Inspect parsed structure
 mix bpmn.run <file>        # Execute a process
 ```
 
+### BPMN Conformance Tests
+
+The engine is validated against the [BPMN MIWG](https://www.omg.org/cgi-bin/doc?bmi/) reference test suite, ensuring interoperability with diagrams from Camunda, Signavio, Bizagi, and other BPMN tools.
+
+```shell
+mix test test/bpmn/conformance/                    # Run all conformance tests
+mix test test/bpmn/conformance/parse_test.exs      # MIWG parse verification
+mix test test/bpmn/conformance/execution_test.exs  # 12 execution patterns
+mix test test/bpmn/conformance/coverage_test.exs   # Element type coverage
+```
+
+Tests cover:
+
+- **Parse conformance** — MIWG reference files (A.1.0–B.2.0) parse correctly regardless of namespace prefix
+- **Execution patterns** — 12 standard BPMN patterns (sequential, gateways, timers, messages, signals, error boundaries, compensation, subprocesses, event-based routing)
+- **Element coverage** — Reports supported element types against the most complex MIWG reference (B.2.0)
+
 ## License
 
 Copyright (c) 2017 Around 25 SRL
