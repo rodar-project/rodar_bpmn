@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_07_throw" name="Signal Throw Process" isExecutable="true">
+    <bpmn:startEvent id="Start_Throw" name="Start">
+      <bpmn:outgoing>Flow_T1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateThrowEvent id="Signal_Throw" name="Throw Signal">
+      <bpmn:incoming>Flow_T1</bpmn:incoming>
+      <bpmn:outgoing>Flow_T2</bpmn:outgoing>
+      <bpmn:signalEventDefinition signalRef="alert_signal"/>
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_Throw" name="End">
+      <bpmn:incoming>Flow_T2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_T1" sourceRef="Start_Throw" targetRef="Signal_Throw"/>
+    <bpmn:sequenceFlow id="Flow_T2" sourceRef="Signal_Throw" targetRef="End_Throw"/>
+  </bpmn:process>
+  <bpmn:process id="Process_07_catch" name="Signal Catch Process" isExecutable="true">
+    <bpmn:startEvent id="Start_Catch" name="Start">
+      <bpmn:outgoing>Flow_C1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="Signal_Catch" name="Catch Signal">
+      <bpmn:incoming>Flow_C1</bpmn:incoming>
+      <bpmn:outgoing>Flow_C2</bpmn:outgoing>
+      <bpmn:signalEventDefinition signalRef="alert_signal"/>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Task_After_Signal" name="Handle Signal">
+      <bpmn:incoming>Flow_C2</bpmn:incoming>
+      <bpmn:outgoing>Flow_C3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_Catch" name="End">
+      <bpmn:incoming>Flow_C3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_C1" sourceRef="Start_Catch" targetRef="Signal_Catch"/>
+    <bpmn:sequenceFlow id="Flow_C2" sourceRef="Signal_Catch" targetRef="Task_After_Signal"/>
+    <bpmn:sequenceFlow id="Flow_C3" sourceRef="Task_After_Signal" targetRef="End_Catch"/>
+  </bpmn:process>
+</bpmn:definitions>

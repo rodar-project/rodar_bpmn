@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_12" name="Event-Based Gateway" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:eventGateway id="EBG_1" name="Event Gateway">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Timer</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Msg</bpmn:outgoing>
+    </bpmn:eventGateway>
+    <bpmn:intermediateCatchEvent id="Timer_Catch" name="Timeout">
+      <bpmn:incoming>Flow_Timer</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT0S</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="Msg_Catch" name="Message">
+      <bpmn:incoming>Flow_Msg</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="ebg_message"/>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Task_Timeout" name="Timeout Path">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_Message" name="Message Path">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_1" name="End">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="EBG_1"/>
+    <bpmn:sequenceFlow id="Flow_Timer" sourceRef="EBG_1" targetRef="Timer_Catch"/>
+    <bpmn:sequenceFlow id="Flow_Msg" sourceRef="EBG_1" targetRef="Msg_Catch"/>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Timer_Catch" targetRef="Task_Timeout"/>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Msg_Catch" targetRef="Task_Message"/>
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Timeout" targetRef="End_1"/>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Message" targetRef="End_1"/>
+  </bpmn:process>
+</bpmn:definitions>

@@ -345,7 +345,13 @@ defmodule Bpmn.Engine.Diagram do
     do: {:bpmn_data_store_reference, Map.merge(attrs, %{_elems: elems})}
 
   defp load_element("bpmn2:task", attrs, elems),
-    do: {:bpmn_activity_task, Map.merge(attrs, %{_elems: elems})}
+    do:
+      {:bpmn_activity_task,
+       Map.merge(attrs, %{
+         incoming: load_elements("bpmn2:incoming", elems),
+         outgoing: load_elements("bpmn2:outgoing", elems),
+         _elems: elems
+       })}
 
   defp load_element("bpmn2:conditionalEventDefinition", attrs, elems) do
     {condition, condition_language} =

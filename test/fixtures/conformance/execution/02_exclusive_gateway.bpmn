@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_02" name="Exclusive Gateway" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="GW_Split" name="Decision" default="Flow_Default">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_A</bpmn:outgoing>
+      <bpmn:outgoing>Flow_B</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_A" name="Path A">
+      <bpmn:incoming>Flow_A</bpmn:incoming>
+      <bpmn:outgoing>Flow_A_Merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_B" name="Path B">
+      <bpmn:incoming>Flow_B</bpmn:incoming>
+      <bpmn:outgoing>Flow_B_Merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_Default" name="Default Path">
+      <bpmn:incoming>Flow_Default</bpmn:incoming>
+      <bpmn:outgoing>Flow_Default_Merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="GW_Merge" name="Merge">
+      <bpmn:incoming>Flow_A_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_B_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_Default_Merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_End</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_1" name="End">
+      <bpmn:incoming>Flow_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="GW_Split"/>
+    <bpmn:sequenceFlow id="Flow_A" sourceRef="GW_Split" targetRef="Task_A">
+      <bpmn:conditionExpression>data["choice"] == "A"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_B" sourceRef="GW_Split" targetRef="Task_B">
+      <bpmn:conditionExpression>data["choice"] == "B"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Default" sourceRef="GW_Split" targetRef="Task_Default"/>
+    <bpmn:sequenceFlow id="Flow_A_Merge" sourceRef="Task_A" targetRef="GW_Merge"/>
+    <bpmn:sequenceFlow id="Flow_B_Merge" sourceRef="Task_B" targetRef="GW_Merge"/>
+    <bpmn:sequenceFlow id="Flow_Default_Merge" sourceRef="Task_Default" targetRef="GW_Merge"/>
+    <bpmn:sequenceFlow id="Flow_End" sourceRef="GW_Merge" targetRef="End_1"/>
+  </bpmn:process>
+</bpmn:definitions>

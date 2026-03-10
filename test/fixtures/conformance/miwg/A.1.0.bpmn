@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                      xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                      xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                      xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                      id="Definitions_1"
+                      targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <semantic:process id="WFP-6-" name="A.1.0" isExecutable="true">
+    <semantic:startEvent id="_93c466ab-b271-4376-a427-f4c353d55ce8" name="Start Event">
+      <semantic:outgoing>_e16564d7-0c4c-413e-95c6-f6c3a1d80a09</semantic:outgoing>
+    </semantic:startEvent>
+    <semantic:task id="_ec59e164-68b4-4f94-98de-ffb1c58a84af" name="Task 1">
+      <semantic:incoming>_e16564d7-0c4c-413e-95c6-f6c3a1d80a09</semantic:incoming>
+      <semantic:outgoing>_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_820c21c0-45f7-473b-81ab-2b0b0304c94d" name="Task 2">
+      <semantic:incoming>_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599</semantic:incoming>
+      <semantic:outgoing>_2aa47410-1b0e-4f8b-ad54-d6f798080cb4</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_e70a6fcb-913c-4a7b-82a7-d793f31131b2" name="Task 3">
+      <semantic:incoming>_2aa47410-1b0e-4f8b-ad54-d6f798080cb4</semantic:incoming>
+      <semantic:outgoing>_8e8fe679-eb3b-4c43-a4d6-4b2b987fd8b5</semantic:outgoing>
+    </semantic:task>
+    <semantic:endEvent id="_a47df184-085b-49f7-bb82-031c84625821" name="End Event">
+      <semantic:incoming>_8e8fe679-eb3b-4c43-a4d6-4b2b987fd8b5</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_e16564d7-0c4c-413e-95c6-f6c3a1d80a09" sourceRef="_93c466ab-b271-4376-a427-f4c353d55ce8" targetRef="_ec59e164-68b4-4f94-98de-ffb1c58a84af"/>
+    <semantic:sequenceFlow id="_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599" sourceRef="_ec59e164-68b4-4f94-98de-ffb1c58a84af" targetRef="_820c21c0-45f7-473b-81ab-2b0b0304c94d"/>
+    <semantic:sequenceFlow id="_2aa47410-1b0e-4f8b-ad54-d6f798080cb4" sourceRef="_820c21c0-45f7-473b-81ab-2b0b0304c94d" targetRef="_e70a6fcb-913c-4a7b-82a7-d793f31131b2"/>
+    <semantic:sequenceFlow id="_8e8fe679-eb3b-4c43-a4d6-4b2b987fd8b5" sourceRef="_e70a6fcb-913c-4a7b-82a7-d793f31131b2" targetRef="_a47df184-085b-49f7-bb82-031c84625821"/>
+  </semantic:process>
+</semantic:definitions>

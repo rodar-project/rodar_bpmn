@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_08" name="Error Boundary" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="Sub_Main" name="Main Subprocess">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Normal</bpmn:outgoing>
+      <bpmn:startEvent id="Sub_Start">
+        <bpmn:outgoing>SF_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:task id="Task_Main" name="Risky Task">
+        <bpmn:incoming>SF_1</bpmn:incoming>
+        <bpmn:outgoing>SF_2</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="Sub_End">
+        <bpmn:incoming>SF_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="SF_1" sourceRef="Sub_Start" targetRef="Task_Main"/>
+      <bpmn:sequenceFlow id="SF_2" sourceRef="Task_Main" targetRef="Sub_End"/>
+    </bpmn:subProcess>
+    <bpmn:boundaryEvent id="Error_Boundary" name="Error" attachedToRef="Sub_Main">
+      <bpmn:outgoing>Flow_Error</bpmn:outgoing>
+      <bpmn:errorEventDefinition/>
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_Normal" name="Normal Path">
+      <bpmn:incoming>Flow_Normal</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_Error" name="Error Handler">
+      <bpmn:incoming>Flow_Error</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_Normal" name="Normal End">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Error" name="Error End">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Sub_Main"/>
+    <bpmn:sequenceFlow id="Flow_Normal" sourceRef="Sub_Main" targetRef="Task_Normal"/>
+    <bpmn:sequenceFlow id="Flow_Error" sourceRef="Error_Boundary" targetRef="Task_Error"/>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Normal" targetRef="End_Normal"/>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Error" targetRef="End_Error"/>
+  </bpmn:process>
+</bpmn:definitions>

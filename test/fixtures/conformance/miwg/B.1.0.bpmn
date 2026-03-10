@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                      id="Definitions_1"
+                      targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <semantic:collaboration id="Collaboration_1">
+    <semantic:participant id="_participant1" name="Participant 1" processRef="_process1"/>
+    <semantic:participant id="_participant2" name="Participant 2" processRef="_process2"/>
+    <semantic:messageFlow id="_mf1" sourceRef="_send_task1" targetRef="_receive_task1"/>
+  </semantic:collaboration>
+  <semantic:process id="_process1" name="Process 1" isExecutable="true">
+    <semantic:startEvent id="_p1_start" name="Start">
+      <semantic:outgoing>_p1_f1</semantic:outgoing>
+    </semantic:startEvent>
+    <semantic:userTask id="_p1_user_task" name="User Task">
+      <semantic:incoming>_p1_f1</semantic:incoming>
+      <semantic:outgoing>_p1_f2</semantic:outgoing>
+    </semantic:userTask>
+    <semantic:serviceTask id="_p1_service_task" name="Service Task">
+      <semantic:incoming>_p1_f2</semantic:incoming>
+      <semantic:outgoing>_p1_f3</semantic:outgoing>
+    </semantic:serviceTask>
+    <semantic:sendTask id="_send_task1" name="Send Task">
+      <semantic:incoming>_p1_f3</semantic:incoming>
+      <semantic:outgoing>_p1_f4</semantic:outgoing>
+    </semantic:sendTask>
+    <semantic:subProcess id="_p1_subprocess" name="Expanded Subprocess">
+      <semantic:incoming>_p1_f4</semantic:incoming>
+      <semantic:outgoing>_p1_f5</semantic:outgoing>
+      <semantic:startEvent id="_p1_sub_start">
+        <semantic:outgoing>_p1_sf1</semantic:outgoing>
+      </semantic:startEvent>
+      <semantic:task id="_p1_sub_task" name="Sub Task">
+        <semantic:incoming>_p1_sf1</semantic:incoming>
+        <semantic:outgoing>_p1_sf2</semantic:outgoing>
+      </semantic:task>
+      <semantic:endEvent id="_p1_sub_end">
+        <semantic:incoming>_p1_sf2</semantic:incoming>
+      </semantic:endEvent>
+      <semantic:sequenceFlow id="_p1_sf1" sourceRef="_p1_sub_start" targetRef="_p1_sub_task"/>
+      <semantic:sequenceFlow id="_p1_sf2" sourceRef="_p1_sub_task" targetRef="_p1_sub_end"/>
+    </semantic:subProcess>
+    <semantic:endEvent id="_p1_end" name="End">
+      <semantic:incoming>_p1_f5</semantic:incoming>
+      <semantic:terminateEventDefinition/>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_p1_f1" sourceRef="_p1_start" targetRef="_p1_user_task"/>
+    <semantic:sequenceFlow id="_p1_f2" sourceRef="_p1_user_task" targetRef="_p1_service_task"/>
+    <semantic:sequenceFlow id="_p1_f3" sourceRef="_p1_service_task" targetRef="_send_task1"/>
+    <semantic:sequenceFlow id="_p1_f4" sourceRef="_send_task1" targetRef="_p1_subprocess"/>
+    <semantic:sequenceFlow id="_p1_f5" sourceRef="_p1_subprocess" targetRef="_p1_end"/>
+  </semantic:process>
+  <semantic:process id="_process2" name="Process 2" isExecutable="true">
+    <semantic:startEvent id="_p2_start" name="Start">
+      <semantic:outgoing>_p2_f1</semantic:outgoing>
+    </semantic:startEvent>
+    <semantic:receiveTask id="_receive_task1" name="Receive Task">
+      <semantic:incoming>_p2_f1</semantic:incoming>
+      <semantic:outgoing>_p2_f2</semantic:outgoing>
+    </semantic:receiveTask>
+    <semantic:task id="_p2_task1" name="Process Task">
+      <semantic:incoming>_p2_f2</semantic:incoming>
+      <semantic:outgoing>_p2_f3</semantic:outgoing>
+    </semantic:task>
+    <semantic:callActivity id="_p2_call_activity" name="Call Activity" calledElement="external-process">
+      <semantic:incoming>_p2_f3</semantic:incoming>
+      <semantic:outgoing>_p2_f4</semantic:outgoing>
+    </semantic:callActivity>
+    <semantic:endEvent id="_p2_end" name="End">
+      <semantic:incoming>_p2_f4</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_p2_f1" sourceRef="_p2_start" targetRef="_receive_task1"/>
+    <semantic:sequenceFlow id="_p2_f2" sourceRef="_receive_task1" targetRef="_p2_task1"/>
+    <semantic:sequenceFlow id="_p2_f3" sourceRef="_p2_task1" targetRef="_p2_call_activity"/>
+    <semantic:sequenceFlow id="_p2_f4" sourceRef="_p2_call_activity" targetRef="_p2_end"/>
+  </semantic:process>
+</semantic:definitions>

@@ -85,6 +85,15 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 
 Tests rely heavily on doctests embedded in module documentation. Unit tests in `test/` mirror the `lib/` structure. Test modules use `async: true` where possible.
 
+### Conformance Tests
+
+BPMN conformance tests in `test/bpmn/conformance/`:
+- `parse_test.exs` — Verifies MIWG reference files (A.1.0–B.2.0) parse correctly
+- `execution_test.exs` — End-to-end execution of 12 standard BPMN patterns
+- `coverage_test.exs` — Element type coverage analysis against MIWG B.2.0
+
+Fixtures: `test/fixtures/conformance/miwg/` (MIWG reference), `test/fixtures/conformance/execution/` (handcrafted patterns). Download script: `scripts/download_miwg.sh`.
+
 ## Commit Message Format
 
 ```

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_03" name="Parallel Gateway" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:parallelGateway id="PGW_Split" name="Fork">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_A</bpmn:outgoing>
+      <bpmn:outgoing>Flow_B</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="Task_A" name="Branch A">
+      <bpmn:incoming>Flow_A</bpmn:incoming>
+      <bpmn:outgoing>Flow_A_Join</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_B" name="Branch B">
+      <bpmn:incoming>Flow_B</bpmn:incoming>
+      <bpmn:outgoing>Flow_B_Join</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="PGW_Join" name="Join">
+      <bpmn:incoming>Flow_A_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_B_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_End</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:endEvent id="End_1" name="End">
+      <bpmn:incoming>Flow_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="PGW_Split"/>
+    <bpmn:sequenceFlow id="Flow_A" sourceRef="PGW_Split" targetRef="Task_A"/>
+    <bpmn:sequenceFlow id="Flow_B" sourceRef="PGW_Split" targetRef="Task_B"/>
+    <bpmn:sequenceFlow id="Flow_A_Join" sourceRef="Task_A" targetRef="PGW_Join"/>
+    <bpmn:sequenceFlow id="Flow_B_Join" sourceRef="Task_B" targetRef="PGW_Join"/>
+    <bpmn:sequenceFlow id="Flow_End" sourceRef="PGW_Join" targetRef="End_1"/>
+  </bpmn:process>
+</bpmn:definitions>

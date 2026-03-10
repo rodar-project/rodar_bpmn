@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                      id="Definitions_1"
+                      targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <semantic:process id="_process_main" name="Main Process" isExecutable="true">
+    <semantic:startEvent id="_start_timer" name="Timer Start">
+      <semantic:outgoing>_f1</semantic:outgoing>
+      <semantic:timerEventDefinition>
+        <semantic:timeDuration>PT1H</semantic:timeDuration>
+      </semantic:timerEventDefinition>
+    </semantic:startEvent>
+    <semantic:task id="_task1" name="Task 1">
+      <semantic:incoming>_f1</semantic:incoming>
+      <semantic:outgoing>_f2</semantic:outgoing>
+    </semantic:task>
+    <semantic:parallelGateway id="_pgw_split" name="Parallel Split">
+      <semantic:incoming>_f2</semantic:incoming>
+      <semantic:outgoing>_f3a</semantic:outgoing>
+      <semantic:outgoing>_f3b</semantic:outgoing>
+    </semantic:parallelGateway>
+    <semantic:task id="_task_a" name="Task A">
+      <semantic:incoming>_f3a</semantic:incoming>
+      <semantic:outgoing>_f4a</semantic:outgoing>
+    </semantic:task>
+    <semantic:sendTask id="_send_task" name="Send Notification">
+      <semantic:incoming>_f3b</semantic:incoming>
+      <semantic:outgoing>_f4b</semantic:outgoing>
+    </semantic:sendTask>
+    <semantic:parallelGateway id="_pgw_join" name="Parallel Join">
+      <semantic:incoming>_f4a</semantic:incoming>
+      <semantic:incoming>_f4b</semantic:incoming>
+      <semantic:outgoing>_f5</semantic:outgoing>
+    </semantic:parallelGateway>
+    <semantic:inclusiveGateway id="_igw_split" name="Inclusive Split">
+      <semantic:incoming>_f5</semantic:incoming>
+      <semantic:outgoing>_f6a</semantic:outgoing>
+      <semantic:outgoing>_f6b</semantic:outgoing>
+    </semantic:inclusiveGateway>
+    <semantic:task id="_task_inc_a" name="Inclusive A">
+      <semantic:incoming>_f6a</semantic:incoming>
+      <semantic:outgoing>_f7a</semantic:outgoing>
+    </semantic:task>
+    <semantic:subProcess id="_embedded_sub" name="Expanded Subprocess">
+      <semantic:incoming>_f6b</semantic:incoming>
+      <semantic:outgoing>_f7b</semantic:outgoing>
+      <semantic:startEvent id="_sub_start">
+        <semantic:outgoing>_sf1</semantic:outgoing>
+      </semantic:startEvent>
+      <semantic:task id="_sub_task" name="Sub Task">
+        <semantic:incoming>_sf1</semantic:incoming>
+        <semantic:outgoing>_sf2</semantic:outgoing>
+      </semantic:task>
+      <semantic:endEvent id="_sub_end">
+        <semantic:incoming>_sf2</semantic:incoming>
+      </semantic:endEvent>
+      <semantic:sequenceFlow id="_sf1" sourceRef="_sub_start" targetRef="_sub_task"/>
+      <semantic:sequenceFlow id="_sf2" sourceRef="_sub_task" targetRef="_sub_end"/>
+    </semantic:subProcess>
+    <semantic:boundaryEvent id="_boundary_esc" name="Escalation" attachedToRef="_embedded_sub" cancelActivity="true">
+      <semantic:outgoing>_f_esc</semantic:outgoing>
+      <semantic:escalationEventDefinition escalationRef="esc1"/>
+    </semantic:boundaryEvent>
+    <semantic:boundaryEvent id="_boundary_cond" name="Conditional" attachedToRef="_task_inc_a" cancelActivity="false">
+      <semantic:outgoing>_f_cond</semantic:outgoing>
+      <semantic:conditionalEventDefinition>
+        <semantic:condition>data["flag"] == true</semantic:condition>
+      </semantic:conditionalEventDefinition>
+    </semantic:boundaryEvent>
+    <semantic:inclusiveGateway id="_igw_join" name="Inclusive Join">
+      <semantic:incoming>_f7a</semantic:incoming>
+      <semantic:incoming>_f7b</semantic:incoming>
+      <semantic:outgoing>_f8</semantic:outgoing>
+    </semantic:inclusiveGateway>
+    <semantic:intermediateCatchEvent id="_timer_catch" name="Timer Catch">
+      <semantic:incoming>_f8</semantic:incoming>
+      <semantic:outgoing>_f9</semantic:outgoing>
+      <semantic:timerEventDefinition>
+        <semantic:timeDuration>PT5M</semantic:timeDuration>
+      </semantic:timerEventDefinition>
+    </semantic:intermediateCatchEvent>
+    <semantic:intermediateThrowEvent id="_signal_throw" name="Signal Throw">
+      <semantic:incoming>_f_esc</semantic:incoming>
+      <semantic:outgoing>_f10</semantic:outgoing>
+      <semantic:signalEventDefinition signalRef="sig1"/>
+    </semantic:intermediateThrowEvent>
+    <semantic:endEvent id="_end1" name="Normal End">
+      <semantic:incoming>_f9</semantic:incoming>
+      <semantic:incoming>_f_cond</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:endEvent id="_end2" name="Escalation End">
+      <semantic:incoming>_f10</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_f1" sourceRef="_start_timer" targetRef="_task1"/>
+    <semantic:sequenceFlow id="_f2" sourceRef="_task1" targetRef="_pgw_split"/>
+    <semantic:sequenceFlow id="_f3a" sourceRef="_pgw_split" targetRef="_task_a"/>
+    <semantic:sequenceFlow id="_f3b" sourceRef="_pgw_split" targetRef="_send_task"/>
+    <semantic:sequenceFlow id="_f4a" sourceRef="_task_a" targetRef="_pgw_join"/>
+    <semantic:sequenceFlow id="_f4b" sourceRef="_send_task" targetRef="_pgw_join"/>
+    <semantic:sequenceFlow id="_f5" sourceRef="_pgw_join" targetRef="_igw_split"/>
+    <semantic:sequenceFlow id="_f6a" sourceRef="_igw_split" targetRef="_task_inc_a"/>
+    <semantic:sequenceFlow id="_f6b" sourceRef="_igw_split" targetRef="_embedded_sub"/>
+    <semantic:sequenceFlow id="_f7a" sourceRef="_task_inc_a" targetRef="_igw_join"/>
+    <semantic:sequenceFlow id="_f7b" sourceRef="_embedded_sub" targetRef="_igw_join"/>
+    <semantic:sequenceFlow id="_f8" sourceRef="_igw_join" targetRef="_timer_catch"/>
+    <semantic:sequenceFlow id="_f9" sourceRef="_timer_catch" targetRef="_end1"/>
+    <semantic:sequenceFlow id="_f_esc" sourceRef="_boundary_esc" targetRef="_signal_throw"/>
+    <semantic:sequenceFlow id="_f_cond" sourceRef="_boundary_cond" targetRef="_end1"/>
+    <semantic:sequenceFlow id="_f10" sourceRef="_signal_throw" targetRef="_end2"/>
+  </semantic:process>
+  <semantic:process id="_process_aux" name="Auxiliary Process" isExecutable="true">
+    <semantic:startEvent id="_aux_start" name="Signal Start">
+      <semantic:outgoing>_af1</semantic:outgoing>
+      <semantic:signalEventDefinition signalRef="sig1"/>
+    </semantic:startEvent>
+    <semantic:task id="_aux_task" name="Handle Signal">
+      <semantic:incoming>_af1</semantic:incoming>
+      <semantic:outgoing>_af2</semantic:outgoing>
+    </semantic:task>
+    <semantic:endEvent id="_aux_end" name="End">
+      <semantic:incoming>_af2</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_af1" sourceRef="_aux_start" targetRef="_aux_task"/>
+    <semantic:sequenceFlow id="_af2" sourceRef="_aux_task" targetRef="_aux_end"/>
+  </semantic:process>
+</semantic:definitions>

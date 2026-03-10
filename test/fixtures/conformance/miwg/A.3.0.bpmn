@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                      id="Definitions_1"
+                      targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <semantic:process id="WFP-6-" name="A.3.0" isExecutable="true">
+    <semantic:startEvent id="_start" name="Start Event">
+      <semantic:outgoing>_f1</semantic:outgoing>
+    </semantic:startEvent>
+    <semantic:task id="_task1" name="Task 1">
+      <semantic:incoming>_f1</semantic:incoming>
+      <semantic:outgoing>_f2</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_task2" name="Task 2">
+      <semantic:incoming>_f2</semantic:incoming>
+      <semantic:outgoing>_f3</semantic:outgoing>
+    </semantic:task>
+    <semantic:subProcess id="_subprocess1" name="Collapsed Subprocess">
+      <semantic:incoming>_f3</semantic:incoming>
+      <semantic:outgoing>_f4</semantic:outgoing>
+      <semantic:startEvent id="_sub_start" name="Sub Start">
+        <semantic:outgoing>_sf1</semantic:outgoing>
+      </semantic:startEvent>
+      <semantic:task id="_sub_task" name="Sub Task">
+        <semantic:incoming>_sf1</semantic:incoming>
+        <semantic:outgoing>_sf2</semantic:outgoing>
+      </semantic:task>
+      <semantic:endEvent id="_sub_end" name="Sub End">
+        <semantic:incoming>_sf2</semantic:incoming>
+      </semantic:endEvent>
+      <semantic:sequenceFlow id="_sf1" sourceRef="_sub_start" targetRef="_sub_task"/>
+      <semantic:sequenceFlow id="_sf2" sourceRef="_sub_task" targetRef="_sub_end"/>
+    </semantic:subProcess>
+    <semantic:boundaryEvent id="_boundary_msg" name="Message Boundary" attachedToRef="_subprocess1" cancelActivity="false">
+      <semantic:outgoing>_f_msg</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="boundary_message"/>
+    </semantic:boundaryEvent>
+    <semantic:boundaryEvent id="_boundary_esc" name="Escalation Boundary" attachedToRef="_subprocess1" cancelActivity="true">
+      <semantic:outgoing>_f_esc</semantic:outgoing>
+      <semantic:escalationEventDefinition escalationRef="boundary_escalation"/>
+    </semantic:boundaryEvent>
+    <semantic:task id="_task3" name="Task 3">
+      <semantic:incoming>_f_msg</semantic:incoming>
+      <semantic:outgoing>_f5</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_task4" name="Task 4">
+      <semantic:incoming>_f_esc</semantic:incoming>
+      <semantic:outgoing>_f6</semantic:outgoing>
+    </semantic:task>
+    <semantic:endEvent id="_end1" name="End Event 1">
+      <semantic:incoming>_f4</semantic:incoming>
+      <semantic:incoming>_f5</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:endEvent id="_end2" name="End Event 2">
+      <semantic:incoming>_f6</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_f1" sourceRef="_start" targetRef="_task1"/>
+    <semantic:sequenceFlow id="_f2" sourceRef="_task1" targetRef="_task2"/>
+    <semantic:sequenceFlow id="_f3" sourceRef="_task2" targetRef="_subprocess1"/>
+    <semantic:sequenceFlow id="_f4" sourceRef="_subprocess1" targetRef="_end1"/>
+    <semantic:sequenceFlow id="_f_msg" sourceRef="_boundary_msg" targetRef="_task3"/>
+    <semantic:sequenceFlow id="_f_esc" sourceRef="_boundary_esc" targetRef="_task4"/>
+    <semantic:sequenceFlow id="_f5" sourceRef="_task3" targetRef="_end1"/>
+    <semantic:sequenceFlow id="_f6" sourceRef="_task4" targetRef="_end2"/>
+  </semantic:process>
+</semantic:definitions>

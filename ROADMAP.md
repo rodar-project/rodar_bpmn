@@ -119,7 +119,7 @@ Improve spec compliance and catch errors early.
 - [x] **Diagram validation** — `Bpmn.Validation` validates structural rules before execution: start/end event existence and connectivity, sequence flow ref integrity, orphan node detection, gateway outgoing counts, exclusive gateway defaults, boundary event attachment. Returns accumulated errors. Opt-in at `activate/1` via `config :bpmn, :validate_on_activate, true`.
 - [x] **Multi-pool/multi-participant** — `Bpmn.Collaboration` orchestrates multi-participant collaboration diagrams. Parser handles `<bpmn:collaboration>`, `<bpmn:participant>`, `<bpmn:messageFlow>`, and `<bpmn:callActivity>`. Message flows pre-wired via `Bpmn.Event.Bus` before activation. Collaboration validation checks participant refs, message flow refs, and cross-process constraints.
 - [x] **BPMN 2.0 XML export** — `Bpmn.Engine.Diagram.Export` serializes parsed diagram maps back to BPMN 2.0 XML. IO list-based builder, no new dependencies. Accessible via `Diagram.export/1` delegate and `mix bpmn.export` CLI task.
-- [ ] **BPMN conformance tests** — Implement test cases from the BPMN Model Interchange Working Group (MIWG) conformance test suite.
+- [x] **BPMN conformance tests** — 50 tests covering MIWG parse conformance (A.1.0–B.2.0), execution patterns (12 scenarios), and element type coverage analysis. Fixtures in `test/fixtures/conformance/`.
 
 ## Phase 10: Developer Experience
 

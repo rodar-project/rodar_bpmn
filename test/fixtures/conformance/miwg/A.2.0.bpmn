@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                      xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                      xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                      xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                      id="Definitions_1"
+                      targetNamespace="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <semantic:process id="WFP-6-" name="A.2.0" isExecutable="true">
+    <semantic:startEvent id="_93c466ab-b271-4376-a427-f4c353d55ce8" name="Start Event">
+      <semantic:outgoing>_e16564d7-0c4c-413e-95c6-f6c3a1d80a09</semantic:outgoing>
+    </semantic:startEvent>
+    <semantic:task id="_ec59e164-68b4-4f94-98de-ffb1c58a84af" name="Task 1">
+      <semantic:incoming>_e16564d7-0c4c-413e-95c6-f6c3a1d80a09</semantic:incoming>
+      <semantic:outgoing>_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599</semantic:outgoing>
+    </semantic:task>
+    <semantic:exclusiveGateway id="_gw_split" name="Gateway Split" gatewayDirection="Diverging" default="_flow_default">
+      <semantic:incoming>_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599</semantic:incoming>
+      <semantic:outgoing>_flow_a</semantic:outgoing>
+      <semantic:outgoing>_flow_b</semantic:outgoing>
+      <semantic:outgoing>_flow_default</semantic:outgoing>
+    </semantic:exclusiveGateway>
+    <semantic:task id="_task_a" name="Task 2">
+      <semantic:incoming>_flow_a</semantic:incoming>
+      <semantic:outgoing>_flow_a_merge</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_task_b" name="Task 3">
+      <semantic:incoming>_flow_b</semantic:incoming>
+      <semantic:outgoing>_flow_b_merge</semantic:outgoing>
+    </semantic:task>
+    <semantic:task id="_task_default" name="Task 4">
+      <semantic:incoming>_flow_default</semantic:incoming>
+      <semantic:outgoing>_flow_default_merge</semantic:outgoing>
+    </semantic:task>
+    <semantic:exclusiveGateway id="_gw_merge" name="Gateway Merge" gatewayDirection="Converging">
+      <semantic:incoming>_flow_a_merge</semantic:incoming>
+      <semantic:incoming>_flow_b_merge</semantic:incoming>
+      <semantic:incoming>_flow_default_merge</semantic:incoming>
+      <semantic:outgoing>_flow_to_end</semantic:outgoing>
+    </semantic:exclusiveGateway>
+    <semantic:endEvent id="_end" name="End Event">
+      <semantic:incoming>_flow_to_end</semantic:incoming>
+    </semantic:endEvent>
+    <semantic:sequenceFlow id="_e16564d7-0c4c-413e-95c6-f6c3a1d80a09" sourceRef="_93c466ab-b271-4376-a427-f4c353d55ce8" targetRef="_ec59e164-68b4-4f94-98de-ffb1c58a84af"/>
+    <semantic:sequenceFlow id="_d77dd5ec-e4e7-420e-bbe7-8ac9cd1df599" sourceRef="_ec59e164-68b4-4f94-98de-ffb1c58a84af" targetRef="_gw_split"/>
+    <semantic:sequenceFlow id="_flow_a" name="Condition A" sourceRef="_gw_split" targetRef="_task_a">
+      <semantic:conditionExpression>data["choice"] == "A"</semantic:conditionExpression>
+    </semantic:sequenceFlow>
+    <semantic:sequenceFlow id="_flow_b" name="Condition B" sourceRef="_gw_split" targetRef="_task_b">
+      <semantic:conditionExpression>data["choice"] == "B"</semantic:conditionExpression>
+    </semantic:sequenceFlow>
+    <semantic:sequenceFlow id="_flow_default" sourceRef="_gw_split" targetRef="_task_default"/>
+    <semantic:sequenceFlow id="_flow_a_merge" sourceRef="_task_a" targetRef="_gw_merge"/>
+    <semantic:sequenceFlow id="_flow_b_merge" sourceRef="_task_b" targetRef="_gw_merge"/>
+    <semantic:sequenceFlow id="_flow_default_merge" sourceRef="_task_default" targetRef="_gw_merge"/>
+    <semantic:sequenceFlow id="_flow_to_end" sourceRef="_gw_merge" targetRef="_end"/>
+  </semantic:process>
+</semantic:definitions>
