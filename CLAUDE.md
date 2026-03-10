@@ -93,3 +93,16 @@ Subject: imperative present tense, no capitalized first letter, no trailing dot.
 ## Branch Strategy
 
 Feature branches off `develop`. PRs target `develop`.
+
+## Agent Rules
+
+All subagents (launched via the Agent tool) MUST follow these rules:
+
+1. **Worktree isolation**: Always use `isolation: "worktree"` so multiple agents can work in parallel without file conflicts.
+2. **Update documentation**: After making code changes, update relevant docs — CLAUDE.md (architecture, key modules), module `@moduledoc`/`@doc`, and ExDoc guides in `guides/` as needed.
+3. **Pass all CI checks before committing**: Before creating a commit, run and verify all pass:
+   - `mix compile --warnings-as-errors`
+   - `mix test`
+   - `mix credo --strict`
+   - `mix dialyzer` (use 600000ms timeout)
+4. **Commit at the end**: After all checks pass, commit the changes in the worktree with a properly formatted commit message (see Commit Message Format above).
