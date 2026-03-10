@@ -66,7 +66,7 @@ Enhance the execution runtime for correctness and reliability.
 - [x] **Context supervision** — Replace the plain Agent with a supervised GenServer. Handle crashes gracefully by restarting from the last known state.
 - [x] **Execution history** — Record each node visit, timestamp, input data, and output data. Useful for debugging and audit trails.
 - [x] **Error propagation** — Implement BPMN error handling: when an error is thrown, walk up the scope tree looking for a matching boundary error event. If none is found, propagate to the process level.
-- [ ] **Compensation** — Track completed activities and their compensation handlers. When a compensate event is triggered, execute compensation in reverse completion order.
+- [x] **Compensation** — `Bpmn.Compensation` tracks completed activities and their compensation handlers (registered via boundary events). When a compensate event is triggered (intermediate throw or end event with `compensateEventDefinition`), handlers execute in reverse completion order. Supports `activityRef` for targeted compensation and `waitForCompletion` for sync/async behavior.
 
 ## Phase 5: Event System
 

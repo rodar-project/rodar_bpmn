@@ -160,6 +160,8 @@ defmodule Bpmn do
 
     Bpmn.Hooks.notify(context, :before_node, %{node_id: id, node_type: type, token: token})
 
+    if activity_type?(type), do: pre_register_compensation(context, id)
+
     result = Bpmn.Telemetry.node_span(span_metadata, fn -> dispatch(elem, context) end)
 
     Bpmn.Hooks.notify(context, :after_node, %{
@@ -169,29 +171,13 @@ defmodule Bpmn do
       result: result
     })
 
-    result_type =
-      case result do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Bpmn.Hooks.notify(context, :on_error, %{node_id: id, error: reason})
-          :error
-
-        {:manual, _} ->
-          :manual
-
-        {:fatal, _} ->
-          :fatal
-
-        {:not_implemented} ->
-          :not_implemented
-
-        _ ->
-          :unknown
-      end
+    result_type = classify_result(result, context, id)
 
     Bpmn.Context.record_completion(context, id, token.id, result_type)
+
+    if result_type != :ok and activity_type?(type) do
+      Bpmn.Compensation.remove_handlers(context, id)
+    end
 
     result
   end
@@ -276,6 +262,65 @@ defmodule Bpmn do
   end
 
   defp dispatch(_elem, _context), do: nil
+
+  @activity_types [
+    :bpmn_activity_task_user,
+    :bpmn_activity_task_script,
+    :bpmn_activity_task_service,
+    :bpmn_activity_task_manual,
+    :bpmn_activity_task_send,
+    :bpmn_activity_task_receive,
+    :bpmn_activity_subprocess,
+    :bpmn_activity_subprocess_embeded
+  ]
+
+  defp classify_result({:ok, _}, _context, _id), do: :ok
+  defp classify_result({:manual, _}, _context, _id), do: :manual
+  defp classify_result({:fatal, _}, _context, _id), do: :fatal
+  defp classify_result({:not_implemented}, _context, _id), do: :not_implemented
+
+  defp classify_result({:error, reason}, context, id) do
+    Bpmn.Hooks.notify(context, :on_error, %{node_id: id, error: reason})
+    :error
+  end
+
+  defp classify_result(_, _context, _id), do: :unknown
+
+  defp activity_type?(type), do: type in @activity_types
+
+  defp pre_register_compensation(context, activity_id) do
+    process = Bpmn.Context.get(context, :process)
+
+    process
+    |> find_compensation_boundaries(activity_id)
+    |> Enum.each(fn {outgoing, _attrs} ->
+      handler_id = find_handler_target(outgoing, process)
+      if handler_id, do: Bpmn.Compensation.register_handler(context, activity_id, handler_id)
+    end)
+  end
+
+  defp find_compensation_boundaries(process, activity_id) do
+    Enum.flat_map(process, fn
+      {_id, {:bpmn_event_boundary, %{attachedToRef: ^activity_id, outgoing: outgoing} = attrs}} ->
+        if has_compensate_definition?(attrs), do: [{outgoing, attrs}], else: []
+
+      _ ->
+        []
+    end)
+  end
+
+  defp has_compensate_definition?(attrs) do
+    match?({:bpmn_event_definition_compensate, _}, Map.get(attrs, :compensateEventDefinition))
+  end
+
+  defp find_handler_target([flow_id | _], process) do
+    case Map.get(process, flow_id) do
+      {:bpmn_sequence_flow, %{targetRef: target}} -> target
+      _ -> nil
+    end
+  end
+
+  defp find_handler_target(_, _), do: nil
 
   defp reduce_result({:ok, {:ok, _} = result}, {:ok, _}), do: result
   defp reduce_result({:ok, {:error, _} = result}, {:ok, _}), do: result

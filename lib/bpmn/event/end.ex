@@ -43,6 +43,9 @@ defmodule Bpmn.Event.End do
         has_terminate_definition?(attrs) ->
           handle_terminate(context)
 
+        has_compensate_definition?(attrs) ->
+          handle_compensate(attrs, context)
+
         true ->
           {:ok, context}
       end
@@ -72,6 +75,23 @@ defmodule Bpmn.Event.End do
 
   defp handle_terminate(context) do
     Bpmn.Context.put_meta(context, :terminated, true)
+    {:ok, context}
+  end
+
+  defp has_compensate_definition?(attrs) do
+    match?({:bpmn_event_definition_compensate, _}, Map.get(attrs, :compensateEventDefinition))
+  end
+
+  defp handle_compensate(attrs, context) do
+    {:bpmn_event_definition_compensate, def_attrs} = attrs.compensateEventDefinition
+    activity_ref = Map.get(def_attrs, :activityRef)
+
+    if activity_ref do
+      Bpmn.Compensation.compensate_activity(context, to_string(activity_ref))
+    else
+      Bpmn.Compensation.compensate_all(context)
+    end
+
     {:ok, context}
   end
 end

@@ -37,6 +37,9 @@ defmodule Bpmn.Event.Intermediate.Throw do
         publish_escalation(id, attrs, context)
         Bpmn.release_token(outgoing, context)
 
+      has_compensate?(attrs) ->
+        handle_compensate(attrs, outgoing, context)
+
       true ->
         # None/link — pass through
         Bpmn.release_token(outgoing, context)
@@ -67,6 +70,32 @@ defmodule Bpmn.Event.Intermediate.Throw do
     signal_name = Map.get(def_attrs, :signalRef, id)
     data = Bpmn.Context.get(context, :data)
     Bpmn.Event.Bus.publish(:signal, signal_name, %{source: id, data: data})
+  end
+
+  defp has_compensate?(attrs) do
+    match?({:bpmn_event_definition_compensate, _}, Map.get(attrs, :compensateEventDefinition))
+  end
+
+  defp handle_compensate(attrs, outgoing, context) do
+    {:bpmn_event_definition_compensate, def_attrs} = attrs.compensateEventDefinition
+    activity_ref = Map.get(def_attrs, :activityRef)
+    wait = Map.get(def_attrs, :waitForCompletion, "true")
+
+    run_compensation = fn ->
+      if activity_ref do
+        Bpmn.Compensation.compensate_activity(context, to_string(activity_ref))
+      else
+        Bpmn.Compensation.compensate_all(context)
+      end
+    end
+
+    if wait == "false" do
+      spawn(run_compensation)
+      Bpmn.release_token(outgoing, context)
+    else
+      run_compensation.()
+      Bpmn.release_token(outgoing, context)
+    end
   end
 
   defp publish_escalation(id, attrs, context) do

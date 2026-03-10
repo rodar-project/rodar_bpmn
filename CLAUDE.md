@@ -40,7 +40,8 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - **`Bpmn.Event.Timer`** — ISO 8601 duration parsing (`parse_duration/1`), cycle parsing (`parse_cycle/1` for `R3/PT10S`, `R/PT1M`, bare durations), `schedule/4` via `Process.send_after`, `schedule_cycle/5` for repeating timers, `cancel/1`.
 - **`Bpmn.Event.Intermediate.Throw`** — Publishes message/signal/escalation to event bus, releases token.
 - **`Bpmn.Event.Intermediate.Catch`** — Subscribes to event bus or schedules timer; returns `{:manual, _}`. Has `resume/3`.
-- **`Bpmn.Event.Boundary`** — Full implementation: error (direct activation), message/signal/escalation (event bus), timer (scheduled).
+- **`Bpmn.Event.Boundary`** — Full implementation: error (direct activation), message/signal/escalation (event bus), timer (scheduled), compensate (passive — registration in dispatcher).
+- **`Bpmn.Compensation`** — Tracks completed activities and their compensation handlers. `register_handler/3`, `compensate_activity/2` (targeted), `compensate_all/1` (reverse order), `remove_handlers/2` (cleanup on failure). Pre-registered in `Bpmn.execute/3` for activities with compensation boundary events.
 - **`Bpmn.Expression`** — Evaluates condition expressions on sequence flows using the sandbox evaluator. Accepts both `{:bpmn_expression, {lang, expr}}` and legacy `{:bpmn_condition_expression, %{...}}` formats.
 - **`Bpmn.Expression.Sandbox`** — AST-restricted Elixir expression evaluator. Parses via `Code.string_to_quoted`, walks AST against an allowlist, evaluates safe expressions via `Code.eval_quoted`. Prevents arbitrary code execution.
 - **`Bpmn.Expression.TestHelpers`** — Convenience functions for evaluating expressions against sample data without a full process context, and for validating expression safety.

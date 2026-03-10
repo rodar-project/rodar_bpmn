@@ -165,6 +165,9 @@ end
 | Boundary Event (signal) | Implemented | Subscribes to event bus |
 | Boundary Event (timer) | Implemented | Schedules via `Process.send_after` |
 | Boundary Event (escalation) | Implemented | Subscribes to event bus |
+| Boundary Event (compensate) | Implemented | Passive — handler registration in dispatcher |
+| Intermediate Throw (compensate) | Implemented | Triggers compensation; supports `activityRef` and `waitForCompletion` |
+| End Event (compensate) | Implemented | Triggers compensation on process end |
 
 ### Gateways
 
@@ -195,6 +198,7 @@ end
 | Call Activity (Subprocess) | Implemented | Looks up external process from registry, executes in child context |
 | Embedded Subprocess | Implemented | Executes nested elements within parent context; error boundary event propagation |
 | Event Bus | Implemented | Registry-based pub/sub for message (point-to-point), signal/escalation (broadcast) |
+| Compensation | Implemented | Tracks completed activities; executes handlers in reverse order via `Bpmn.Compensation` |
 | Triggered Start Events | Implemented | Auto-create process instances on matching message/signal via `Bpmn.Event.Start.Trigger` |
 | Timer | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
 | Telemetry | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus |
@@ -269,6 +273,7 @@ The engine uses a **token-based execution model**. A `Bpmn.Token` struct tracks 
 - **`Bpmn.Collaboration`** — Multi-participant orchestration. Starts processes, wires message flows, activates all.
 - **`Bpmn.TaskHandler`** — Behaviour for custom task handlers. Register by type atom or task ID string via `Bpmn.TaskRegistry`.
 - **`Bpmn.Hooks`** — Per-context hook system for observing execution (before/after node, on error, on complete).
+- **`Bpmn.Compensation`** — Tracks completed activities and their compensation handlers. Executes in reverse completion order.
 
 ### Supervision Tree
 

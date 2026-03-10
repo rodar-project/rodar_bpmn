@@ -46,6 +46,11 @@ defmodule Bpmn.Event.Boundary do
       has_escalation?(attrs) ->
         handle_escalation_boundary(id, attrs, outgoing, context)
 
+      has_compensate?(attrs) ->
+        # Compensation boundary events are passive — handler registration
+        # happens in Bpmn.execute/3 when the attached activity completes
+        {:ok, context}
+
       true ->
         {:error, "Boundary event '#{id}': unsupported event definition"}
     end
@@ -69,6 +74,10 @@ defmodule Bpmn.Event.Boundary do
 
   defp has_escalation?(attrs) do
     match?({:bpmn_event_definition_escalation, _}, Map.get(attrs, :escalationEventDefinition))
+  end
+
+  defp has_compensate?(attrs) do
+    match?({:bpmn_event_definition_compensate, _}, Map.get(attrs, :compensateEventDefinition))
   end
 
   # Error boundaries are activated directly by the parent activity
