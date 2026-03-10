@@ -12,7 +12,7 @@ defmodule RodarBpmn.MixProject do
       start_permanent: Mix.env() == :prod,
       package: package(),
       deps: deps(),
-      description: "A BPMN engine for elixir",
+      description: "A BPMN engine for Elixir",
 
       # Docs
       name: "Rodar BPMN",
