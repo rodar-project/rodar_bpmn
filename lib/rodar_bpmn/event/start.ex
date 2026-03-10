@@ -1,61 +1,30 @@
 defmodule RodarBpmn.Event.Start do
   @moduledoc """
-  Handle passing the token through an event element.
+  Handles BPMN start event elements.
 
-  # Start Event
+  The start event is the entry point of a process. When a token arrives, it is
+  released to the first outgoing sequence flow. If there are no outgoing flows
+  (e.g., a degenerate single-node process), it returns `{:ok, context}` immediately.
 
-  A BPMN start event can have the following BPMN contents:
-
-    <bpmn:startEvent id="StartEvent_1" name="START" camunda:initiator="HTTP">
-      <bpmn:outgoing>SequenceFlow_0u2ggjm</bpmn:outgoing>
-
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="username" label="Username" type="string">
-            <camunda:validation>
-              <camunda:constraint name="username" config="required" />
-              <camunda:constraint name="password" config="required" />
-            </camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="password" label="Password" type="string" />
-        </camunda:formData>
-        <camunda:executionListener class="bpmn.event.start.listener" event="start" />
-      </bpmn:extensionElements>
-    </bpmn:startEvent>
-
-  This node can be represented as the following Elixir token:
-
-    {:bpmn_event_start,
-      %{
-        id: "StartEvent_1",
-        name: "START",
-        outgoing: ["SequenceFlow_0u2ggjm"],
-        inputs: [%{"username"=>"user", "password"=>"password"}],
-        definitions: [{:error_event_definition, %{}}]
-      }
-    }
+  For message- and signal-triggered start events that automatically create process
+  instances, see `RodarBpmn.Event.Start.Trigger`.
 
   ## Examples
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-    iex> {:ok, pid} = RodarBpmn.Event.Start.token_in({:bpmn_event_start, %{outgoing: []}}, context)
-    iex> context == pid
-    true
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> {:ok, pid} = RodarBpmn.Event.Start.token_in({:bpmn_event_start, %{outgoing: []}}, context)
+      iex> context == pid
+      true
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{})
-    iex> {:not_implemented} = RodarBpmn.Event.Start.token_in({:bpmn_event_start, %{outgoing: ["to"]}}, context)
-    iex> true
-    true
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{})
+      iex> {:not_implemented} = RodarBpmn.Event.Start.token_in({:bpmn_event_start, %{outgoing: ["to"]}}, context)
+      iex> true
+      true
 
   """
 
   @doc """
-  Receive the token for the element and decide if the business logic should be executed
-
-  @todo:
-    - Load input data into the context based on the given inputs
-    - Check the event definitions and wait for the event to be triggered before executing the event
-
+  Accepts the initial token and releases it to the first outgoing sequence flow.
   """
   @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def token_in({:bpmn_event_start, %{outgoing: []}}, context), do: {:ok, context}

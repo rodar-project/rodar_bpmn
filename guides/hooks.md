@@ -56,3 +56,8 @@ Both systems observe execution, but serve different purposes:
 
 - **Hooks** are per-context, registered at runtime, and receive rich metadata including the token and result objects. Use for application-level logic (audit logging, metrics, debugging).
 - **Telemetry** is global, uses `:telemetry` events, and integrates with the broader Erlang/Elixir observability ecosystem. Use for infrastructure monitoring (Prometheus, StatsD).
+
+## Next Steps
+
+- [Observability](observability.md) — Telemetry events, dashboard queries, and health checks
+- [Task Handlers](task_handlers.md) — Register custom task implementations

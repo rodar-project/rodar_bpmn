@@ -70,8 +70,15 @@ defmodule RodarBpmn.MixProject do
         "CONTRIBUTING.md",
         "CODE_OF_CONDUCT.md",
         "guides/getting_started.md",
+        "guides/process_lifecycle.md",
+        "guides/events.md",
+        "guides/gateways.md",
+        "guides/expressions.md",
         "guides/task_handlers.md",
         "guides/hooks.md",
+        "guides/persistence.md",
+        "guides/versioning.md",
+        "guides/observability.md",
         "guides/cli.md"
       ],
       groups_for_extras: [
@@ -83,16 +90,20 @@ defmodule RodarBpmn.MixProject do
           RodarBpmn.Token,
           RodarBpmn.Context,
           RodarBpmn.Process,
-          RodarBpmn.Registry
+          RodarBpmn.Registry,
+          RodarBpmn.Migration
         ],
         Events: [
           RodarBpmn.Event.Start,
+          RodarBpmn.Event.Start.Trigger,
           RodarBpmn.Event.End,
+          RodarBpmn.Event.Intermediate,
           RodarBpmn.Event.Intermediate.Throw,
           RodarBpmn.Event.Intermediate.Catch,
           RodarBpmn.Event.Boundary,
           RodarBpmn.Event.Bus,
-          RodarBpmn.Event.Timer
+          RodarBpmn.Event.Timer,
+          RodarBpmn.Compensation
         ],
         Gateways: [
           RodarBpmn.Gateway.Exclusive,

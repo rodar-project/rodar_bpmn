@@ -1,18 +1,34 @@
 defmodule RodarBpmn.Engine.Diagram do
   @moduledoc """
+  Parses BPMN 2.0 XML into Elixir data structures.
 
-  iex> diagram = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/hiring/hiring.bpmn2"))
-  iex> is_map(diagram)
-  true
+  Uses `:erlsom.simple_form/2` to parse XML, then transforms the result into a
+  map containing `:processes`, `:item_definitions`, and `:collaboration`. Each
+  process is a map of element ID to `{:bpmn_type, %{...}}` tuples that the
+  `RodarBpmn` dispatcher can execute.
 
-  iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
-  iex> is_list(processes)
-  true
+  Element types are mapped from XML tag names (e.g., `intermediateThrowEvent` becomes
+  `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` becomes
+  `:bpmn_event_intermediate_catch`). Condition expressions are emitted as
+  `{:bpmn_expression, {language, expression}}` tuples.
 
-  iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
-  iex> Enum.map(processes, &IO.inspect/1)
-  iex> is_list(processes)
-  true
+  `export/1` delegates to `RodarBpmn.Engine.Diagram.Export.to_xml/1` for the
+  inverse operation.
+
+  ## Examples
+
+      iex> diagram = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/hiring/hiring.bpmn2"))
+      iex> is_map(diagram)
+      true
+
+      iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
+      iex> is_list(processes)
+      true
+
+      iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
+      iex> Enum.map(processes, &IO.inspect/1)
+      iex> is_list(processes)
+      true
 
   """
 

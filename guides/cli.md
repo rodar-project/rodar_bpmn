@@ -67,3 +67,8 @@ Parses the input file and re-exports it as normalized BPMN 2.0 XML. This is usef
 - Verifying round-trip fidelity of the parser
 
 Prints to stdout by default. Use `--output` to write to a file instead.
+
+## Next Steps
+
+- [Getting Started](getting_started.md) — Installation and basic concepts
+- [Process Lifecycle](process_lifecycle.md) — Instance creation and status transitions

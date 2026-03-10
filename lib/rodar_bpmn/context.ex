@@ -1,20 +1,41 @@
 defmodule RodarBpmn.Context do
   @moduledoc """
-  RodarBpmn.Engine.Context
-  ===================
+  GenServer-based execution context for a running BPMN process instance.
 
-  The context is an important part of executing a BPMN process. It allows you to keep track
-  of any data changes in the execution of the process and well as monitor the execution state
-  of your process.
+  Holds all mutable state during process execution: the process definition,
+  initial and current data, node metadata, token counts, and execution history.
+  Each process instance gets its own context, typically started under
+  `RodarBpmn.ContextSupervisor` via `start_supervised/2`.
 
-  BPMN execution context for a process. It contains:
-  - the list of active nodes for a process
-  - the list of completed nodes
-  - the initial data received when starting the process
-  - the current data in the process
-  - the current process
-  - extra information about the execution context
+  ## State Management
 
+  - `get/2` — Read top-level state keys (`:init`, `:data`, `:process`, `:nodes`, `:meta`).
+  - `get_state/1` / `restore_state/2` — Snapshot and restore full state (for persistence).
+  - `swap_process/2` — Replace the process definition (for version migration).
+
+  ## Data and Metadata
+
+  - `put_data/3` / `get_data/2` — Read and write process variables. Writing triggers
+    any registered conditional subscriptions.
+  - `put_meta/3` / `get_meta/2` — Store auxiliary metadata outside the process data.
+
+  ## Token Tracking
+
+  - `record_token/3` / `token_count/2` — Track how many tokens have arrived at a
+    node (used by join gateways).
+  - `record_activated_paths/3` — Track which outgoing paths were activated (for
+    inclusive gateway joins).
+
+  ## Execution History
+
+  - `record_visit/2` / `record_completion/4` — Log node entry and exit.
+  - `get_history/1` / `get_node_history/2` — Query the execution log.
+
+  ## Conditional Subscriptions
+
+  - `subscribe_condition/4` / `unsubscribe_condition/2` — Register expressions
+    that are evaluated on every `put_data/3` call, firing `{:condition_met, ...}`
+    when satisfied.
   """
 
   use GenServer

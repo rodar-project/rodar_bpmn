@@ -15,11 +15,13 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
 
   # --- Client API ---
 
+  @doc "Starts the ETS adapter GenServer and creates the named table."
   def start_link(opts \\ []) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc "Serializes and stores a process snapshot in ETS, keyed by instance ID."
   @impl RodarBpmn.Persistence
   def save(instance_id, snapshot) do
     binary = Serializer.serialize(snapshot)
@@ -27,6 +29,7 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
     :ok
   end
 
+  @doc "Loads and deserializes a snapshot by instance ID. Returns `{:error, :not_found}` if missing."
   @impl RodarBpmn.Persistence
   def load(instance_id) do
     case :ets.lookup(@table, instance_id) do
@@ -38,12 +41,14 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
     end
   end
 
+  @doc "Removes a snapshot from ETS by instance ID."
   @impl RodarBpmn.Persistence
   def delete(instance_id) do
     :ets.delete(@table, instance_id)
     :ok
   end
 
+  @doc "Returns a list of all stored instance IDs."
   @impl RodarBpmn.Persistence
   def list do
     :ets.tab2list(@table)

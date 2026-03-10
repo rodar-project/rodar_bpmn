@@ -77,6 +77,10 @@ mix rodar_bpmn.validate my_process.bpmn
 
 ## Next Steps
 
+- [Process Lifecycle](process_lifecycle.md) — Instance creation, status transitions, suspend/resume
+- [Events](events.md) — Start, end, intermediate, boundary events and the event bus
+- [Gateways](gateways.md) — Exclusive, parallel, inclusive, complex, and event-based gateways
+- [Expressions](expressions.md) — FEEL and Elixir sandbox expression evaluation
 - [Task Handlers](task_handlers.md) — Register custom task implementations
 - [Hooks](hooks.md) — Observe execution with lifecycle hooks
 - [CLI Tools](cli.md) — Mix tasks for validation, inspection, and execution

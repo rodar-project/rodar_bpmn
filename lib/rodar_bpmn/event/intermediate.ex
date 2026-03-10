@@ -1,18 +1,21 @@
 defmodule RodarBpmn.Event.Intermediate do
   @moduledoc """
-  Handle passing the token through an intermediate event element.
+  Stub handler for the generic `:bpmn_event_intermediate` element type.
 
-  This module is kept for backward compatibility with the legacy
-  `:bpmn_event_intermediate` tag. New code should use
-  `RodarBpmn.Event.Intermediate.Throw` and `RodarBpmn.Event.Intermediate.Catch`.
+  Always returns `{:not_implemented}`. The BPMN 2.0 parser splits intermediate
+  events into their specific types, so this module only handles the rare case of
+  an unresolved generic tag. Use `RodarBpmn.Event.Intermediate.Throw` and
+  `RodarBpmn.Event.Intermediate.Catch` for actual intermediate event handling.
 
-    iex> RodarBpmn.Event.Intermediate.token_in({:bpmn_event_intermediate, %{}}, nil)
-    {:not_implemented}
+  ## Examples
+
+      iex> RodarBpmn.Event.Intermediate.token_in({:bpmn_event_intermediate, %{}}, nil)
+      {:not_implemented}
 
   """
 
   @doc """
-  Receive the token for the element and decide if the business logic should be executed
+  Returns `{:not_implemented}` for generic intermediate events.
   """
   @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def token_in(_elem, _context), do: {:not_implemented}

@@ -1,52 +1,32 @@
 defmodule RodarBpmn do
   @moduledoc """
-  BPMN Execution Engine
-  =====================
+  Main dispatcher for the Rodar BPMN execution engine.
 
-  Hashiru BPMN allows you to execute any BPMN process in Elixir.
+  Routes BPMN elements to their handler modules based on element type. Each node
+  in a parsed BPMN process is represented as a `{:bpmn_node_type, %{...}}` tuple,
+  and the dispatcher resolves which module handles it.
 
-  Each node in the BPMN process can be mapped to the appropriate Elixir token and added to a process.
-  Each loaded process will be added to a Registry under the id of that process.
-  From there they can be loaded by any node and executed by the system.
+  ## Execution Modes
 
-  Node definitions
-  ================
+  - `execute/2` — Simple dispatch, returns the handler result directly.
+  - `execute/3` — Token-aware dispatch via `RodarBpmn.Token`, records execution
+    history in `RodarBpmn.Context`, notifies `RodarBpmn.Hooks`, and emits
+    `RodarBpmn.Telemetry` events.
 
-  Each node can be represented in Elixir as a token in the following format: {:bpmn_node_type, :any_data_type}
+  ## Token Flow
 
-  The nodes can return one of the following sets of data:
-  - {:ok, context} => The process has completed successfully and returned some data in the context
-  - {:error, _message, %{field: "Error message"}} => Error in the execution of the process with message and fields
-  - {:manual, _} => The process has reached an external manual activity
-  - {:fatal, _} => Fatal error in the execution of the process
-  - {:not_implemented} => Process reached an unimplemented section of the process-
+  `release_token/2` passes a token to the next node by ID. `release_token/3`
+  forks child tokens for parallel branches (e.g., from a parallel gateway).
 
-  Events
-  ------
+  ## Return Values
 
+  All handlers return one of:
 
-
-  ### End Event
-
-  BPMN definition:
-
-      <bpmn:endEvent id="EndEvent_1s3wrav">
-        <bpmn:incoming>SequenceFlow_1keu1zs</bpmn:incoming>
-        <bpmn:errorEventDefinition />
-      </bpmn:endEvent>
-
-  Elixir token:
-
-    {:bpmn_event_end,
-      %{
-        id: "EndEvent_1s3wrav",
-        name: "END",
-        incoming: ["SequenceFlow_1keu1zs"],
-        errorEventDefinition: {:bpmn_event_definition_error, %{}}
-      }
-    }
-
-
+  - `{:ok, context}` — Node completed successfully.
+  - `{:error, message}` — Execution error with a description.
+  - `{:manual, context}` — Process paused at an external activity (user task, receive task, etc.).
+  - `{:fatal, reason}` — Unrecoverable error.
+  - `{:not_implemented}` — Element type has no handler implementation.
   """
 
   require Logger

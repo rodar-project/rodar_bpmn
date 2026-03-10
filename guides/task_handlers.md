@@ -86,3 +86,9 @@ end
 # Register for all :http_task elements
 RodarBpmn.TaskRegistry.register(:http_task, MyApp.HttpTask)
 ```
+
+## Next Steps
+
+- [Process Lifecycle](process_lifecycle.md) — Instance creation and status transitions
+- [Hooks](hooks.md) — Observe execution with lifecycle hooks
+- [Expressions](expressions.md) — FEEL and Elixir sandbox expression evaluation

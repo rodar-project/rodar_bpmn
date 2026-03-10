@@ -1,18 +1,25 @@
 defmodule RodarBpmn.SequenceFlow do
   @moduledoc """
-  Handle passing the token through a sequence flow element.
+  Handles sequence flow elements that connect BPMN nodes.
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{"username" => "test", "password" => "secret"})
-    iex> RodarBpmn.SequenceFlow.token_in({:bpmn_sequence_flow, %{sourceRef: "from", targetRef: "to"}}, context)
-    {:not_implemented}
+  Evaluates an optional condition expression via `RodarBpmn.Expression` before
+  passing the token to the target node. If the condition evaluates to `false`,
+  returns `{:false}` (used by exclusive and inclusive gateways to skip the path).
+  Unconditional flows pass the token through directly.
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{"username" => "test", "password" => "secret"})
-    iex> RodarBpmn.SequenceFlow.token_in({:bpmn_sequence_flow, %{sourceRef: "from", targetRef: "to", conditionExpression: {:bpmn_expression, {"elixir", "1!=1"}}}}, context)
-    {:false}
+  ## Examples
+
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{"username" => "test", "password" => "secret"})
+      iex> RodarBpmn.SequenceFlow.token_in({:bpmn_sequence_flow, %{sourceRef: "from", targetRef: "to"}}, context)
+      {:not_implemented}
+
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{"to" => {:bpmn_activity_task_script, %{}}}, %{"username" => "test", "password" => "secret"})
+      iex> RodarBpmn.SequenceFlow.token_in({:bpmn_sequence_flow, %{sourceRef: "from", targetRef: "to", conditionExpression: {:bpmn_expression, {"elixir", "1!=1"}}}}, context)
+      {:false}
   """
 
   @doc """
-  Receive the token for the element and decide if the business logic should be executed
+  Evaluates any condition expression and releases the token to the target node.
   """
   @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def token_in(elem, context), do: execute(elem, context)
