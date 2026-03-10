@@ -26,7 +26,12 @@ defmodule Bpmn.Process do
   Looks up the process definition in `Bpmn.Registry`, creates a supervised
   context, and sets status to `:created`.
   """
-  @spec start_link({String.t(), map()} | String.t(), map()) :: {:ok, pid()} | {:error, any()}
+  @spec start_link({String.t(), map()} | {:restore, map(), pid()} | String.t(), map()) ::
+          {:ok, pid()} | {:error, any()}
+  def start_link({:restore, _restore_data, _context} = args) do
+    GenServer.start_link(__MODULE__, args)
+  end
+
   def start_link({process_id, init_data}) do
     start_link(process_id, init_data)
   end
@@ -109,9 +114,67 @@ defmodule Bpmn.Process do
     GenServer.call(pid, :instance_id)
   end
 
+  @doc """
+  Dehydrate a process instance: save its state to persistence and return
+  the instance ID.
+  """
+  @spec dehydrate(pid()) :: {:ok, String.t()} | {:error, any()}
+  def dehydrate(pid) do
+    GenServer.call(pid, :dehydrate)
+  end
+
+  @doc """
+  Rehydrate a process instance from a persisted snapshot.
+
+  Loads the snapshot from the persistence adapter, looks up the process
+  definition in the registry, starts a new supervised context with the
+  restored state, and starts a new Process GenServer.
+  """
+  @spec rehydrate(String.t()) :: {:ok, pid()} | {:error, any()}
+  def rehydrate(instance_id) do
+    alias Bpmn.Persistence
+    alias Bpmn.Persistence.Serializer
+
+    with {:ok, snapshot} <- Persistence.load(instance_id),
+         {:ok, {_type, _attrs, elements}} <- lookup_registry(snapshot.process_id),
+         process_map <- build_process_map(elements),
+         {:ok, context} <- Bpmn.Context.start_supervised(process_map, %{}),
+         deserialized_state <- Serializer.deserialize_context_state(snapshot.context_state),
+         :ok <- Bpmn.Context.restore_state(context, deserialized_state),
+         root_token <- Serializer.deserialize_token(snapshot.root_token),
+         restore_data <- %{
+           instance_id: snapshot.instance_id,
+           process_id: snapshot.process_id,
+           status: snapshot.status,
+           root_token: root_token
+         },
+         {:ok, pid} <-
+           DynamicSupervisor.start_child(
+             Bpmn.ProcessSupervisor,
+             {__MODULE__, {:restore, restore_data, context}}
+           ) do
+      resubscribe_events(deserialized_state, process_map, context)
+      {:ok, pid}
+    else
+      {:error, _} = err -> err
+    end
+  end
+
   # --- GenServer Callbacks ---
 
   @impl true
+  def init({:restore, restore_data, context}) do
+    {:ok,
+     %{
+       instance_id: restore_data.instance_id,
+       process_id: restore_data.process_id,
+       definition: nil,
+       context: context,
+       status: restore_data.status,
+       root_token: restore_data.root_token
+     }}
+  end
+
   def init({process_id, init_data}) do
     case Bpmn.Registry.lookup(process_id) do
       {:ok, {_type, attrs, elements}} ->
@@ -155,10 +218,19 @@ defmodule Bpmn.Process do
 
         state =
           case result do
-            {:ok, _} -> %{state | status: :completed}
-            {:error, _} -> %{state | status: :error}
-            {:manual, _} -> %{state | status: :suspended}
-            _ -> %{state | status: :error}
+            {:ok, _} ->
+              %{state | status: :completed}
+
+            {:error, _} ->
+              %{state | status: :error}
+
+            {:manual, _} ->
+              state = %{state | status: :suspended}
+              maybe_auto_dehydrate(state)
+              state
+
+            _ ->
+              %{state | status: :error}
           end
 
         {:reply, :ok, state}
@@ -205,6 +277,13 @@ defmodule Bpmn.Process do
     {:reply, state.instance_id, state}
   end
 
+  def handle_call(:dehydrate, _from, state) do
+    case do_dehydrate(state) do
+      {:ok, instance_id} -> {:reply, {:ok, instance_id}, state}
+      {:error, _} = err -> {:reply, err, state}
+    end
+  end
+
   # --- Private helpers ---
 
   defp find_start_event(process_map) do
@@ -225,5 +304,74 @@ defmodule Bpmn.Process do
 
   defp generate_instance_id do
     Bpmn.Token.new().id
+  end
+
+  defp maybe_auto_dehydrate(state) do
+    if Bpmn.Persistence.auto_dehydrate?(), do: do_dehydrate(state)
+  end
+
+  defp lookup_registry(process_id) do
+    case Bpmn.Registry.lookup(process_id) do
+      {:ok, _} = result -> result
+      :error -> {:error, "Process '#{process_id}' not found in registry"}
+    end
+  end
+
+  defp do_dehydrate(state) do
+    context_state = Bpmn.Context.get_state(state.context)
+
+    snapshot =
+      Bpmn.Persistence.Serializer.snapshot(%{
+        instance_id: state.instance_id,
+        process_id: state.process_id,
+        status: state.status,
+        root_token: state.root_token,
+        context_state: context_state
+      })
+
+    case Bpmn.Persistence.save(state.instance_id, snapshot) do
+      :ok -> {:ok, state.instance_id}
+      {:error, _} = err -> err
+    end
+  end
+
+  defp resubscribe_events(context_state, process_map, context) do
+    Enum.each(context_state.nodes, fn
+      {node_id, %{active: true, type: type}} when type in [:catch_event, :boundary_event] ->
+        case Map.get(process_map, node_id) do
+          {_elem_type, %{outgoing: outgoing} = attrs} ->
+            resubscribe_node(node_id, attrs, outgoing, context)
+
+          _ ->
+            :ok
+        end
+
+      _ ->
+        :ok
+    end)
+  end
+
+  defp resubscribe_node(id, attrs, outgoing, context) do
+    metadata = %{context: context, node_id: id, outgoing: outgoing}
+
+    cond do
+      match?({:bpmn_event_definition_message, _}, Map.get(attrs, :messageEventDefinition)) ->
+        {:bpmn_event_definition_message, def_attrs} = attrs.messageEventDefinition
+        name = Map.get(def_attrs, :messageRef, id)
+        Bpmn.Event.Bus.subscribe(:message, name, metadata)
+
+      match?({:bpmn_event_definition_signal, _}, Map.get(attrs, :signalEventDefinition)) ->
+        {:bpmn_event_definition_signal, def_attrs} = attrs.signalEventDefinition
+        name = Map.get(def_attrs, :signalRef, id)
+        Bpmn.Event.Bus.subscribe(:signal, name, metadata)
+
+      match?({:bpmn_event_definition_escalation, _}, Map.get(attrs, :escalationEventDefinition)) ->
+        {:bpmn_event_definition_escalation, def_attrs} = attrs.escalationEventDefinition
+        name = Map.get(def_attrs, :escalationRef, id)
+        Bpmn.Event.Bus.subscribe(:escalation, name, metadata)
+
+      true ->
+        :ok
+    end
   end
 end

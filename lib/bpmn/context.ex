@@ -200,6 +200,14 @@ defmodule Bpmn.Context do
     GenServer.call(context, {:get_node_history, node_id})
   end
 
+  @doc """
+  Replace the full GenServer state wholesale (used during rehydration).
+  """
+  @spec restore_state(pid(), map()) :: :ok
+  def restore_state(context, new_state) do
+    GenServer.call(context, {:restore_state, new_state})
+  end
+
   # --- GenServer Callbacks ---
 
   @impl true
@@ -283,6 +291,10 @@ defmodule Bpmn.Context do
 
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call({:restore_state, new_state}, _from, _old_state) do
+    {:reply, :ok, new_state}
   end
 
   def handle_call({:record_visit, entry}, _from, state) do

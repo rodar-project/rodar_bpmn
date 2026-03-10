@@ -26,3 +26,7 @@ import Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{config_env()}.exs"
+
+config :bpmn, :persistence,
+  adapter: Bpmn.Persistence.Adapter.ETS,
+  auto_dehydrate: true
