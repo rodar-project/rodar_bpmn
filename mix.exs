@@ -19,7 +19,7 @@ defmodule Bpmn.MixProject do
       source_url: "https://github.com/Around25/rodar-bpmn",
       homepage_url: "https://github.com/Around25/rodar-bpmn",
       test_coverage: [tool: ExCoveralls],
-      dialyzer: [plt_add_apps: [:mix]],
+      dialyzer: [plt_add_apps: [:mix, :ex_unit]],
       docs: docs()
     ]
   end

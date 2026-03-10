@@ -1,8 +1,8 @@
 defmodule Bpmn.Event.Start.TriggerTest do
   use ExUnit.Case, async: false
 
-  alias Bpmn.Event.Start.Trigger
   alias Bpmn.Event.Bus
+  alias Bpmn.Event.Start.Trigger
 
   setup do
     # Clean up any triggers from previous tests

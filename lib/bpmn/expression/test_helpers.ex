@@ -17,12 +17,14 @@ defmodule Bpmn.Expression.TestHelpers do
 
   """
 
+  alias Bpmn.Expression.Sandbox
+
   @doc """
   Evaluate an expression against sample data without a full process context.
   """
   @spec eval_expression(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
   def eval_expression(expr, data) do
-    Bpmn.Expression.Sandbox.eval(expr, %{"data" => data})
+    Sandbox.eval(expr, %{"data" => data})
   end
 
   @doc """
@@ -32,7 +34,7 @@ defmodule Bpmn.Expression.TestHelpers do
   def validate(expr) do
     case Code.string_to_quoted(expr) do
       {:ok, ast} ->
-        case Bpmn.Expression.Sandbox.safe?(ast) do
+        case Sandbox.safe?(ast) do
           true -> :ok
           {:error, _} = err -> err
         end

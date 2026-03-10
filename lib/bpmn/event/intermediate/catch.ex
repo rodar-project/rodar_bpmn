@@ -16,6 +16,11 @@ defmodule Bpmn.Event.Intermediate.Catch do
 
   """
 
+  alias Bpmn.Context
+  alias Bpmn.Event.Bus
+  alias Bpmn.Event.Timer
+  alias Bpmn.Expression.Sandbox
+
   @doc """
   Receive the token for the element and handle the catch event.
   """
@@ -46,10 +51,10 @@ defmodule Bpmn.Event.Intermediate.Catch do
   def resume({:bpmn_event_intermediate_catch, %{id: id, outgoing: outgoing}}, context, input)
       when is_map(input) do
     Enum.each(input, fn {key, value} ->
-      Bpmn.Context.put_data(context, key, value)
+      Context.put_data(context, key, value)
     end)
 
-    Bpmn.Context.put_meta(context, id, %{active: false, completed: true, type: :catch_event})
+    Context.put_meta(context, id, %{active: false, completed: true, type: :catch_event})
     Bpmn.release_token(outgoing, context)
   end
 
@@ -73,12 +78,12 @@ defmodule Bpmn.Event.Intermediate.Catch do
     {:bpmn_event_definition_message, def_attrs} = attrs.messageEventDefinition
     message_name = Map.get(def_attrs, :messageRef, id)
 
-    Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
+    Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
 
     metadata = %{context: context, node_id: id, outgoing: outgoing}
     metadata = put_correlation(metadata, def_attrs, context)
 
-    Bpmn.Event.Bus.subscribe(:message, message_name, metadata)
+    Bus.subscribe(:message, message_name, metadata)
 
     {:manual,
      %{
@@ -94,9 +99,9 @@ defmodule Bpmn.Event.Intermediate.Catch do
     {:bpmn_event_definition_signal, def_attrs} = attrs.signalEventDefinition
     signal_name = Map.get(def_attrs, :signalRef, id)
 
-    Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
+    Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
 
-    Bpmn.Event.Bus.subscribe(:signal, signal_name, %{
+    Bus.subscribe(:signal, signal_name, %{
       context: context,
       node_id: id,
       outgoing: outgoing
@@ -109,7 +114,7 @@ defmodule Bpmn.Event.Intermediate.Catch do
   defp handle_timer(id, attrs, outgoing, context) do
     {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
 
-    Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
+    Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})
 
     cond do
       Map.has_key?(def_attrs, :timeCycle) ->
@@ -128,11 +133,11 @@ defmodule Bpmn.Event.Intermediate.Catch do
   end
 
   defp schedule_duration_timer(id, duration, outgoing, context) when is_binary(duration) do
-    case Bpmn.Event.Timer.parse_duration(duration) do
+    case Timer.parse_duration(duration) do
       {:ok, ms} ->
-        timer_ref = Bpmn.Event.Timer.schedule(ms, context, id, outgoing)
+        timer_ref = Timer.schedule(ms, context, id, outgoing)
 
-        Bpmn.Context.put_meta(context, id, %{
+        Context.put_meta(context, id, %{
           active: true,
           completed: false,
           type: :catch_event,
@@ -163,11 +168,11 @@ defmodule Bpmn.Event.Intermediate.Catch do
   end
 
   defp handle_conditional_expr(id, condition, outgoing, context) do
-    data = Bpmn.Context.get(context, :data)
+    data = Context.get(context, :data)
 
-    case Bpmn.Expression.Sandbox.eval(condition, %{"data" => data}) do
+    case Sandbox.eval(condition, %{"data" => data}) do
       {:ok, true} ->
-        Bpmn.Context.put_meta(context, id, %{
+        Context.put_meta(context, id, %{
           active: false,
           completed: true,
           type: :catch_event
@@ -176,13 +181,13 @@ defmodule Bpmn.Event.Intermediate.Catch do
         Bpmn.release_token(outgoing, context)
 
       _ ->
-        Bpmn.Context.put_meta(context, id, %{
+        Context.put_meta(context, id, %{
           active: true,
           completed: false,
           type: :catch_event
         })
 
-        Bpmn.Context.subscribe_condition(context, id, condition, %{
+        Context.subscribe_condition(context, id, condition, %{
           node_id: id,
           outgoing: outgoing,
           context: context
@@ -205,17 +210,17 @@ defmodule Bpmn.Event.Intermediate.Catch do
         metadata
 
       key ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         Map.put(metadata, :correlation, %{key: key, value: Map.get(data, key)})
     end
   end
 
   defp schedule_cycle_timer(id, cycle_expr, outgoing, context) do
-    case Bpmn.Event.Timer.parse_cycle(cycle_expr) do
+    case Timer.parse_cycle(cycle_expr) do
       {:ok, %{repetitions: reps, duration_ms: ms}} ->
-        timer_ref = Bpmn.Event.Timer.schedule_cycle(ms, context, id, outgoing, reps)
+        timer_ref = Timer.schedule_cycle(ms, context, id, outgoing, reps)
 
-        Bpmn.Context.put_meta(context, id, %{
+        Context.put_meta(context, id, %{
           active: true,
           completed: false,
           type: :catch_event,

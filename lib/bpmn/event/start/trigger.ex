@@ -9,16 +9,20 @@ defmodule Bpmn.Event.Start.Trigger do
   ## Example
 
       # Register a process with a message start event
-      Bpmn.Registry.register("order-process", process_definition)
+      Registry.register("order-process", process_definition)
       Bpmn.Event.Start.Trigger.register("order-process")
 
       # Publishing a message now auto-creates a process instance
-      Bpmn.Event.Bus.publish(:message, "new_order", %{data: %{"item" => "widget"}})
+      Bus.publish(:message, "new_order", %{data: %{"item" => "widget"}})
       # => A new "order-process" instance is created with %{"item" => "widget"} as init data
 
   """
 
   use GenServer
+
+  alias Bpmn.Event.Bus
+  alias Bpmn.Process, as: BpmnProcess
+  alias Bpmn.Registry
 
   # --- Client API ---
 
@@ -67,7 +71,7 @@ defmodule Bpmn.Event.Start.Trigger do
 
   @impl true
   def handle_call({:register, process_id}, _from, state) do
-    case Bpmn.Registry.lookup(process_id) do
+    case Registry.lookup(process_id) do
       {:ok, {_type, _attrs, elements}} ->
         subscriptions = subscribe_start_events(process_id, elements)
         triggers = state.triggers ++ subscriptions
@@ -82,7 +86,7 @@ defmodule Bpmn.Event.Start.Trigger do
     {to_remove, remaining} = Enum.split_with(state.triggers, &(&1.process_id == process_id))
 
     Enum.each(to_remove, fn trigger ->
-      Bpmn.Event.Bus.unsubscribe(trigger.event_type, trigger.event_name)
+      Bus.unsubscribe(trigger.event_type, trigger.event_name)
     end)
 
     {:reply, :ok, %{state | triggers: remaining}}
@@ -96,11 +100,11 @@ defmodule Bpmn.Event.Start.Trigger do
   def handle_info({:bpmn_event, _type, _name, payload, metadata}, state) do
     process_id = metadata.process_id
     init_data = extract_init_data(payload)
-    spawn(fn -> Bpmn.Process.create_and_run(process_id, init_data) end)
+    spawn(fn -> BpmnProcess.create_and_run(process_id, init_data) end)
 
     # Re-subscribe for next event (signals broadcast but messages are consumed)
     if metadata.event_type == :message do
-      Bpmn.Event.Bus.subscribe(metadata.event_type, metadata.event_name, metadata)
+      Bus.subscribe(metadata.event_type, metadata.event_name, metadata)
     end
 
     {:noreply, state}
@@ -153,7 +157,7 @@ defmodule Bpmn.Event.Start.Trigger do
   defp find_start_triggers(_process_id, _element), do: []
 
   defp subscribe_trigger(process_id, event_type, event_name) do
-    Bpmn.Event.Bus.subscribe(event_type, event_name, %{
+    Bus.subscribe(event_type, event_name, %{
       process_id: process_id,
       event_type: event_type,
       event_name: event_name

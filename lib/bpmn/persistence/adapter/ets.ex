@@ -9,6 +9,8 @@ defmodule Bpmn.Persistence.Adapter.ETS do
   use GenServer
   @behaviour Bpmn.Persistence
 
+  alias Bpmn.Persistence.Serializer
+
   @table :bpmn_persistence
 
   # --- Client API ---
@@ -20,7 +22,7 @@ defmodule Bpmn.Persistence.Adapter.ETS do
 
   @impl Bpmn.Persistence
   def save(instance_id, snapshot) do
-    binary = Bpmn.Persistence.Serializer.serialize(snapshot)
+    binary = Serializer.serialize(snapshot)
     :ets.insert(@table, {instance_id, binary})
     :ok
   end
@@ -29,7 +31,7 @@ defmodule Bpmn.Persistence.Adapter.ETS do
   def load(instance_id) do
     case :ets.lookup(@table, instance_id) do
       [{^instance_id, binary}] ->
-        {:ok, Bpmn.Persistence.Serializer.deserialize(binary)}
+        {:ok, Serializer.deserialize(binary)}
 
       [] ->
         {:error, :not_found}

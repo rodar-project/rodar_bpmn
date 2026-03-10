@@ -1,6 +1,8 @@
 defmodule Bpmn.Gateway.Exclusive.EventTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Gateway.Exclusive.Event}
+
   describe "event-based gateway" do
     test "returns manual with catch event info" do
       catch1 =
@@ -44,17 +46,17 @@ defmodule Bpmn.Gateway.Exclusive.EventTest do
          }}
 
       process = %{"f1" => f1, "f2" => f2, "catch1" => catch1, "catch2" => catch2}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem = {:bpmn_gateway_exclusive_event, %{id: "egw", outgoing: ["f1", "f2"]}}
-      assert {:manual, task_data} = Bpmn.Gateway.Exclusive.Event.token_in(elem, context)
+      assert {:manual, task_data} = Event.token_in(elem, context)
       assert task_data.id == "egw"
       assert task_data.type == :event_gateway
       assert length(task_data.catch_events) == 2
     end
 
     test "dispatches via Bpmn.execute/2" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
       elem = {:bpmn_gateway_exclusive_event, %{id: "egw", outgoing: []}}
       assert {:manual, _} = Bpmn.execute(elem, context)
     end

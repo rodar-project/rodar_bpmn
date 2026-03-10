@@ -1,6 +1,8 @@
 defmodule Bpmn.Event.BoundaryTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Event.Boundary, Event.Timer}
+
   defp make_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow"], outgoing: []}}
 
@@ -19,7 +21,7 @@ defmodule Bpmn.Event.BoundaryTest do
 
   describe "error boundary event" do
     test "releases token to outgoing flows" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
 
       elem =
         {:bpmn_event_boundary,
@@ -34,13 +36,13 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, ^context} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:ok, ^context} = Boundary.token_in(elem, context)
     end
   end
 
   describe "message boundary event" do
     test "subscribes to event bus and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
       msg_name = "msg_boundary_#{:erlang.unique_integer()}"
 
       elem =
@@ -56,7 +58,7 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:manual, task_data} = Boundary.token_in(elem, context)
       assert task_data.type == :message_boundary
       assert task_data.event_name == msg_name
     end
@@ -64,7 +66,7 @@ defmodule Bpmn.Event.BoundaryTest do
 
   describe "signal boundary event" do
     test "subscribes to event bus and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
       sig_name = "sig_boundary_#{:erlang.unique_integer()}"
 
       elem =
@@ -80,14 +82,14 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:manual, task_data} = Boundary.token_in(elem, context)
       assert task_data.type == :signal_boundary
     end
   end
 
   describe "timer boundary event" do
     test "schedules timer and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
 
       elem =
         {:bpmn_event_boundary,
@@ -102,19 +104,19 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:manual, task_data} = Boundary.token_in(elem, context)
       assert task_data.type == :timer_boundary
       assert task_data.duration_ms == 10_000
 
       # Cancel to avoid firing
-      meta = Bpmn.Context.get_meta(context, "b1")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "b1")
+      Timer.cancel(meta.timer_ref)
     end
   end
 
   describe "timer cycle boundary event" do
     test "schedules cycle timer and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
 
       elem =
         {:bpmn_event_boundary,
@@ -129,19 +131,19 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:manual, task_data} = Boundary.token_in(elem, context)
       assert task_data.type == :timer_cycle_boundary
       assert task_data.duration_ms == 10_000
       assert task_data.repetitions == 3
 
-      meta = Bpmn.Context.get_meta(context, "b_cycle")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "b_cycle")
+      Timer.cancel(meta.timer_ref)
     end
   end
 
   describe "escalation boundary event" do
     test "subscribes to event bus and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
       esc_code = "esc_boundary_#{:erlang.unique_integer()}"
 
       elem =
@@ -158,7 +160,7 @@ defmodule Bpmn.Event.BoundaryTest do
              {:bpmn_event_definition_escalation, %{escalationRef: esc_code}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:manual, task_data} = Boundary.token_in(elem, context)
       assert task_data.type == :escalation_boundary
       assert task_data.event_name == esc_code
     end
@@ -166,7 +168,7 @@ defmodule Bpmn.Event.BoundaryTest do
 
   describe "unsupported boundary event" do
     test "returns error" do
-      {:ok, context} = Bpmn.Context.start_link(make_process(), %{})
+      {:ok, context} = Context.start_link(make_process(), %{})
 
       elem =
         {:bpmn_event_boundary,
@@ -181,7 +183,7 @@ defmodule Bpmn.Event.BoundaryTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:error, msg} = Bpmn.Event.Boundary.token_in(elem, context)
+      assert {:error, msg} = Boundary.token_in(elem, context)
       assert msg =~ "unsupported event definition"
     end
   end

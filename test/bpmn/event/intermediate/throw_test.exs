@@ -1,6 +1,8 @@
 defmodule Bpmn.Event.Intermediate.ThrowTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Event.Bus, Event.Intermediate.Throw}
+
   setup do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
 
@@ -15,7 +17,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
        }}
 
     process = %{"flow_out" => flow_out, "end" => end_event}
-    {:ok, context} = Bpmn.Context.start_link(process, %{})
+    {:ok, context} = Context.start_link(process, %{})
     %{context: context}
   end
 
@@ -31,7 +33,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, ^context} = Bpmn.Event.Intermediate.Throw.token_in(elem, context)
+      assert {:ok, ^context} = Throw.token_in(elem, context)
     end
   end
 
@@ -40,7 +42,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
       msg_name = "msg_throw_#{:erlang.unique_integer()}"
 
       # Subscribe to receive the message
-      Bpmn.Event.Bus.subscribe(:message, msg_name, %{node_id: "receiver"})
+      Bus.subscribe(:message, msg_name, %{node_id: "receiver"})
 
       elem =
         {:bpmn_event_intermediate_throw,
@@ -52,7 +54,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, ^context} = Bpmn.Event.Intermediate.Throw.token_in(elem, context)
+      assert {:ok, ^context} = Throw.token_in(elem, context)
       assert_receive {:bpmn_event, :message, ^msg_name, _, _}
     end
   end
@@ -61,7 +63,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
     test "publishes signal to event bus and releases token", %{context: context} do
       sig_name = "sig_throw_#{:erlang.unique_integer()}"
 
-      Bpmn.Event.Bus.subscribe(:signal, sig_name, %{node_id: "receiver"})
+      Bus.subscribe(:signal, sig_name, %{node_id: "receiver"})
 
       elem =
         {:bpmn_event_intermediate_throw,
@@ -73,7 +75,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, ^context} = Bpmn.Event.Intermediate.Throw.token_in(elem, context)
+      assert {:ok, ^context} = Throw.token_in(elem, context)
       assert_receive {:bpmn_event, :signal, ^sig_name, _, _}
     end
   end
@@ -82,7 +84,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
     test "publishes escalation to event bus and releases token", %{context: context} do
       esc_code = "esc_throw_#{:erlang.unique_integer()}"
 
-      Bpmn.Event.Bus.subscribe(:escalation, esc_code, %{node_id: "receiver"})
+      Bus.subscribe(:escalation, esc_code, %{node_id: "receiver"})
 
       elem =
         {:bpmn_event_intermediate_throw,
@@ -95,7 +97,7 @@ defmodule Bpmn.Event.Intermediate.ThrowTest do
              {:bpmn_event_definition_escalation, %{escalationRef: esc_code}}
          }}
 
-      assert {:ok, ^context} = Bpmn.Event.Intermediate.Throw.token_in(elem, context)
+      assert {:ok, ^context} = Throw.token_in(elem, context)
       assert_receive {:bpmn_event, :escalation, ^esc_code, _, _}
     end
   end

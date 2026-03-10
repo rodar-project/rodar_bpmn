@@ -1,6 +1,8 @@
 defmodule Bpmn.Activity.SubprocessTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Activity.Subprocess, Context, Registry}
+
   describe "call activity" do
     test "executes external process from registry and merges data back" do
       # Child process that sets data
@@ -21,7 +23,7 @@ defmodule Bpmn.Activity.SubprocessTest do
       child_elements = %{"cs" => child_start, "ce" => child_end, "cf1" => cf1}
 
       process_id = "call_test_#{:erlang.unique_integer()}"
-      Bpmn.Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
+      Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
 
       # Parent process
       outer_end = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
@@ -37,29 +39,29 @@ defmodule Bpmn.Activity.SubprocessTest do
          }}
 
       process = %{"flow_out" => flow_out, "end" => outer_end}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess,
          %{id: "call1", calledElement: process_id, outgoing: ["flow_out"]}}
 
-      assert {:ok, ^context} = Bpmn.Activity.Subprocess.token_in(elem, context)
+      assert {:ok, ^context} = Subprocess.token_in(elem, context)
 
-      meta = Bpmn.Context.get_meta(context, "call1")
+      meta = Context.get_meta(context, "call1")
       assert meta.completed == true
       assert meta.type == :call_activity
 
-      Bpmn.Registry.unregister(process_id)
+      Registry.unregister(process_id)
     end
 
     test "returns error when process not found in registry" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_activity_subprocess,
          %{id: "call1", calledElement: "nonexistent", outgoing: ["flow_out"]}}
 
-      assert {:error, msg} = Bpmn.Activity.Subprocess.token_in(elem, context)
+      assert {:error, msg} = Subprocess.token_in(elem, context)
       assert msg =~ "not found in registry"
     end
 
@@ -69,18 +71,18 @@ defmodule Bpmn.Activity.SubprocessTest do
       }
 
       process_id = "no_start_#{:erlang.unique_integer()}"
-      Bpmn.Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
+      Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
 
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_activity_subprocess,
          %{id: "call1", calledElement: process_id, outgoing: ["flow_out"]}}
 
-      assert {:error, msg} = Bpmn.Activity.Subprocess.token_in(elem, context)
+      assert {:error, msg} = Subprocess.token_in(elem, context)
       assert msg =~ "no start event"
 
-      Bpmn.Registry.unregister(process_id)
+      Registry.unregister(process_id)
     end
 
     test "propagates error from child process" do
@@ -107,17 +109,17 @@ defmodule Bpmn.Activity.SubprocessTest do
 
       child_elements = %{"cs" => child_start, "ce" => child_err, "cf1" => cf1}
       process_id = "err_child_#{:erlang.unique_integer()}"
-      Bpmn.Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
+      Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
 
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_activity_subprocess,
          %{id: "call1", calledElement: process_id, outgoing: ["flow_out"]}}
 
-      assert {:error, "child_error"} = Bpmn.Activity.Subprocess.token_in(elem, context)
+      assert {:error, "child_error"} = Subprocess.token_in(elem, context)
 
-      Bpmn.Registry.unregister(process_id)
+      Registry.unregister(process_id)
     end
   end
 
@@ -138,7 +140,7 @@ defmodule Bpmn.Activity.SubprocessTest do
 
       child_elements = %{"cs" => child_start, "ce" => child_end, "cf1" => cf1}
       process_id = "dispatch_call_#{:erlang.unique_integer()}"
-      Bpmn.Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
+      Registry.register(process_id, {:bpmn_process, %{id: process_id}, child_elements})
 
       outer_end = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
 
@@ -153,7 +155,7 @@ defmodule Bpmn.Activity.SubprocessTest do
          }}
 
       process = %{"flow_out" => flow_out, "end" => outer_end}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess,
@@ -161,7 +163,7 @@ defmodule Bpmn.Activity.SubprocessTest do
 
       assert {:ok, ^context} = Bpmn.execute(elem, context)
 
-      Bpmn.Registry.unregister(process_id)
+      Registry.unregister(process_id)
     end
   end
 end

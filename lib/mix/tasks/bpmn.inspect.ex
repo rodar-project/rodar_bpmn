@@ -12,11 +12,13 @@ defmodule Mix.Tasks.Bpmn.Inspect do
 
   use Mix.Task
 
+  alias Bpmn.Engine.Diagram
+
   @shortdoc "Print the parsed structure of a BPMN file"
 
   @impl true
   def run([file_path]) do
-    diagram = file_path |> File.read!() |> Bpmn.Engine.Diagram.load()
+    diagram = file_path |> File.read!() |> Diagram.load()
 
     Mix.shell().info("BPMN Diagram: #{diagram.id}")
     Mix.shell().info("")

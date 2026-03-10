@@ -11,13 +11,16 @@ defmodule Bpmn.Activity.Task.Send do
       iex> end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
       iex> flow_out = {:bpmn_sequence_flow, %{id: "flow_out", sourceRef: "task_1", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
-      iex> {:ok, context} = Bpmn.Context.start_link(process, %{})
+      iex> {:ok, context} = Context.start_link(process, %{})
       iex> elem = {:bpmn_activity_task_send, %{id: "task_1", name: "Send Invoice", outgoing: ["flow_out"]}}
       iex> {:ok, ^context} = Bpmn.Activity.Task.Send.token_in(elem, context)
       iex> true
       true
 
   """
+
+  alias Bpmn.Context
+  alias Bpmn.Event.Bus
 
   @doc """
   Receive the token for the element. Stores message metadata and releases token.
@@ -28,7 +31,7 @@ defmodule Bpmn.Activity.Task.Send do
         {:bpmn_activity_task_send, %{id: id, outgoing: outgoing} = attrs},
         context
       ) do
-    Bpmn.Context.put_meta(context, id, %{
+    Context.put_meta(context, id, %{
       active: false,
       completed: true,
       type: :send_task,
@@ -41,10 +44,10 @@ defmodule Bpmn.Activity.Task.Send do
         :ok
 
       message_ref ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         payload = %{source: id, data: data}
         payload = put_correlation(payload, attrs, context)
-        Bpmn.Event.Bus.publish(:message, message_ref, payload)
+        Bus.publish(:message, message_ref, payload)
     end
 
     Bpmn.release_token(outgoing, context)
@@ -56,7 +59,7 @@ defmodule Bpmn.Activity.Task.Send do
         payload
 
       key ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         Map.put(payload, :correlation, %{key: key, value: Map.get(data, key)})
     end
   end

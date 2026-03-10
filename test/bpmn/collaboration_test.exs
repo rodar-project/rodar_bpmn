@@ -1,7 +1,7 @@
 defmodule Bpmn.CollaborationTest do
   use ExUnit.Case, async: false
 
-  alias Bpmn.{Registry, Collaboration}
+  alias Bpmn.{Collaboration, Registry}
 
   setup do
     for id <- Registry.list() do

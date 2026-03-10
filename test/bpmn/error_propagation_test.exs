@@ -1,6 +1,8 @@
 defmodule Bpmn.ErrorPropagationTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Activity.Subprocess.Embedded, Context}
+
   describe "subprocess with attached error boundary event" do
     test "routes to boundary event outgoing flows on subprocess error" do
       # Nested subprocess that will fail (no start event → error)
@@ -55,7 +57,7 @@ defmodule Bpmn.ErrorPropagationTest do
         "normal_flow" => normal_flow
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
@@ -63,10 +65,10 @@ defmodule Bpmn.ErrorPropagationTest do
 
       # Should route through boundary event's outgoing flows instead of returning error
       assert {:ok, ^context} =
-               Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+               Embedded.token_in(elem, context)
 
       # Subprocess should be marked as errored
-      meta = Bpmn.Context.get_meta(context, "sub")
+      meta = Context.get_meta(context, "sub")
       assert meta.error == true
       assert meta.completed == false
     end
@@ -94,14 +96,14 @@ defmodule Bpmn.ErrorPropagationTest do
         "normal_flow" => normal_flow
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["normal_flow"], elements: nested}}
 
       # No boundary event → error propagates upward
-      assert {:error, _} = Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+      assert {:error, _} = Embedded.token_in(elem, context)
     end
 
     test "ignores non-error boundary events" do
@@ -127,14 +129,14 @@ defmodule Bpmn.ErrorPropagationTest do
         "boundary_1" => boundary
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["normal_flow"], elements: nested}}
 
       # Timer boundary should not catch errors
-      assert {:error, _} = Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+      assert {:error, _} = Embedded.token_in(elem, context)
     end
   end
 end

@@ -12,12 +12,15 @@ defmodule Bpmn.Activity.Task.Receive do
   ## Examples
 
       iex> elem = {:bpmn_activity_task_receive, %{id: "task_1", name: "Wait for Payment", outgoing: ["flow_out"]}}
-      iex> {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      iex> {:ok, context} = Context.start_link(%{}, %{})
       iex> {:manual, task_data} = Bpmn.Activity.Task.Receive.token_in(elem, context)
       iex> task_data.id
       "task_1"
 
   """
+
+  alias Bpmn.Context
+  alias Bpmn.Event.Bus
 
   @doc """
   Receive the token for the element. Pauses execution and returns task data.
@@ -35,7 +38,7 @@ defmodule Bpmn.Activity.Task.Receive do
       context: context
     }
 
-    Bpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :receive_task})
+    Context.put_meta(context, id, %{active: true, completed: false, type: :receive_task})
 
     # Subscribe to event bus if messageRef is present
     case Map.get(attrs, :messageRef) do
@@ -45,7 +48,7 @@ defmodule Bpmn.Activity.Task.Receive do
       message_ref ->
         metadata = %{context: context, node_id: id, outgoing: outgoing}
         metadata = put_correlation(metadata, attrs, context)
-        Bpmn.Event.Bus.subscribe(:message, message_ref, metadata)
+        Bus.subscribe(:message, message_ref, metadata)
     end
 
     {:manual, task_data}
@@ -61,10 +64,10 @@ defmodule Bpmn.Activity.Task.Receive do
   def resume({:bpmn_activity_task_receive, %{id: id, outgoing: outgoing}}, context, input)
       when is_map(input) do
     Enum.each(input, fn {key, value} ->
-      Bpmn.Context.put_data(context, key, value)
+      Context.put_data(context, key, value)
     end)
 
-    Bpmn.Context.put_meta(context, id, %{active: false, completed: true, type: :receive_task})
+    Context.put_meta(context, id, %{active: false, completed: true, type: :receive_task})
 
     Bpmn.release_token(outgoing, context)
   end
@@ -75,7 +78,7 @@ defmodule Bpmn.Activity.Task.Receive do
         metadata
 
       key ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         Map.put(metadata, :correlation, %{key: key, value: Map.get(data, key)})
     end
   end

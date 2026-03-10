@@ -51,6 +51,33 @@ defmodule Bpmn do
 
   require Logger
 
+  alias Bpmn.Activity.Subprocess
+  alias Bpmn.Activity.Subprocess.Embedded, as: SubprocessEmbedded
+  alias Bpmn.Activity.Task.Manual
+  alias Bpmn.Activity.Task.Receive, as: TaskReceive
+  alias Bpmn.Activity.Task.Script
+  alias Bpmn.Activity.Task.Send, as: TaskSend
+  alias Bpmn.Activity.Task.Service
+  alias Bpmn.Activity.Task.User
+  alias Bpmn.Compensation
+  alias Bpmn.Context
+  alias Bpmn.Event.Boundary
+  alias Bpmn.Event.End
+  alias Bpmn.Event.Intermediate
+  alias Bpmn.Event.Intermediate.Catch, as: IntermediateCatch
+  alias Bpmn.Event.Intermediate.Throw, as: IntermediateThrow
+  alias Bpmn.Event.Start
+  alias Bpmn.Gateway.Complex
+  alias Bpmn.Gateway.Exclusive
+  alias Bpmn.Gateway.Exclusive.Event, as: ExclusiveEvent
+  alias Bpmn.Gateway.Inclusive
+  alias Bpmn.Gateway.Parallel
+  alias Bpmn.Hooks
+  alias Bpmn.SequenceFlow
+  alias Bpmn.TaskRegistry
+  alias Bpmn.Telemetry
+  alias Bpmn.Token
+
   @typedoc "A BPMN element represented as a tagged tuple with a map of attributes"
   @type element :: {atom(), map()}
 
@@ -93,7 +120,7 @@ defmodule Bpmn do
   end
 
   def release_token(target, context) do
-    process = Bpmn.Context.get(context, :process)
+    process = Context.get(context, :process)
     next = next(target, process)
 
     case next do
@@ -109,17 +136,17 @@ defmodule Bpmn do
   for each branch.
   """
   @spec release_token(String.t() | [String.t()], context(), Bpmn.Token.t()) :: result()
-  def release_token(targets, context, %Bpmn.Token{} = token) when is_list(targets) do
+  def release_token(targets, context, %Token{} = token) when is_list(targets) do
     targets
     |> Task.async_stream(fn target ->
-      child_token = Bpmn.Token.fork(token)
+      child_token = Token.fork(token)
       release_token(target, context, child_token)
     end)
     |> Enum.reduce({:ok, context}, &reduce_result/2)
   end
 
-  def release_token(target, context, %Bpmn.Token{} = token) do
-    process = Bpmn.Context.get(context, :process)
+  def release_token(target, context, %Token{} = token) do
+    process = Context.get(context, :process)
     next = next(target, process)
 
     case next do
@@ -133,7 +160,7 @@ defmodule Bpmn do
   """
   @spec execute(element(), context()) :: result()
   def execute(elem, context) do
-    token = Bpmn.Token.new()
+    token = Token.new()
     execute(elem, context, token)
   end
 
@@ -143,12 +170,12 @@ defmodule Bpmn do
   Updates the token's `current_node` before dispatching to the handler,
   stores the token on the context, and records execution history.
   """
-  @spec execute(element(), context(), Bpmn.Token.t()) :: result()
-  def execute({type, %{id: id} = _attrs} = elem, context, %Bpmn.Token{} = token) do
+  @spec execute(element(), context(), Token.t()) :: result()
+  def execute({type, %{id: id} = _attrs} = elem, context, %Token{} = token) do
     token = %{token | current_node: id}
-    Bpmn.Context.put_meta(context, :current_token, token)
+    Context.put_meta(context, :current_token, token)
 
-    Bpmn.Context.record_visit(context, %{
+    Context.record_visit(context, %{
       node_id: id,
       token_id: token.id,
       node_type: type,
@@ -158,13 +185,13 @@ defmodule Bpmn do
     Logger.metadata(bpmn_node_id: id, bpmn_node_type: type, bpmn_token_id: token.id)
     span_metadata = %{node_id: id, node_type: type, token_id: token.id}
 
-    Bpmn.Hooks.notify(context, :before_node, %{node_id: id, node_type: type, token: token})
+    Hooks.notify(context, :before_node, %{node_id: id, node_type: type, token: token})
 
     if activity_type?(type), do: pre_register_compensation(context, id)
 
-    result = Bpmn.Telemetry.node_span(span_metadata, fn -> dispatch(elem, context) end)
+    result = Telemetry.node_span(span_metadata, fn -> dispatch(elem, context) end)
 
-    Bpmn.Hooks.notify(context, :after_node, %{
+    Hooks.notify(context, :after_node, %{
       node_id: id,
       node_type: type,
       token: token,
@@ -173,88 +200,88 @@ defmodule Bpmn do
 
     result_type = classify_result(result, context, id)
 
-    Bpmn.Context.record_completion(context, id, token.id, result_type)
+    Context.record_completion(context, id, token.id, result_type)
 
     if result_type != :ok and activity_type?(type) do
-      Bpmn.Compensation.remove_handlers(context, id)
+      Compensation.remove_handlers(context, id)
     end
 
     result
   end
 
   # Elements without :id (e.g., bare sequence flows in some paths) skip history recording
-  def execute(elem, context, %Bpmn.Token{} = token) do
-    Bpmn.Context.put_meta(context, :current_token, token)
+  def execute(elem, context, %Token{} = token) do
+    Context.put_meta(context, :current_token, token)
     dispatch(elem, context)
   end
 
   defp dispatch({:bpmn_event_start, _} = elem, context),
-    do: Bpmn.Event.Start.token_in(elem, context)
+    do: Start.token_in(elem, context)
 
   defp dispatch({:bpmn_event_end, _} = elem, context),
-    do: Bpmn.Event.End.token_in(elem, context)
+    do: End.token_in(elem, context)
 
   defp dispatch({:bpmn_event_intermediate, _} = elem, context),
-    do: Bpmn.Event.Intermediate.token_in(elem, context)
+    do: Intermediate.token_in(elem, context)
 
   defp dispatch({:bpmn_event_intermediate_throw, _} = elem, context),
-    do: Bpmn.Event.Intermediate.Throw.token_in(elem, context)
+    do: IntermediateThrow.token_in(elem, context)
 
   defp dispatch({:bpmn_event_intermediate_catch, _} = elem, context),
-    do: Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+    do: IntermediateCatch.token_in(elem, context)
 
   defp dispatch({:bpmn_event_boundary, _} = elem, context),
-    do: Bpmn.Event.Boundary.token_in(elem, context)
+    do: Boundary.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_user, _} = elem, context),
-    do: Bpmn.Activity.Task.User.token_in(elem, context)
+    do: User.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_script, _} = elem, context),
-    do: Bpmn.Activity.Task.Script.token_in(elem, context)
+    do: Script.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_service, _} = elem, context),
-    do: Bpmn.Activity.Task.Service.token_in(elem, context)
+    do: Service.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_manual, _} = elem, context),
-    do: Bpmn.Activity.Task.Manual.token_in(elem, context)
+    do: Manual.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_send, _} = elem, context),
-    do: Bpmn.Activity.Task.Send.token_in(elem, context)
+    do: TaskSend.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_task_receive, _} = elem, context),
-    do: Bpmn.Activity.Task.Receive.token_in(elem, context)
+    do: TaskReceive.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_subprocess, _} = elem, context),
-    do: Bpmn.Activity.Subprocess.token_in(elem, context)
+    do: Subprocess.token_in(elem, context)
 
   defp dispatch({:bpmn_activity_subprocess_embeded, _} = elem, context),
-    do: Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+    do: SubprocessEmbedded.token_in(elem, context)
 
   defp dispatch({:bpmn_gateway_exclusive, _} = elem, context),
-    do: Bpmn.Gateway.Exclusive.token_in(elem, context)
+    do: Exclusive.token_in(elem, context)
 
   defp dispatch({:bpmn_gateway_exclusive_event, _} = elem, context),
-    do: Bpmn.Gateway.Exclusive.Event.token_in(elem, context)
+    do: ExclusiveEvent.token_in(elem, context)
 
   defp dispatch({:bpmn_gateway_parallel, _} = elem, context),
-    do: Bpmn.Gateway.Parallel.token_in(elem, context)
+    do: Parallel.token_in(elem, context)
 
   defp dispatch({:bpmn_gateway_inclusive, _} = elem, context),
-    do: Bpmn.Gateway.Inclusive.token_in(elem, context)
+    do: Inclusive.token_in(elem, context)
 
   defp dispatch({:bpmn_gateway_complex, _} = elem, context),
-    do: Bpmn.Gateway.Complex.token_in(elem, context)
+    do: Complex.token_in(elem, context)
 
   defp dispatch({:bpmn_sequence_flow, _} = elem, context),
-    do: Bpmn.SequenceFlow.token_in(elem, context)
+    do: SequenceFlow.token_in(elem, context)
 
   defp dispatch({type, %{id: id}} = elem, context) do
-    case Bpmn.TaskRegistry.lookup(id) do
+    case TaskRegistry.lookup(id) do
       {:ok, handler} ->
         handler.token_in(elem, context)
 
       :error ->
-        case Bpmn.TaskRegistry.lookup(type) do
+        case TaskRegistry.lookup(type) do
           {:ok, handler} -> handler.token_in(elem, context)
           :error -> nil
         end
@@ -280,7 +307,7 @@ defmodule Bpmn do
   defp classify_result({:not_implemented}, _context, _id), do: :not_implemented
 
   defp classify_result({:error, reason}, context, id) do
-    Bpmn.Hooks.notify(context, :on_error, %{node_id: id, error: reason})
+    Hooks.notify(context, :on_error, %{node_id: id, error: reason})
     :error
   end
 
@@ -289,13 +316,13 @@ defmodule Bpmn do
   defp activity_type?(type), do: type in @activity_types
 
   defp pre_register_compensation(context, activity_id) do
-    process = Bpmn.Context.get(context, :process)
+    process = Context.get(context, :process)
 
     process
     |> find_compensation_boundaries(activity_id)
     |> Enum.each(fn {outgoing, _attrs} ->
       handler_id = find_handler_target(outgoing, process)
-      if handler_id, do: Bpmn.Compensation.register_handler(context, activity_id, handler_id)
+      if handler_id, do: Compensation.register_handler(context, activity_id, handler_id)
     end)
   end
 

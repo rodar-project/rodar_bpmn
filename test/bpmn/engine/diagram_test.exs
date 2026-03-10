@@ -1,5 +1,8 @@
 defmodule Bpmn.Engine.DiagramTest do
   use ExUnit.Case, async: true
+
+  alias Bpmn.Engine.Diagram
+
   doctest Bpmn.Engine.Diagram
 
   describe "parser support for task types" do
@@ -43,7 +46,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       assert {:bpmn_activity_task_manual, attrs} = elements["ManualTask_1"]
       assert attrs.incoming == ["Flow_1"]
@@ -67,7 +70,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       assert {:bpmn_event_boundary, attrs} = elements["Boundary_1"]
       assert attrs.outgoing == ["Flow_3"]
@@ -90,7 +93,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       assert {:bpmn_activity_subprocess, attrs} = elements["Call_1"]
       assert attrs.calledElement == "SubProcess_1"
@@ -122,7 +125,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      diagram = Bpmn.Engine.Diagram.load(xml)
+      diagram = Diagram.load(xml)
       assert diagram.collaboration != nil
       assert diagram.collaboration.id == "Collab_1"
 
@@ -155,7 +158,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      diagram = Bpmn.Engine.Diagram.load(xml)
+      diagram = Diagram.load(xml)
       assert diagram.collaboration == nil
     end
   end
@@ -177,7 +180,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
       {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
@@ -200,7 +203,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
       {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
@@ -223,7 +226,7 @@ defmodule Bpmn.Engine.DiagramTest do
       </bpmn:definitions>
       """
 
-      %{processes: [process]} = Bpmn.Engine.Diagram.load(xml)
+      %{processes: [process]} = Diagram.load(xml)
       {:bpmn_process, _, elements} = process
       {:bpmn_event_intermediate_catch, attrs} = elements["Catch_1"]
       {:bpmn_event_definition_timer, def_attrs} = attrs.timerEventDefinition
@@ -248,6 +251,6 @@ defmodule Bpmn.Engine.DiagramTest do
   end
 
   defp load_elements do
-    Bpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
+    Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
   end
 end

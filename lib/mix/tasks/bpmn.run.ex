@@ -13,6 +13,11 @@ defmodule Mix.Tasks.Bpmn.Run do
 
   use Mix.Task
 
+  alias Bpmn.Context
+  alias Bpmn.Engine.Diagram
+  alias Bpmn.Process, as: BpmnProcess
+  alias Bpmn.Registry
+
   @shortdoc "Execute a BPMN process from an XML file"
 
   @impl true
@@ -20,7 +25,7 @@ defmodule Mix.Tasks.Bpmn.Run do
     Mix.Task.run("app.start")
 
     init_data = parse_data(rest)
-    diagram = file_path |> File.read!() |> Bpmn.Engine.Diagram.load()
+    diagram = file_path |> File.read!() |> Diagram.load()
 
     case diagram.processes do
       [] ->
@@ -29,9 +34,9 @@ defmodule Mix.Tasks.Bpmn.Run do
       [{:bpmn_process, %{id: process_id} = attrs, _elements} = process | _] ->
         name = Map.get(attrs, :name, process_id)
         Mix.shell().info("Running process: #{name} (#{process_id})")
-        Bpmn.Registry.register(process_id, process)
+        Registry.register(process_id, process)
 
-        case Bpmn.Process.create_and_run(process_id, init_data) do
+        case BpmnProcess.create_and_run(process_id, init_data) do
           {:ok, pid} ->
             print_result(pid)
 
@@ -63,13 +68,13 @@ defmodule Mix.Tasks.Bpmn.Run do
   end
 
   defp print_result(pid) do
-    status = Bpmn.Process.status(pid)
+    status = BpmnProcess.status(pid)
     Mix.shell().info("Status: #{status}")
 
     case status do
       :completed ->
-        context = Bpmn.Process.get_context(pid)
-        data = Bpmn.Context.get(context, :data)
+        context = BpmnProcess.get_context(pid)
+        data = Context.get(context, :data)
         Mix.shell().info("Data: #{inspect(data)}")
 
       :suspended ->

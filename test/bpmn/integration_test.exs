@@ -1,6 +1,17 @@
 defmodule Bpmn.IntegrationTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{
+    Activity.Task.Send,
+    Context,
+    Engine.Diagram,
+    Event.Bus,
+    Event.End,
+    Event.Intermediate.Catch,
+    Event.Intermediate.Throw,
+    Event.Start
+  }
+
   @moduledoc """
   End-to-end integration test that loads a BPMN file through the parser
   and executes it through the engine.
@@ -8,7 +19,7 @@ defmodule Bpmn.IntegrationTest do
 
   describe "user_login.bpmn" do
     setup do
-      diagram = Bpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
+      diagram = Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
       {:ok, diagram: diagram}
     end
 
@@ -53,28 +64,28 @@ defmodule Bpmn.IntegrationTest do
 
       # Create context with the process elements
       {:ok, context} =
-        Bpmn.Context.start_link(elements, %{"username" => "test", "password" => "secret"})
+        Context.start_link(elements, %{"username" => "test", "password" => "secret"})
 
       # Find and execute the start event
       {:bpmn_event_start, _} = start_event = elements["StartEvent_1"]
 
       # The start event should flow through the sequence flow to the script task,
       # which returns {:not_implemented} since it's a stub
-      result = Bpmn.Event.Start.token_in(start_event, context)
+      result = Start.token_in(start_event, context)
       assert {:not_implemented} = result
     end
 
     test "end event completes the process" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
       end_event = {:bpmn_event_end, %{incoming: ["some_flow"]}}
 
-      assert {:ok, ^context} = Bpmn.Event.End.token_in(end_event, context)
+      assert {:ok, ^context} = End.token_in(end_event, context)
     end
 
     test "full dispatch through Bpmn.execute/2", %{diagram: diagram} do
       [{:bpmn_process, _attrs, elements}] = diagram.processes
 
-      {:ok, context} = Bpmn.Context.start_link(elements, %{})
+      {:ok, context} = Context.start_link(elements, %{})
 
       # Execute start event through the main dispatcher
       start_event = elements["StartEvent_1"]
@@ -151,16 +162,16 @@ defmodule Bpmn.IntegrationTest do
         "end" => end_event
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # First, subscribe the catch event
-      {:manual, _} = Bpmn.Event.Intermediate.Catch.token_in(catch_event, context)
+      {:manual, _} = Catch.token_in(catch_event, context)
 
       # Now execute the send task — it should publish and auto-deliver
-      {:ok, ^context} = Bpmn.Activity.Task.Send.token_in(send_task, context)
+      {:ok, ^context} = Send.token_in(send_task, context)
 
       # Verify the catch event subscription was consumed
-      assert Bpmn.Event.Bus.subscriptions(:message, msg_name) == []
+      assert Bus.subscriptions(:message, msg_name) == []
     end
   end
 
@@ -168,8 +179,8 @@ defmodule Bpmn.IntegrationTest do
     test "signal throw broadcasts to multiple catch events" do
       sig_name = "integration_sig_#{:erlang.unique_integer()}"
 
-      {:ok, ctx1} = Bpmn.Context.start_link(%{}, %{})
-      {:ok, ctx2} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, ctx1} = Context.start_link(%{}, %{})
+      {:ok, ctx2} = Context.start_link(%{}, %{})
 
       # Two catch events subscribe to same signal
       catch1 =
@@ -192,11 +203,11 @@ defmodule Bpmn.IntegrationTest do
            timerEventDefinition: nil
          }}
 
-      {:manual, _} = Bpmn.Event.Intermediate.Catch.token_in(catch1, ctx1)
-      {:manual, _} = Bpmn.Event.Intermediate.Catch.token_in(catch2, ctx2)
+      {:manual, _} = Catch.token_in(catch1, ctx1)
+      {:manual, _} = Catch.token_in(catch2, ctx2)
 
       # Verify both subscriptions exist
-      subs = Bpmn.Event.Bus.subscriptions(:signal, sig_name)
+      subs = Bus.subscriptions(:signal, sig_name)
       assert length(subs) == 2
 
       # Throw signal — should broadcast to both
@@ -212,7 +223,7 @@ defmodule Bpmn.IntegrationTest do
            isImmediate: nil
          }}
 
-      {:ok, throw_ctx} = Bpmn.Context.start_link(%{"f_out" => f_out, "end" => end_event}, %{})
+      {:ok, throw_ctx} = Context.start_link(%{"f_out" => f_out, "end" => end_event}, %{})
 
       throw_event =
         {:bpmn_event_intermediate_throw,
@@ -224,7 +235,7 @@ defmodule Bpmn.IntegrationTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, _} = Bpmn.Event.Intermediate.Throw.token_in(throw_event, throw_ctx)
+      assert {:ok, _} = Throw.token_in(throw_event, throw_ctx)
     end
   end
 
@@ -252,14 +263,14 @@ defmodule Bpmn.IntegrationTest do
         "end_1" => end_event
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{"key" => "value"})
+      {:ok, context} = Context.start_link(process, %{"key" => "value"})
 
       # Execute the full flow
       result = Bpmn.execute(start_event, context)
       assert {:ok, ^context} = result
 
       # Verify initial data is preserved
-      assert Bpmn.Context.get(context, :init) == %{"key" => "value"}
+      assert Context.get(context, :init) == %{"key" => "value"}
     end
   end
 end

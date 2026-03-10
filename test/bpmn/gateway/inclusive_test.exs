@@ -1,6 +1,8 @@
 defmodule Bpmn.Gateway.InclusiveTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Gateway.Inclusive}
+
   defp make_flow(id, target, condition \\ nil) do
     {:bpmn_sequence_flow,
      %{
@@ -34,11 +36,11 @@ defmodule Bpmn.Gateway.InclusiveTest do
         "end_b" => end_b
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      assert {:ok, ^context} = Bpmn.Gateway.Inclusive.token_in(gateway, context)
+      {:ok, context} = Context.start_link(process, %{})
+      assert {:ok, ^context} = Inclusive.token_in(gateway, context)
 
       # Both paths should be recorded as activated
-      paths = Bpmn.Context.get_activated_paths(context, "gw")
+      paths = Context.get_activated_paths(context, "gw")
       assert length(paths) == 2
       assert "flow_a" in paths
       assert "flow_b" in paths
@@ -60,10 +62,10 @@ defmodule Bpmn.Gateway.InclusiveTest do
         "end_a" => end_a
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      assert {:ok, ^context} = Bpmn.Gateway.Inclusive.token_in(gateway, context)
+      {:ok, context} = Context.start_link(process, %{})
+      assert {:ok, ^context} = Inclusive.token_in(gateway, context)
 
-      paths = Bpmn.Context.get_activated_paths(context, "gw")
+      paths = Context.get_activated_paths(context, "gw")
       assert paths == ["flow_a"]
     end
 
@@ -88,10 +90,10 @@ defmodule Bpmn.Gateway.InclusiveTest do
         "end_default" => end_default
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      assert {:ok, ^context} = Bpmn.Gateway.Inclusive.token_in(gateway, context)
+      {:ok, context} = Context.start_link(process, %{})
+      assert {:ok, ^context} = Inclusive.token_in(gateway, context)
 
-      paths = Bpmn.Context.get_activated_paths(context, "gw")
+      paths = Context.get_activated_paths(context, "gw")
       assert paths == ["flow_default"]
     end
 
@@ -104,10 +106,10 @@ defmodule Bpmn.Gateway.InclusiveTest do
 
       process = %{"flow_a" => flow_a}
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       assert {:error, "Inclusive gateway: no matching condition and no default flow"} =
-               Bpmn.Gateway.Inclusive.token_in(gateway, context)
+               Inclusive.token_in(gateway, context)
     end
 
     test "unconditional flows (no condition) are treated as matching" do
@@ -119,8 +121,8 @@ defmodule Bpmn.Gateway.InclusiveTest do
 
       process = %{"flow_a" => flow_a, "end_a" => end_a}
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      assert {:ok, ^context} = Bpmn.Gateway.Inclusive.token_in(gateway, context)
+      {:ok, context} = Context.start_link(process, %{})
+      assert {:ok, ^context} = Inclusive.token_in(gateway, context)
     end
   end
 
@@ -143,14 +145,14 @@ defmodule Bpmn.Gateway.InclusiveTest do
          %{id: "gw_join", incoming: ["flow_a", "flow_b"], outgoing: ["flow_out"]}}
 
       process = %{"flow_out" => flow_out, "end" => end_event}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # Record that only flow_a was activated at the fork
-      Bpmn.Context.record_activated_paths(context, "gw_join", ["flow_a"])
+      Context.record_activated_paths(context, "gw_join", ["flow_a"])
 
       # flow_a arrives — should complete since it's the only activated path
       assert {:ok, ^context} =
-               Bpmn.Gateway.Inclusive.token_in(gateway, context, "flow_a")
+               Inclusive.token_in(gateway, context, "flow_a")
     end
 
     test "waits for all incoming when no activation record exists" do
@@ -171,18 +173,18 @@ defmodule Bpmn.Gateway.InclusiveTest do
          %{id: "gw_join", incoming: ["flow_a", "flow_b"], outgoing: ["flow_out"]}}
 
       process = %{"flow_out" => flow_out, "end" => end_event}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # No activation record — falls back to parallel behavior (wait for all)
       assert {:ok, ^context} =
-               Bpmn.Gateway.Inclusive.token_in(gateway, context, "flow_a")
+               Inclusive.token_in(gateway, context, "flow_a")
 
       # First token waits
-      assert Bpmn.Context.token_count(context, "gw_join") == 1
+      assert Context.token_count(context, "gw_join") == 1
 
       # Second token completes the join
       assert {:ok, ^context} =
-               Bpmn.Gateway.Inclusive.token_in(gateway, context, "flow_b")
+               Inclusive.token_in(gateway, context, "flow_b")
     end
 
     test "first token does not trigger outgoing flow when two are expected" do
@@ -192,13 +194,13 @@ defmodule Bpmn.Gateway.InclusiveTest do
 
       # No flow_out in process — if join tried to release, it would error
       process = %{}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # Both paths activated
-      Bpmn.Context.record_activated_paths(context, "gw_join", ["flow_a", "flow_b"])
+      Context.record_activated_paths(context, "gw_join", ["flow_a", "flow_b"])
 
       assert {:ok, ^context} =
-               Bpmn.Gateway.Inclusive.token_in(gateway, context, "flow_a")
+               Inclusive.token_in(gateway, context, "flow_a")
     end
   end
 
@@ -220,9 +222,9 @@ defmodule Bpmn.Gateway.InclusiveTest do
         {:bpmn_gateway_inclusive, %{id: "gw", incoming: ["in"], outgoing: ["flow_out"]}}
 
       process = %{"flow_out" => flow_out, "end" => end_event}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
-      assert {:ok, ^context} = Bpmn.Gateway.Inclusive.token_in(gateway, context)
+      assert {:ok, ^context} = Inclusive.token_in(gateway, context)
     end
   end
 end

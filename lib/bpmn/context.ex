@@ -19,6 +19,9 @@ defmodule Bpmn.Context do
 
   use GenServer
 
+  alias Bpmn.Event.Timer
+  alias Bpmn.Expression.Sandbox
+
   # --- Client API ---
 
   @doc "Start the context process"
@@ -386,7 +389,7 @@ defmodule Bpmn.Context do
         %{state | nodes: nodes}
       else
         timer_ref =
-          Bpmn.Event.Timer.schedule_cycle(duration_ms, context, node_id, outgoing, remaining)
+          Timer.schedule_cycle(duration_ms, context, node_id, outgoing, remaining)
 
         nodes =
           Map.put(state.nodes, node_id, %{
@@ -414,7 +417,7 @@ defmodule Bpmn.Context do
     context = self()
 
     Enum.each(state.conditional_subscriptions, fn {sub_id, %{condition: expr, metadata: meta}} ->
-      case Bpmn.Expression.Sandbox.eval(expr, %{"data" => state.data}) do
+      case Sandbox.eval(expr, %{"data" => state.data}) do
         {:ok, true} ->
           outgoing = Map.get(meta, :outgoing, [])
           send(context, {:condition_met, sub_id, outgoing})

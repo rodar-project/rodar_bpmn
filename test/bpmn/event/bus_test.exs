@@ -1,51 +1,53 @@
 defmodule Bpmn.Event.BusTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.Event.Bus
+
   describe "subscribe/3 and unsubscribe/2" do
     test "subscribes and returns event key" do
-      {:ok, key} = Bpmn.Event.Bus.subscribe(:message, "test_sub_#{:erlang.unique_integer()}")
+      {:ok, key} = Bus.subscribe(:message, "test_sub_#{:erlang.unique_integer()}")
       assert {type, _name} = key
       assert type == :message
     end
 
     test "unsubscribe removes subscription" do
       name = "test_unsub_#{:erlang.unique_integer()}"
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "n1"})
-      assert length(Bpmn.Event.Bus.subscriptions(:message, name)) == 1
+      Bus.subscribe(:message, name, %{node_id: "n1"})
+      assert length(Bus.subscriptions(:message, name)) == 1
 
-      Bpmn.Event.Bus.unsubscribe(:message, name)
-      assert Bpmn.Event.Bus.subscriptions(:message, name) == []
+      Bus.unsubscribe(:message, name)
+      assert Bus.subscriptions(:message, name) == []
     end
   end
 
   describe "publish/3 with :message type" do
     test "delivers to first subscriber and unregisters it" do
       name = "msg_#{:erlang.unique_integer()}"
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "n1"})
+      Bus.subscribe(:message, name, %{node_id: "n1"})
 
-      assert :ok = Bpmn.Event.Bus.publish(:message, name, %{data: "hello"})
+      assert :ok = Bus.publish(:message, name, %{data: "hello"})
       assert_receive {:bpmn_event, :message, ^name, %{data: "hello"}, %{node_id: "n1"}}
 
       # Subscriber should be removed after delivery
-      assert Bpmn.Event.Bus.subscriptions(:message, name) == []
+      assert Bus.subscriptions(:message, name) == []
     end
 
     test "returns error when no subscriber exists" do
       assert {:error, :no_subscriber} =
-               Bpmn.Event.Bus.publish(:message, "no_such_#{:erlang.unique_integer()}", %{})
+               Bus.publish(:message, "no_such_#{:erlang.unique_integer()}", %{})
     end
   end
 
   describe "publish/3 with :signal type" do
     test "broadcasts to all subscribers" do
       name = "sig_#{:erlang.unique_integer()}"
-      Bpmn.Event.Bus.subscribe(:signal, name, %{node_id: "n1"})
+      Bus.subscribe(:signal, name, %{node_id: "n1"})
 
       # Spawn another subscriber
       parent = self()
 
       spawn(fn ->
-        Bpmn.Event.Bus.subscribe(:signal, name, %{node_id: "n2"})
+        Bus.subscribe(:signal, name, %{node_id: "n2"})
         send(parent, :subscribed)
 
         receive do
@@ -57,22 +59,22 @@ defmodule Bpmn.Event.BusTest do
         :subscribed -> :ok
       end
 
-      assert :ok = Bpmn.Event.Bus.publish(:signal, name, %{data: "broadcast"})
+      assert :ok = Bus.publish(:signal, name, %{data: "broadcast"})
       assert_receive {:bpmn_event, :signal, ^name, %{data: "broadcast"}, %{node_id: "n1"}}
       assert_receive {:child_received, {:bpmn_event, :signal, ^name, _, %{node_id: "n2"}}}
     end
 
     test "returns ok even with no subscribers" do
-      assert :ok = Bpmn.Event.Bus.publish(:signal, "no_such_#{:erlang.unique_integer()}", %{})
+      assert :ok = Bus.publish(:signal, "no_such_#{:erlang.unique_integer()}", %{})
     end
   end
 
   describe "publish/3 with :escalation type" do
     test "broadcasts to all subscribers" do
       name = "esc_#{:erlang.unique_integer()}"
-      Bpmn.Event.Bus.subscribe(:escalation, name, %{node_id: "n1"})
+      Bus.subscribe(:escalation, name, %{node_id: "n1"})
 
-      assert :ok = Bpmn.Event.Bus.publish(:escalation, name, %{code: "E1"})
+      assert :ok = Bus.publish(:escalation, name, %{code: "E1"})
       assert_receive {:bpmn_event, :escalation, ^name, %{code: "E1"}, %{node_id: "n1"}}
     end
   end
@@ -82,19 +84,19 @@ defmodule Bpmn.Event.BusTest do
       name = "corr_msg_#{:erlang.unique_integer()}"
 
       # Subscribe both from current process with different correlation values
-      Bpmn.Event.Bus.subscribe(:message, name, %{
+      Bus.subscribe(:message, name, %{
         node_id: "n1",
         correlation: %{key: "order_id", value: "ORD-1"}
       })
 
-      Bpmn.Event.Bus.subscribe(:message, name, %{
+      Bus.subscribe(:message, name, %{
         node_id: "n2",
         correlation: %{key: "order_id", value: "ORD-2"}
       })
 
       # Publish with ORD-2 correlation — should reach subscriber 2 only
       assert :ok =
-               Bpmn.Event.Bus.publish(:message, name, %{
+               Bus.publish(:message, name, %{
                  data: "payment",
                  correlation: %{key: "order_id", value: "ORD-2"}
                })
@@ -102,7 +104,7 @@ defmodule Bpmn.Event.BusTest do
       assert_receive {:bpmn_event, :message, ^name, %{data: "payment"}, %{node_id: "n2"}}
 
       # Subscriber 1 should still be registered
-      subs = Bpmn.Event.Bus.subscriptions(:message, name)
+      subs = Bus.subscriptions(:message, name)
       assert length(subs) == 1
       assert hd(subs).node_id == "n1"
     end
@@ -111,11 +113,11 @@ defmodule Bpmn.Event.BusTest do
       name = "corr_fallback_#{:erlang.unique_integer()}"
 
       # Uncorrelated subscriber (current process)
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "uncorr"})
+      Bus.subscribe(:message, name, %{node_id: "uncorr"})
 
       # Publish with correlation that doesn't match anyone
       assert :ok =
-               Bpmn.Event.Bus.publish(:message, name, %{
+               Bus.publish(:message, name, %{
                  data: "hello",
                  correlation: %{key: "order_id", value: "ORD-999"}
                })
@@ -129,7 +131,7 @@ defmodule Bpmn.Event.BusTest do
 
       # Only a correlated subscriber with different value
       spawn(fn ->
-        Bpmn.Event.Bus.subscribe(:message, name, %{
+        Bus.subscribe(:message, name, %{
           node_id: "n1",
           correlation: %{key: "order_id", value: "ORD-1"}
         })
@@ -141,7 +143,7 @@ defmodule Bpmn.Event.BusTest do
       receive do: (:ready -> :ok)
 
       assert {:error, :no_subscriber} =
-               Bpmn.Event.Bus.publish(:message, name, %{
+               Bus.publish(:message, name, %{
                  correlation: %{key: "order_id", value: "ORD-999"}
                })
     end
@@ -149,9 +151,9 @@ defmodule Bpmn.Event.BusTest do
     test "backward compat: publish without correlation picks first subscriber" do
       name = "corr_compat_#{:erlang.unique_integer()}"
 
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "first"})
+      Bus.subscribe(:message, name, %{node_id: "first"})
 
-      assert :ok = Bpmn.Event.Bus.publish(:message, name, %{data: "no_corr"})
+      assert :ok = Bus.publish(:message, name, %{data: "no_corr"})
       assert_receive {:bpmn_event, :message, ^name, %{data: "no_corr"}, %{node_id: "first"}}
     end
 
@@ -159,24 +161,24 @@ defmodule Bpmn.Event.BusTest do
       name = "corr_mixed_#{:erlang.unique_integer()}"
 
       # Correlated subscriber
-      Bpmn.Event.Bus.subscribe(:message, name, %{
+      Bus.subscribe(:message, name, %{
         node_id: "corr",
         correlation: %{key: "id", value: "A"}
       })
 
       # Uncorrelated subscriber
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "uncorr"})
+      Bus.subscribe(:message, name, %{node_id: "uncorr"})
 
       # Publish with matching correlation — should go to correlated subscriber
       assert :ok =
-               Bpmn.Event.Bus.publish(:message, name, %{
+               Bus.publish(:message, name, %{
                  correlation: %{key: "id", value: "A"}
                })
 
       assert_receive {:bpmn_event, :message, ^name, _, %{node_id: "corr"}}
 
       # Uncorrelated should still be there
-      subs = Bpmn.Event.Bus.subscriptions(:message, name)
+      subs = Bus.subscriptions(:message, name)
       assert length(subs) == 1
       assert hd(subs).node_id == "uncorr"
     end
@@ -185,15 +187,15 @@ defmodule Bpmn.Event.BusTest do
   describe "subscriptions/2" do
     test "lists current subscribers" do
       name = "list_#{:erlang.unique_integer()}"
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "n1"})
+      Bus.subscribe(:message, name, %{node_id: "n1"})
 
-      subs = Bpmn.Event.Bus.subscriptions(:message, name)
+      subs = Bus.subscriptions(:message, name)
       assert length(subs) == 1
       assert hd(subs).node_id == "n1"
     end
 
     test "returns empty list for no subscribers" do
-      assert Bpmn.Event.Bus.subscriptions(:message, "empty_#{:erlang.unique_integer()}") == []
+      assert Bus.subscriptions(:message, "empty_#{:erlang.unique_integer()}") == []
     end
   end
 end

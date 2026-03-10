@@ -17,6 +17,11 @@ defmodule Bpmn.Collaboration do
 
   require Logger
 
+  alias Bpmn.Context
+  alias Bpmn.Event.Bus
+  alias Bpmn.Process, as: BpmnProcess
+  alias Bpmn.Registry
+
   @doc """
   Start a collaboration from a parsed diagram map.
 
@@ -56,7 +61,7 @@ defmodule Bpmn.Collaboration do
   @spec stop(map()) :: :ok
   def stop(%{instances: instances}) do
     Enum.each(instances, fn {_process_id, pid} ->
-      if Process.alive?(pid), do: Bpmn.Process.terminate(pid)
+      if Process.alive?(pid), do: BpmnProcess.terminate(pid)
     end)
 
     :ok
@@ -95,11 +100,11 @@ defmodule Bpmn.Collaboration do
 
   defp start_participant(process_id, processes_by_id, init_data, acc) do
     {process_def, _elements} = Map.fetch!(processes_by_id, process_id)
-    Bpmn.Registry.register(process_id, process_def)
+    Registry.register(process_id, process_def)
 
     case DynamicSupervisor.start_child(
            Bpmn.ProcessSupervisor,
-           {Bpmn.Process, {process_id, init_data}}
+           {BpmnProcess, {process_id, init_data}}
          ) do
       {:ok, pid} ->
         {:cont, {:ok, Map.put(acc, process_id, pid)}}
@@ -123,12 +128,12 @@ defmodule Bpmn.Collaboration do
     with {process_id, {_type, attrs}} when process_id != nil <-
            find_element_in_processes(target_ref, processes_by_id),
          target_pid when target_pid != nil <- Map.get(instances, process_id) do
-      context = Bpmn.Process.get_context(target_pid)
+      context = BpmnProcess.get_context(target_pid)
       message_ref = extract_message_ref(attrs, target_ref)
       outgoing = Map.get(attrs, :outgoing, [])
       metadata = %{context: context, node_id: target_ref, outgoing: outgoing}
       metadata = put_correlation(metadata, flow, context)
-      Bpmn.Event.Bus.subscribe(:message, message_ref, metadata)
+      Bus.subscribe(:message, message_ref, metadata)
     end
   end
 
@@ -138,7 +143,7 @@ defmodule Bpmn.Collaboration do
         metadata
 
       key ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         Map.put(metadata, :correlation, %{key: key, value: Map.get(data, key)})
     end
   end
@@ -164,7 +169,7 @@ defmodule Bpmn.Collaboration do
 
   defp activate_all(instances) do
     Enum.each(instances, fn {_process_id, pid} ->
-      Bpmn.Process.activate(pid)
+      BpmnProcess.activate(pid)
     end)
   end
 end

@@ -19,6 +19,10 @@ defmodule Bpmn.Event.Intermediate.Throw do
 
   """
 
+  alias Bpmn.Compensation
+  alias Bpmn.Context
+  alias Bpmn.Event.Bus
+
   @doc """
   Receive the token for the element and handle the throw event.
   """
@@ -61,17 +65,17 @@ defmodule Bpmn.Event.Intermediate.Throw do
   defp publish_message(id, attrs, context) do
     {:bpmn_event_definition_message, def_attrs} = attrs.messageEventDefinition
     message_name = Map.get(def_attrs, :messageRef, id)
-    data = Bpmn.Context.get(context, :data)
+    data = Context.get(context, :data)
     payload = %{source: id, data: data}
     payload = put_correlation(payload, def_attrs, context)
-    Bpmn.Event.Bus.publish(:message, message_name, payload)
+    Bus.publish(:message, message_name, payload)
   end
 
   defp publish_signal(id, attrs, context) do
     {:bpmn_event_definition_signal, def_attrs} = attrs.signalEventDefinition
     signal_name = Map.get(def_attrs, :signalRef, id)
-    data = Bpmn.Context.get(context, :data)
-    Bpmn.Event.Bus.publish(:signal, signal_name, %{source: id, data: data})
+    data = Context.get(context, :data)
+    Bus.publish(:signal, signal_name, %{source: id, data: data})
   end
 
   defp has_compensate?(attrs) do
@@ -85,9 +89,9 @@ defmodule Bpmn.Event.Intermediate.Throw do
 
     run_compensation = fn ->
       if activity_ref do
-        Bpmn.Compensation.compensate_activity(context, to_string(activity_ref))
+        Compensation.compensate_activity(context, to_string(activity_ref))
       else
-        Bpmn.Compensation.compensate_all(context)
+        Compensation.compensate_all(context)
       end
     end
 
@@ -106,7 +110,7 @@ defmodule Bpmn.Event.Intermediate.Throw do
         payload
 
       key ->
-        data = Bpmn.Context.get(context, :data)
+        data = Context.get(context, :data)
         Map.put(payload, :correlation, %{key: key, value: Map.get(data, key)})
     end
   end
@@ -114,7 +118,7 @@ defmodule Bpmn.Event.Intermediate.Throw do
   defp publish_escalation(id, attrs, context) do
     {:bpmn_event_definition_escalation, def_attrs} = attrs.escalationEventDefinition
     escalation_code = Map.get(def_attrs, :escalationRef, id)
-    data = Bpmn.Context.get(context, :data)
-    Bpmn.Event.Bus.publish(:escalation, escalation_code, %{source: id, data: data})
+    data = Context.get(context, :data)
+    Bus.publish(:escalation, escalation_code, %{source: id, data: data})
   end
 end

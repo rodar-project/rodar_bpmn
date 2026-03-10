@@ -1,13 +1,15 @@
 defmodule Mix.Tasks.Bpmn.RunTest do
   use ExUnit.Case, async: false
 
+  alias Mix.Tasks.Bpmn.Run
+
   import ExUnit.CaptureIO
 
   describe "run/1" do
     test "executes a simple BPMN process and prints result" do
       output =
         capture_io(fn ->
-          Mix.Tasks.Bpmn.Run.run(["test/fixtures/simple.bpmn"])
+          Run.run(["test/fixtures/simple.bpmn"])
         end)
 
       assert output =~ "Running process:"
@@ -17,7 +19,7 @@ defmodule Mix.Tasks.Bpmn.RunTest do
     test "accepts --data flag with JSON" do
       output =
         capture_io(fn ->
-          Mix.Tasks.Bpmn.Run.run([
+          Run.run([
             "test/fixtures/simple.bpmn",
             "--data",
             ~S|{"username": "alice"}|
@@ -30,7 +32,7 @@ defmodule Mix.Tasks.Bpmn.RunTest do
     test "prints usage on missing arguments" do
       output =
         capture_io(:stderr, fn ->
-          Mix.Tasks.Bpmn.Run.run([])
+          Run.run([])
         end)
 
       assert output =~ "Usage:"

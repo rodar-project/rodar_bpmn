@@ -1,6 +1,8 @@
 defmodule Bpmn.Activity.Task.SendTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Activity.Task.Send, Context}
+
   doctest Bpmn.Activity.Task.Send
 
   defp build_process do
@@ -22,14 +24,14 @@ defmodule Bpmn.Activity.Task.SendTest do
   describe "token_in/2" do
     test "stores message metadata and releases token immediately" do
       process = build_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_task_send, %{id: "task_1", name: "Send Invoice", outgoing: ["flow_out"]}}
 
-      assert {:ok, ^context} = Bpmn.Activity.Task.Send.token_in(elem, context)
+      assert {:ok, ^context} = Send.token_in(elem, context)
 
-      meta = Bpmn.Context.get_meta(context, "task_1")
+      meta = Context.get_meta(context, "task_1")
       assert meta.completed == true
       assert meta.active == false
       assert meta.type == :send_task
@@ -38,13 +40,13 @@ defmodule Bpmn.Activity.Task.SendTest do
 
     test "completes without name attribute" do
       process = build_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem = {:bpmn_activity_task_send, %{id: "task_1", outgoing: ["flow_out"]}}
 
-      assert {:ok, ^context} = Bpmn.Activity.Task.Send.token_in(elem, context)
+      assert {:ok, ^context} = Send.token_in(elem, context)
 
-      meta = Bpmn.Context.get_meta(context, "task_1")
+      meta = Context.get_meta(context, "task_1")
       assert meta.message_name == nil
     end
   end

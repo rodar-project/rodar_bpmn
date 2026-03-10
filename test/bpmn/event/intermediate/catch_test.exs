@@ -1,9 +1,11 @@
 defmodule Bpmn.Event.Intermediate.CatchTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Event.Bus, Event.Intermediate.Catch, Event.Timer}
+
   describe "message catch event" do
     test "subscribes to event bus and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
       msg_name = "msg_catch_#{:erlang.unique_integer()}"
 
       elem =
@@ -16,20 +18,20 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.id == "catch1"
       assert task_data.type == :message_catch
       assert task_data.event_name == msg_name
 
       # Verify subscription exists
-      subs = Bpmn.Event.Bus.subscriptions(:message, msg_name)
+      subs = Bus.subscriptions(:message, msg_name)
       assert length(subs) == 1
     end
   end
 
   describe "signal catch event" do
     test "subscribes to event bus and returns manual" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
       sig_name = "sig_catch_#{:erlang.unique_integer()}"
 
       elem =
@@ -42,7 +44,7 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: nil
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :signal_catch
       assert task_data.event_name == sig_name
     end
@@ -50,7 +52,7 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
 
   describe "timer catch event" do
     test "returns manual with timer info for valid duration" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -62,17 +64,17 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{timeDuration: "PT5S"}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :timer_catch
       assert task_data.duration_ms == 5_000
 
       # Cancel the timer to avoid it firing in tests
-      meta = Bpmn.Context.get_meta(context, "catch1")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "catch1")
+      Timer.cancel(meta.timer_ref)
     end
 
     test "returns error for invalid duration" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -84,12 +86,12 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{timeDuration: "invalid"}}
          }}
 
-      assert {:error, msg} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:error, msg} = Catch.token_in(elem, context)
       assert msg =~ "invalid timer duration"
     end
 
     test "returns manual without duration when timeDuration is nil" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -101,7 +103,7 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :timer_catch
       refute Map.has_key?(task_data, :duration_ms)
     end
@@ -109,7 +111,7 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
 
   describe "timer cycle catch event" do
     test "returns manual with cycle info for valid cycle" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -121,17 +123,17 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "R3/PT10S"}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :timer_cycle_catch
       assert task_data.duration_ms == 10_000
       assert task_data.repetitions == 3
 
-      meta = Bpmn.Context.get_meta(context, "catch_cycle")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "catch_cycle")
+      Timer.cancel(meta.timer_ref)
     end
 
     test "returns manual with infinite cycle for bare duration" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -143,16 +145,16 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "PT5S"}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :timer_cycle_catch
       assert task_data.repetitions == :infinite
 
-      meta = Bpmn.Context.get_meta(context, "catch_cycle2")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "catch_cycle2")
+      Timer.cancel(meta.timer_ref)
     end
 
     test "returns error for invalid cycle expression" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -164,12 +166,12 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: {:bpmn_event_definition_timer, %{timeCycle: "R3/invalid"}}
          }}
 
-      assert {:error, msg} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:error, msg} = Catch.token_in(elem, context)
       assert msg =~ "invalid timer cycle"
     end
 
     test "timeCycle takes priority over timeDuration" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -182,18 +184,18 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
              {:bpmn_event_definition_timer, %{timeCycle: "R2/PT1S", timeDuration: "PT5S"}}
          }}
 
-      assert {:manual, task_data} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:manual, task_data} = Catch.token_in(elem, context)
       assert task_data.type == :timer_cycle_catch
       assert task_data.repetitions == 2
 
-      meta = Bpmn.Context.get_meta(context, "catch_both")
-      Bpmn.Event.Timer.cancel(meta.timer_ref)
+      meta = Context.get_meta(context, "catch_both")
+      Timer.cancel(meta.timer_ref)
     end
   end
 
   describe "unsupported catch event" do
     test "returns error for catch event without known definition" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
 
       elem =
         {:bpmn_event_intermediate_catch,
@@ -205,7 +207,7 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: nil
          }}
 
-      assert {:error, msg} = Bpmn.Event.Intermediate.Catch.token_in(elem, context)
+      assert {:error, msg} = Catch.token_in(elem, context)
       assert msg =~ "unsupported event definition"
     end
   end
@@ -225,21 +227,21 @@ defmodule Bpmn.Event.Intermediate.CatchTest do
          }}
 
       process = %{"flow_out" => flow_out, "end" => end_event}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_event_intermediate_catch, %{id: "catch1", outgoing: ["flow_out"]}}
 
       assert {:ok, ^context} =
-               Bpmn.Event.Intermediate.Catch.resume(elem, context, %{"key" => "value"})
+               Catch.resume(elem, context, %{"key" => "value"})
 
-      assert Bpmn.Context.get_data(context, "key") == "value"
+      assert Context.get_data(context, "key") == "value"
     end
   end
 
   describe "dispatch via Bpmn.execute/2" do
     test "dispatches intermediate catch events correctly" do
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Context.start_link(%{}, %{})
       msg_name = "msg_dispatch_#{:erlang.unique_integer()}"
 
       elem =

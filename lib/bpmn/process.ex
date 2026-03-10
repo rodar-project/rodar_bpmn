@@ -17,7 +17,14 @@ defmodule Bpmn.Process do
   use GenServer
   require Logger
 
+  alias Bpmn.Context
   alias Bpmn.Event.Bus
+  alias Bpmn.Persistence
+  alias Bpmn.Persistence.Serializer
+  alias Bpmn.Registry
+  alias Bpmn.Telemetry
+  alias Bpmn.Token
+  alias Bpmn.Validation
 
   @type status :: :created | :running | :suspended | :completed | :terminated | :error
 
@@ -135,15 +142,12 @@ defmodule Bpmn.Process do
   """
   @spec rehydrate(String.t()) :: {:ok, pid()} | {:error, any()}
   def rehydrate(instance_id) do
-    alias Bpmn.Persistence
-    alias Bpmn.Persistence.Serializer
-
     with {:ok, snapshot} <- Persistence.load(instance_id),
          {:ok, {_type, _attrs, elements}} <- lookup_registry(snapshot.process_id),
          process_map <- build_process_map(elements),
-         {:ok, context} <- Bpmn.Context.start_supervised(process_map, %{}),
+         {:ok, context} <- Context.start_supervised(process_map, %{}),
          deserialized_state <- Serializer.deserialize_context_state(snapshot.context_state),
-         :ok <- Bpmn.Context.restore_state(context, deserialized_state),
+         :ok <- Context.restore_state(context, deserialized_state),
          root_token <- Serializer.deserialize_token(snapshot.root_token),
          restore_data <- %{
            instance_id: snapshot.instance_id,
@@ -184,11 +188,11 @@ defmodule Bpmn.Process do
   end
 
   def init({process_id, init_data}) do
-    case Bpmn.Registry.lookup(process_id) do
+    case Registry.lookup(process_id) do
       {:ok, {_type, attrs, elements}} ->
         process_map = build_process_map(elements)
 
-        case Bpmn.Context.start_supervised(process_map, init_data) do
+        case Context.start_supervised(process_map, init_data) do
           {:ok, context} ->
             instance_id = generate_instance_id()
 
@@ -218,7 +222,7 @@ defmodule Bpmn.Process do
 
   @impl true
   def handle_call(:activate, _from, %{status: :created} = state) do
-    process_map = Bpmn.Context.get(state.context, :process)
+    process_map = Context.get(state.context, :process)
 
     case maybe_validate(process_map) do
       {:error, issues} ->
@@ -292,10 +296,10 @@ defmodule Bpmn.Process do
   end
 
   defp run_from_start(start_event, state) do
-    token = Bpmn.Token.new()
+    token = Token.new()
     state = %{state | status: :running, root_token: token}
     start_time = System.monotonic_time()
-    Bpmn.Telemetry.process_started(state.instance_id, state.process_id)
+    Telemetry.process_started(state.instance_id, state.process_id)
 
     result = Bpmn.execute(start_event, state.context, token)
 
@@ -316,7 +320,7 @@ defmodule Bpmn.Process do
           %{state | status: :error}
       end
 
-    Bpmn.Telemetry.process_stopped(
+    Telemetry.process_stopped(
       state.instance_id,
       state.process_id,
       state.status,
@@ -328,7 +332,7 @@ defmodule Bpmn.Process do
 
   defp maybe_validate(process_map) do
     if Application.get_env(:bpmn, :validate_on_activate, false) do
-      case Bpmn.Validation.validate(process_map) do
+      case Validation.validate(process_map) do
         {:ok, _} -> :ok
         {:error, _} = err -> err
       end
@@ -354,25 +358,25 @@ defmodule Bpmn.Process do
   end
 
   defp generate_instance_id do
-    Bpmn.Token.new().id
+    Token.new().id
   end
 
   defp maybe_auto_dehydrate(state) do
-    if Bpmn.Persistence.auto_dehydrate?(), do: do_dehydrate(state)
+    if Persistence.auto_dehydrate?(), do: do_dehydrate(state)
   end
 
   defp lookup_registry(process_id) do
-    case Bpmn.Registry.lookup(process_id) do
+    case Registry.lookup(process_id) do
       {:ok, _} = result -> result
       :error -> {:error, "Process '#{process_id}' not found in registry"}
     end
   end
 
   defp do_dehydrate(state) do
-    context_state = Bpmn.Context.get_state(state.context)
+    context_state = Context.get_state(state.context)
 
     snapshot =
-      Bpmn.Persistence.Serializer.snapshot(%{
+      Serializer.snapshot(%{
         instance_id: state.instance_id,
         process_id: state.process_id,
         status: state.status,
@@ -380,7 +384,7 @@ defmodule Bpmn.Process do
         context_state: context_state
       })
 
-    case Bpmn.Persistence.save(state.instance_id, snapshot) do
+    case Persistence.save(state.instance_id, snapshot) do
       :ok -> {:ok, state.instance_id}
       {:error, _} = err -> err
     end

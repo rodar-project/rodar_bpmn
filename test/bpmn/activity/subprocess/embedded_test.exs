@@ -10,9 +10,10 @@ end
 defmodule Bpmn.Activity.Subprocess.EmbeddedTest do
   use ExUnit.Case, async: true
 
-  doctest Bpmn.Activity.Subprocess.Embedded
-
+  alias Bpmn.{Activity.Subprocess.Embedded, Context}
   alias Bpmn.Activity.Subprocess.EmbeddedTest.SubprocessHandler
+
+  doctest Bpmn.Activity.Subprocess.Embedded
 
   defp build_nested_elements do
     start = {:bpmn_event_start, %{id: "sub_start", incoming: [], outgoing: ["sub_flow"]}}
@@ -51,16 +52,16 @@ defmodule Bpmn.Activity.Subprocess.EmbeddedTest do
     test "linear subprocess completes and releases token to parent" do
       nested = build_nested_elements()
       process = build_parent_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["flow_out"], elements: nested}}
 
       assert {:ok, ^context} =
-               Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+               Embedded.token_in(elem, context)
 
-      meta = Bpmn.Context.get_meta(context, "sub")
+      meta = Context.get_meta(context, "sub")
       assert meta.active == false
       assert meta.completed == true
     end
@@ -109,32 +110,32 @@ defmodule Bpmn.Activity.Subprocess.EmbeddedTest do
       }
 
       process = build_parent_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["flow_out"], elements: nested}}
 
       assert {:ok, ^context} =
-               Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+               Embedded.token_in(elem, context)
 
       # Data written by nested task should be visible in parent context
-      assert Bpmn.Context.get_data(context, :from_subprocess) == true
+      assert Context.get_data(context, :from_subprocess) == true
     end
 
     test "restores parent process after execution" do
       nested = build_nested_elements()
       process = build_parent_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["flow_out"], elements: nested}}
 
-      {:ok, ^context} = Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+      {:ok, ^context} = Embedded.token_in(elem, context)
 
       # Parent process should be restored
-      current_process = Bpmn.Context.get(context, :process)
+      current_process = Context.get(context, :process)
       assert Map.has_key?(current_process, "flow_out")
       assert Map.has_key?(current_process, "end")
     end
@@ -145,14 +146,14 @@ defmodule Bpmn.Activity.Subprocess.EmbeddedTest do
       }
 
       process = build_parent_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_subprocess_embeded,
          %{id: "sub", outgoing: ["flow_out"], elements: nested}}
 
       assert {:error, "Embedded subprocess 'sub': no start event found"} =
-               Bpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+               Embedded.token_in(elem, context)
     end
   end
 end

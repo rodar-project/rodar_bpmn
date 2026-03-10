@@ -1,6 +1,8 @@
 defmodule Bpmn.Gateway.ParallelTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Gateway.Parallel}
+
   describe "fork (diverge)" do
     test "releases tokens to all outgoing flows" do
       end_a = {:bpmn_event_end, %{id: "end_a", incoming: ["flow_a"], outgoing: []}}
@@ -36,9 +38,9 @@ defmodule Bpmn.Gateway.ParallelTest do
         "end_b" => end_b
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
-      assert {:ok, ^context} = Bpmn.Gateway.Parallel.token_in(gateway, context)
+      assert {:ok, ^context} = Parallel.token_in(gateway, context)
     end
   end
 
@@ -62,15 +64,15 @@ defmodule Bpmn.Gateway.ParallelTest do
 
       process = %{"flow_out" => flow_out, "end" => end_event}
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # First token arrives — should wait
       assert {:ok, ^context} =
-               Bpmn.Gateway.Parallel.token_in(gateway, context, "flow_a")
+               Parallel.token_in(gateway, context, "flow_a")
 
       # Second token arrives — should release
       assert {:ok, ^context} =
-               Bpmn.Gateway.Parallel.token_in(gateway, context, "flow_b")
+               Parallel.token_in(gateway, context, "flow_b")
     end
 
     test "first token does not trigger outgoing flow" do
@@ -80,11 +82,11 @@ defmodule Bpmn.Gateway.ParallelTest do
 
       # No flow_out in process — if the join tried to release, it would error
       process = %{}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # First token should just wait, not try to release
       assert {:ok, ^context} =
-               Bpmn.Gateway.Parallel.token_in(gateway, context, "flow_a")
+               Parallel.token_in(gateway, context, "flow_a")
     end
   end
 end

@@ -1,6 +1,8 @@
 defmodule Bpmn.Gateway.ExclusiveTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Gateway.Exclusive}
+
   describe "diverging (split)" do
     test "routes token to the first flow whose condition is true" do
       end_a = {:bpmn_event_end, %{id: "end_a", incoming: ["flow_a"], outgoing: []}}
@@ -37,10 +39,10 @@ defmodule Bpmn.Gateway.ExclusiveTest do
         "end_b" => end_b
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      Bpmn.Context.put_data(context, "count", 10)
+      {:ok, context} = Context.start_link(process, %{})
+      Context.put_data(context, "count", 10)
 
-      assert {:ok, ^context} = Bpmn.Gateway.Exclusive.token_in(gateway, context)
+      assert {:ok, ^context} = Exclusive.token_in(gateway, context)
     end
 
     test "falls through to second flow when first condition is false" do
@@ -78,10 +80,10 @@ defmodule Bpmn.Gateway.ExclusiveTest do
         "end_b" => end_b
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      Bpmn.Context.put_data(context, "count", 2)
+      {:ok, context} = Context.start_link(process, %{})
+      Context.put_data(context, "count", 2)
 
-      assert {:ok, ^context} = Bpmn.Gateway.Exclusive.token_in(gateway, context)
+      assert {:ok, ^context} = Exclusive.token_in(gateway, context)
     end
 
     test "uses default flow when no conditions match" do
@@ -126,9 +128,9 @@ defmodule Bpmn.Gateway.ExclusiveTest do
         "end_default" => end_default
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
-      assert {:ok, ^context} = Bpmn.Gateway.Exclusive.token_in(gateway, context)
+      assert {:ok, ^context} = Exclusive.token_in(gateway, context)
     end
 
     test "returns error when no conditions match and no default" do
@@ -148,9 +150,9 @@ defmodule Bpmn.Gateway.ExclusiveTest do
 
       process = %{"flow_a" => flow_a}
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
-      assert {:error, _msg} = Bpmn.Gateway.Exclusive.token_in(gateway, context)
+      assert {:error, _msg} = Exclusive.token_in(gateway, context)
     end
   end
 
@@ -174,9 +176,9 @@ defmodule Bpmn.Gateway.ExclusiveTest do
 
       process = %{"flow_out" => flow_out, "end" => end_event}
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
-      assert {:ok, ^context} = Bpmn.Gateway.Exclusive.token_in(gateway, context)
+      assert {:ok, ^context} = Exclusive.token_in(gateway, context)
     end
   end
 end

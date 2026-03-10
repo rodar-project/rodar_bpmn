@@ -25,6 +25,8 @@ defmodule Bpmn.Expression do
 
   """
 
+  alias Bpmn.Expression.Sandbox
+
   @doc """
   Validate a Bpmn condition expression and return the result
   """
@@ -45,10 +47,8 @@ defmodule Bpmn.Expression do
   @doc """
   Evaluate an elixir expression within the given context using the sandbox.
   """
-  @spec evaluate(String.t(), String.t(), Bpmn.context()) :: boolean()
+  @spec evaluate(String.t(), String.t(), Bpmn.context()) :: term()
   def evaluate("elixir", expr, context) do
-    alias Bpmn.Expression.Sandbox
-
     data = Bpmn.Context.get(context, :data)
 
     case Sandbox.eval(expr, %{"data" => data}) do

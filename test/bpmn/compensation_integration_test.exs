@@ -1,6 +1,8 @@
 defmodule Bpmn.CompensationIntegrationTest do
   use ExUnit.Case, async: false
 
+  alias Bpmn.{Context, Event.Boundary}
+
   # Builds a process with:
   # start -> task1 -> task2 -> compensate_throw -> end
   # + compensation boundary on task1 -> comp_handler1
@@ -159,17 +161,17 @@ defmodule Bpmn.CompensationIntegrationTest do
   describe "compensate throw event (all activities)" do
     test "executes compensation handlers in reverse completion order" do
       process = build_compensation_process()
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       start = Map.get(process, "start")
       {:ok, _} = Bpmn.execute(start, context)
 
       # Both handlers executed
-      assert Bpmn.Context.get_data(context, :comp1_executed) == "task1_compensated"
-      assert Bpmn.Context.get_data(context, :comp2_executed) == "task2_compensated"
+      assert Context.get_data(context, :comp1_executed) == "task1_compensated"
+      assert Context.get_data(context, :comp2_executed) == "task2_compensated"
 
       # Verify execution order via history: comp_handler2 before comp_handler1 (reverse order)
-      history = Bpmn.Context.get_history(context)
+      history = Context.get_history(context)
       comp_entries = Enum.filter(history, &(&1.node_id in ["comp_handler1", "comp_handler2"]))
       comp_order = Enum.map(comp_entries, & &1.node_id)
       assert comp_order == ["comp_handler2", "comp_handler1"]
@@ -179,13 +181,13 @@ defmodule Bpmn.CompensationIntegrationTest do
   describe "compensate throw event with activityRef" do
     test "executes only the targeted activity's handler" do
       process = build_compensation_process(activity_ref: "task1")
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       start = Map.get(process, "start")
       {:ok, _} = Bpmn.execute(start, context)
 
-      assert Bpmn.Context.get_data(context, :comp1_executed) == "task1_compensated"
-      assert Bpmn.Context.get_data(context, :comp2_executed) == nil
+      assert Context.get_data(context, :comp1_executed) == "task1_compensated"
+      assert Context.get_data(context, :comp2_executed) == nil
     end
   end
 
@@ -264,11 +266,11 @@ defmodule Bpmn.CompensationIntegrationTest do
            }}
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
       start = Map.get(process, "start")
       {:ok, _} = Bpmn.execute(start, context)
 
-      assert Bpmn.Context.get_data(context, :comp_result) == "compensated"
+      assert Context.get_data(context, :comp_result) == "compensated"
     end
   end
 
@@ -289,8 +291,8 @@ defmodule Bpmn.CompensationIntegrationTest do
            compensateEventDefinition: {:bpmn_event_definition_compensate, %{_elems: []}}
          }}
 
-      {:ok, context} = Bpmn.Context.start_link(%{}, %{})
-      assert {:ok, ^context} = Bpmn.Event.Boundary.token_in(boundary, context)
+      {:ok, context} = Context.start_link(%{}, %{})
+      assert {:ok, ^context} = Boundary.token_in(boundary, context)
     end
   end
 end

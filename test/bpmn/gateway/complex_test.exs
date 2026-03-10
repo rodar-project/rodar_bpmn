@@ -1,6 +1,8 @@
 defmodule Bpmn.Gateway.ComplexTest do
   use ExUnit.Case, async: true
 
+  alias Bpmn.{Context, Gateway.Complex}
+
   describe "fork (single incoming)" do
     test "releases token to all matching outgoing flows" do
       end1 = {:bpmn_event_end, %{id: "end1", incoming: ["f1"], outgoing: []}}
@@ -27,10 +29,10 @@ defmodule Bpmn.Gateway.ComplexTest do
          }}
 
       process = %{"f1" => f1, "f2" => f2, "end1" => end1, "end2" => end2}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       gw = {:bpmn_gateway_complex, %{id: "gw", incoming: ["in"], outgoing: ["f1", "f2"]}}
-      assert {:ok, ^context} = Bpmn.Gateway.Complex.token_in(gw, context)
+      assert {:ok, ^context} = Complex.token_in(gw, context)
     end
 
     test "uses default flow when no conditions match" do
@@ -57,13 +59,13 @@ defmodule Bpmn.Gateway.ComplexTest do
          }}
 
       process = %{"f1" => f1, "f_default" => f_default, "end1" => end1}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       gw =
         {:bpmn_gateway_complex,
          %{id: "gw", incoming: ["in"], outgoing: ["f1", "f_default"], default: "f_default"}}
 
-      assert {:ok, ^context} = Bpmn.Gateway.Complex.token_in(gw, context)
+      assert {:ok, ^context} = Complex.token_in(gw, context)
     end
 
     test "returns error when no conditions match and no default" do
@@ -78,10 +80,10 @@ defmodule Bpmn.Gateway.ComplexTest do
          }}
 
       process = %{"f1" => f1}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       gw = {:bpmn_gateway_complex, %{id: "gw", incoming: ["in"], outgoing: ["f1"]}}
-      assert {:error, msg} = Bpmn.Gateway.Complex.token_in(gw, context)
+      assert {:error, msg} = Complex.token_in(gw, context)
       assert msg =~ "no matching condition"
     end
   end
@@ -101,16 +103,16 @@ defmodule Bpmn.Gateway.ComplexTest do
          }}
 
       process = %{"f_out" => f_out, "end1" => end1}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       gw =
         {:bpmn_gateway_complex, %{id: "gw", incoming: ["in1", "in2"], outgoing: ["f_out"]}}
 
       # First token — should wait
-      assert {:ok, ^context} = Bpmn.Gateway.Complex.token_in(gw, context, "in1")
+      assert {:ok, ^context} = Complex.token_in(gw, context, "in1")
 
       # Second token — should release
-      assert {:ok, ^context} = Bpmn.Gateway.Complex.token_in(gw, context, "in2")
+      assert {:ok, ^context} = Complex.token_in(gw, context, "in2")
     end
   end
 
@@ -129,7 +131,7 @@ defmodule Bpmn.Gateway.ComplexTest do
          }}
 
       process = %{"flow_out" => flow_out, "end" => end_event}
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       gw = {:bpmn_gateway_complex, %{id: "gw", incoming: ["in"], outgoing: ["flow_out"]}}
       assert {:ok, ^context} = Bpmn.execute(gw, context)

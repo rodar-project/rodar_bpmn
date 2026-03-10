@@ -14,16 +14,19 @@ defmodule Mix.Tasks.Bpmn.Validate do
 
   use Mix.Task
 
+  alias Bpmn.Engine.Diagram
+  alias Bpmn.Validation
+
   @shortdoc "Validate a BPMN 2.0 XML file"
 
   @impl true
   def run([file_path]) do
-    diagram = file_path |> File.read!() |> Bpmn.Engine.Diagram.load()
+    diagram = file_path |> File.read!() |> Diagram.load()
 
     has_errors =
       diagram.processes
       |> Enum.reduce(false, fn {:bpmn_process, %{id: id}, elements}, has_errors ->
-        case Bpmn.Validation.validate(elements) do
+        case Validation.validate(elements) do
           {:ok, _} ->
             Mix.shell().info("Process #{id}: OK")
             has_errors
@@ -49,7 +52,7 @@ defmodule Mix.Tasks.Bpmn.Validate do
   defp validate_collaboration(%{collaboration: nil}, has_errors), do: has_errors
 
   defp validate_collaboration(%{collaboration: collab, processes: processes}, has_errors) do
-    case Bpmn.Validation.validate_collaboration(collab, processes) do
+    case Validation.validate_collaboration(collab, processes) do
       {:ok, _} ->
         Mix.shell().info("Collaboration #{collab.id}: OK")
         has_errors

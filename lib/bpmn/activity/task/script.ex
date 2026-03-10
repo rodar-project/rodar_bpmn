@@ -15,12 +15,15 @@ defmodule Bpmn.Activity.Task.Script do
       iex> flow_out = {:bpmn_sequence_flow, %{id: "flow_out", sourceRef: "task", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> elem = {:bpmn_activity_task_script, %{id: "task", outgoing: ["flow_out"], type: "elixir", script: "2 + 2"}}
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
-      iex> {:ok, context} = Bpmn.Context.start_link(process, %{})
+      iex> {:ok, context} = Context.start_link(process, %{})
       iex> {:ok, ^context} = Bpmn.Activity.Task.Script.token_in(elem, context)
-      iex> Bpmn.Context.get_data(context, :script_result)
+      iex> Context.get_data(context, :script_result)
       4
 
   """
+
+  alias Bpmn.Context
+  alias Bpmn.Expression.Sandbox
 
   @doc """
   Receive the token for the element and execute the script.
@@ -36,12 +39,12 @@ defmodule Bpmn.Activity.Task.Script do
         {:bpmn_activity_task_script, %{outgoing: outgoing, type: type, script: script} = attrs},
         context
       ) do
-    data = Bpmn.Context.get(context, :data)
+    data = Context.get(context, :data)
     output_var = Map.get(attrs, :output_variable, :script_result)
 
     case run_script(type, script, data) do
       {:ok, result} ->
-        Bpmn.Context.put_data(context, output_var, result)
+        Context.put_data(context, output_var, result)
         token_out(outgoing, context)
 
       {:error, reason} ->
@@ -54,11 +57,11 @@ defmodule Bpmn.Activity.Task.Script do
   defp token_out(targets, context), do: Bpmn.release_token(targets, context)
 
   defp run_script("elixir", {:bpmn_script, %{expression: script}}, data) do
-    Bpmn.Expression.Sandbox.eval(script, %{"data" => data})
+    Sandbox.eval(script, %{"data" => data})
   end
 
   defp run_script("elixir", script, data) when is_binary(script) do
-    Bpmn.Expression.Sandbox.eval(script, %{"data" => data})
+    Sandbox.eval(script, %{"data" => data})
   end
 
   defp run_script(lang, _script, _data) do

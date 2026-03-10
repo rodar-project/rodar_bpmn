@@ -1,7 +1,7 @@
 defmodule Bpmn.ProcessTest do
   use ExUnit.Case, async: false
 
-  alias Bpmn.{Registry, Context}
+  alias Bpmn.{Context, Registry}
 
   @process_id "test_process"
 

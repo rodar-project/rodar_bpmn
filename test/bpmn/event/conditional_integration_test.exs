@@ -1,6 +1,8 @@
 defmodule Bpmn.Event.ConditionalIntegrationTest do
   use ExUnit.Case, async: false
 
+  alias Bpmn.{Context, Event.Boundary}
+
   defp build_conditional_catch_process(condition) do
     start = {:bpmn_event_start, %{id: "start", outgoing: ["f1"], incoming: []}}
 
@@ -74,7 +76,7 @@ defmodule Bpmn.Event.ConditionalIntegrationTest do
   describe "process with conditional catch event" do
     test "pauses at conditional catch then continues on data change" do
       process = build_conditional_catch_process(~S|data["approved"] == true|)
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # Execute process — should pause at catch1
       result = Bpmn.execute(process["start"], context)
@@ -83,28 +85,28 @@ defmodule Bpmn.Event.ConditionalIntegrationTest do
       assert task_data.type == :conditional_catch
 
       # Verify catch event is active
-      meta = Bpmn.Context.get_meta(context, "catch1")
+      meta = Context.get_meta(context, "catch1")
       assert meta.active == true
       assert meta.completed == false
 
       # Now change data to satisfy condition
-      Bpmn.Context.put_data(context, "approved", true)
+      Context.put_data(context, "approved", true)
 
       # Allow spawned processes to complete
       Process.sleep(100)
 
       # Catch event should now be completed
-      meta = Bpmn.Context.get_meta(context, "catch1")
+      meta = Context.get_meta(context, "catch1")
       assert meta.active == false
       assert meta.completed == true
     end
 
     test "passes through immediately when condition is already true" do
       process = build_conditional_catch_process(~S|data["approved"] == true|)
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # Set data before execution
-      Bpmn.Context.put_data(context, "approved", true)
+      Context.put_data(context, "approved", true)
 
       # Execute process — should pass through catch1 immediately
       result = Bpmn.execute(process["start"], context)
@@ -113,24 +115,24 @@ defmodule Bpmn.Event.ConditionalIntegrationTest do
 
     test "condition with numeric comparison" do
       process = build_conditional_catch_process(~S|data["count"] == 5|)
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
-      Bpmn.Context.put_data(context, "count", 0)
+      {:ok, context} = Context.start_link(process, %{})
+      Context.put_data(context, "count", 0)
 
       result = Bpmn.execute(process["start"], context)
       assert {:manual, _} = result
 
       # Set count to 3 — still shouldn't trigger
-      Bpmn.Context.put_data(context, "count", 3)
+      Context.put_data(context, "count", 3)
       Process.sleep(50)
 
-      meta = Bpmn.Context.get_meta(context, "catch1")
+      meta = Context.get_meta(context, "catch1")
       assert meta.active == true
 
       # Set count to 5 — should trigger
-      Bpmn.Context.put_data(context, "count", 5)
+      Context.put_data(context, "count", 5)
       Process.sleep(100)
 
-      meta = Bpmn.Context.get_meta(context, "catch1")
+      meta = Context.get_meta(context, "catch1")
       assert meta.active == false
       assert meta.completed == true
     end
@@ -204,19 +206,19 @@ defmodule Bpmn.Event.ConditionalIntegrationTest do
         "f4" => f4
       }
 
-      {:ok, context} = Bpmn.Context.start_link(process, %{})
+      {:ok, context} = Context.start_link(process, %{})
 
       # Execute boundary event — should subscribe
-      result = Bpmn.Event.Boundary.token_in(boundary, context)
+      result = Boundary.token_in(boundary, context)
       assert {:manual, task_data} = result
       assert task_data.type == :conditional_boundary
 
       # Trigger condition
-      Bpmn.Context.put_data(context, "escalate", true)
+      Context.put_data(context, "escalate", true)
       Process.sleep(100)
 
       # Boundary should have fired
-      meta = Bpmn.Context.get_meta(context, "b1")
+      meta = Context.get_meta(context, "b1")
       assert meta.active == false
       assert meta.completed == true
     end

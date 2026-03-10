@@ -1,6 +1,8 @@
 defmodule Bpmn.TelemetryTest do
   use ExUnit.Case, async: false
 
+  alias Bpmn.Event.Bus
+
   setup do
     test_pid = self()
     handler_id = "test-handler-#{:erlang.unique_integer([:positive])}"
@@ -130,7 +132,7 @@ defmodule Bpmn.TelemetryTest do
   describe "Event.Bus integration" do
     test "subscribe emits telemetry event" do
       name = "sub_test_#{:erlang.unique_integer([:positive])}"
-      Bpmn.Event.Bus.subscribe(:message, name, %{node_id: "catch_node"})
+      Bus.subscribe(:message, name, %{node_id: "catch_node"})
 
       assert_receive {:telemetry_event, [:bpmn, :event_bus, :subscribe], _, meta}
       assert meta.event_type == :message
@@ -140,7 +142,7 @@ defmodule Bpmn.TelemetryTest do
 
     test "publish emits telemetry event" do
       name = "pub_test_#{:erlang.unique_integer([:positive])}"
-      Bpmn.Event.Bus.publish(:signal, name, %{data: "test"})
+      Bus.publish(:signal, name, %{data: "test"})
 
       assert_receive {:telemetry_event, [:bpmn, :event_bus, :publish], _, meta}
       assert meta.event_type == :signal
