@@ -6,9 +6,8 @@ defmodule Bpmn.Activity.Task.Script do
   and content come from the element's attributes. Results are written back
   to the context under the task's output variable(s).
 
-  Currently supports:
-  - `"elixir"` — Evaluates via `Code.eval_string/2` with context data bindings
-  - `"javascript"` / `"nodejs"` — Delegates to the Node.js port
+  Uses `Bpmn.Expression.Sandbox` for safe evaluation — arbitrary code
+  execution is prevented by AST restriction. Only Elixir scripts are supported.
 
   ## Examples
 
@@ -54,25 +53,15 @@ defmodule Bpmn.Activity.Task.Script do
 
   defp token_out(targets, context), do: Bpmn.release_token(targets, context)
 
-  defp run_script("elixir", script, data) do
-    try do
-      {result, _binding} = Code.eval_string(script, data: data)
-      {:ok, result}
-    rescue
-      e -> {:error, Exception.message(e)}
-    end
+  defp run_script("elixir", {:bpmn_script, %{expression: script}}, data) do
+    Bpmn.Expression.Sandbox.eval(script, %{"data" => data})
   end
 
-  defp run_script(lang, script, data) when lang in ["javascript", "nodejs"] do
-    try do
-      result = Bpmn.Port.Nodejs.eval_string(script, data)
-      {:ok, result}
-    rescue
-      e -> {:error, Exception.message(e)}
-    end
+  defp run_script("elixir", script, data) when is_binary(script) do
+    Bpmn.Expression.Sandbox.eval(script, %{"data" => data})
   end
 
   defp run_script(lang, _script, _data) do
-    {:error, "Unsupported script language: #{lang}"}
+    {:error, "Unsupported script language: #{lang}. Only Elixir is supported."}
   end
 end

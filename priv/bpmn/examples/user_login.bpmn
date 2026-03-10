@@ -26,10 +26,10 @@
         </bpmn:exclusiveGateway>
         <bpmn:sequenceFlow id="SequenceFlow_1i6wlcd" sourceRef="Task_1ymg9vn" targetRef="ExclusiveGateway_1eglp8f" />
         <bpmn:sequenceFlow id="SequenceFlow_1keu1zs" name="NO" sourceRef="ExclusiveGateway_1eglp8f" targetRef="EndEvent_1s3wrav">
-            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">!Boolean(data.user)</bpmn:conditionExpression>
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">data["user"] == nil</bpmn:conditionExpression>
         </bpmn:sequenceFlow>
         <bpmn:sequenceFlow id="SequenceFlow_0v8qyt9" name="YES" sourceRef="ExclusiveGateway_1eglp8f" targetRef="Task_0iy3d09">
-            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Boolean(data.user)</bpmn:conditionExpression>
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">data["user"] != nil</bpmn:conditionExpression>
         </bpmn:sequenceFlow>
         <bpmn:scriptTask id="Task_0iy3d09" name="GENERATE TOKEN" scriptFormat="nodejs" camunda:resultVariable="token" camunda:resource="scripts/auth/generate_token.js">
             <bpmn:extensionElements>

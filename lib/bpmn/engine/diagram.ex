@@ -187,12 +187,14 @@ defmodule Bpmn.Engine.Diagram do
   defp load_element("bpmn2:to", attrs, [content]),
     do: {:bpmn_to, Map.merge(attrs, %{content: content |> to_string})}
 
-  defp load_element("bpmn2:conditionExpression", attrs, [content]),
-    do:
-      {:bpmn_condition_expression,
-       Map.merge(attrs, %{
-         expression: content |> to_string
-       })}
+  defp load_element("bpmn2:conditionExpression", attrs, [content]) do
+    lang = Map.get(attrs, :language, "elixir") |> to_string()
+    {:bpmn_expression, {lang, content |> to_string()}}
+  end
+
+  defp load_element("bpmn2:conditionExpression", _attrs, []) do
+    {:bpmn_expression, {"elixir", ""}}
+  end
 
   defp load_element("bpmn2:script", attrs, [content]),
     do: {:bpmn_script, Map.merge(attrs, %{expression: content |> to_string})}

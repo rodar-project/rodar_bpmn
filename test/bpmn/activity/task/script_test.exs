@@ -35,11 +35,11 @@ defmodule Bpmn.Activity.Task.ScriptTest do
     test "script has access to context data" do
       process = build_process()
       {:ok, context} = Bpmn.Context.start_link(process, %{})
-      Bpmn.Context.put_data(context, :x, 10)
+      Bpmn.Context.put_data(context, "x", 10)
 
       elem =
         {:bpmn_activity_task_script,
-         %{id: "task", outgoing: ["flow_out"], type: "elixir", script: "data[:x] + 5"}}
+         %{id: "task", outgoing: ["flow_out"], type: "elixir", script: ~s(data["x"] + 5)}}
 
       assert {:ok, ^context} = Bpmn.Activity.Task.Script.token_in(elem, context)
       assert Bpmn.Context.get_data(context, :script_result) == 15
@@ -55,23 +55,35 @@ defmodule Bpmn.Activity.Task.ScriptTest do
            id: "task",
            outgoing: ["flow_out"],
            type: "elixir",
-           script: ":hello",
+           script: ~s("hello"),
            output_variable: :greeting
          }}
 
       assert {:ok, ^context} = Bpmn.Activity.Task.Script.token_in(elem, context)
-      assert Bpmn.Context.get_data(context, :greeting) == :hello
+      assert Bpmn.Context.get_data(context, :greeting) == "hello"
     end
 
-    test "returns error on script failure" do
+    test "returns error for disallowed operations" do
       process = build_process()
       {:ok, context} = Bpmn.Context.start_link(process, %{})
 
       elem =
         {:bpmn_activity_task_script,
-         %{id: "task", outgoing: ["flow_out"], type: "elixir", script: "raise \"boom\""}}
+         %{id: "task", outgoing: ["flow_out"], type: "elixir", script: ~S|System.cmd("ls", [])|}}
 
-      assert {:error, "boom"} = Bpmn.Activity.Task.Script.token_in(elem, context)
+      assert {:error, "disallowed: module call System.cmd/2"} =
+               Bpmn.Activity.Task.Script.token_in(elem, context)
+    end
+
+    test "returns error on runtime failure" do
+      process = build_process()
+      {:ok, context} = Bpmn.Context.start_link(process, %{})
+
+      elem =
+        {:bpmn_activity_task_script,
+         %{id: "task", outgoing: ["flow_out"], type: "elixir", script: "1 / 0"}}
+
+      assert {:error, "runtime error:" <> _} = Bpmn.Activity.Task.Script.token_in(elem, context)
     end
   end
 
@@ -84,7 +96,19 @@ defmodule Bpmn.Activity.Task.ScriptTest do
         {:bpmn_activity_task_script,
          %{id: "task", outgoing: ["flow_out"], type: "python", script: "print(1)"}}
 
-      assert {:error, "Unsupported script language: python"} =
+      assert {:error, "Unsupported script language: python. Only Elixir is supported."} =
+               Bpmn.Activity.Task.Script.token_in(elem, context)
+    end
+
+    test "returns error for javascript" do
+      process = build_process()
+      {:ok, context} = Bpmn.Context.start_link(process, %{})
+
+      elem =
+        {:bpmn_activity_task_script,
+         %{id: "task", outgoing: ["flow_out"], type: "javascript", script: "1+1"}}
+
+      assert {:error, "Unsupported script language: javascript. Only Elixir is supported."} =
                Bpmn.Activity.Task.Script.token_in(elem, context)
     end
   end
