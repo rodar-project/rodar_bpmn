@@ -1,13 +1,26 @@
 defmodule RodarBpmn.Activity.Task.Script do
   @moduledoc """
-  Handle passing the token through a script task element.
+  Handles passing the token through a script task element.
 
   Executes an inline script defined on the BPMN element. The script language
   and content come from the element's attributes. Results are written back
-  to the context under the task's output variable(s).
+  to the context under the task's `:output_variable` (defaults to `:script_result`).
 
-  Supports `"elixir"` scripts (sandboxed AST evaluation) and `"feel"` scripts
-  (FEEL expression language).
+  ## Supported Languages
+
+  - `"elixir"` -- sandboxed AST evaluation via `RodarBpmn.Expression.Sandbox`
+  - `"feel"` -- FEEL expression language via `RodarBpmn.Expression.Feel`
+  - Any other language string -- resolved through `RodarBpmn.Expression.ScriptRegistry`
+
+  For custom languages, register an engine module implementing the
+  `RodarBpmn.Expression.ScriptEngine` behaviour before executing processes
+  that use that language. If no engine is registered for the language,
+  the task returns `{:error, "Unsupported script language: ..."}`.
+
+  ## See Also
+
+  - `RodarBpmn.Expression.ScriptEngine` -- behaviour for custom script engines
+  - `RodarBpmn.Expression.ScriptRegistry` -- runtime registration of engines
 
   ## Examples
 
@@ -28,13 +41,24 @@ defmodule RodarBpmn.Activity.Task.Script do
   alias RodarBpmn.Expression.ScriptRegistry
 
   @doc """
-  Receive the token for the element and execute the script.
+  Receives the token for a script task element and executes the script.
+
+  Delegates to `execute/2`.
   """
   @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def token_in(elem, context), do: execute(elem, context)
 
   @doc """
-  Execute the script task business logic.
+  Executes the script task business logic.
+
+  Extracts the script language (`type`), script content, and optional
+  `:output_variable` from the element attributes. Evaluates the script
+  via the appropriate engine and stores the result in the context under
+  the output variable key. On success, releases the token to outgoing
+  sequence flows.
+
+  Returns `{:ok, context}` on success, `{:error, reason}` on script
+  evaluation failure, or `{:not_implemented}` for unrecognized elements.
   """
   @spec execute(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def execute(

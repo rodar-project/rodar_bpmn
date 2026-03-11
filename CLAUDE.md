@@ -111,7 +111,7 @@ Return tuples: `{:ok, context}`, `{:error, msg}`, `{:manual, _}`, `{:fatal, _}`,
 - `lib/rodar_bpmn/activity/` — Tasks (user, script, service, send, receive, manual) and subprocesses (embedded, call activity)
 - `lib/rodar_bpmn/event/` — Start, end, intermediate (throw/catch), boundary events, event bus, timer utilities
 - `lib/rodar_bpmn/gateway/` — Exclusive, parallel, inclusive, complex, event-based gateways
-- `lib/rodar_bpmn/expression/` — Sandboxed Elixir evaluator, FEEL evaluator (`feel/` subdirectory), and test helpers
+- `lib/rodar_bpmn/expression/` — Sandboxed Elixir evaluator, FEEL evaluator (`feel/` subdirectory), pluggable script engine behaviour and registry, and test helpers
 - `lib/rodar_bpmn/persistence/` — Persistence behaviour, serializer, and adapters (ETS)
 - `lib/rodar_bpmn/telemetry/` — Telemetry event definitions, helpers, and default log handler
 - `lib/rodar_bpmn/observability.ex` — Dashboard query APIs and health checks

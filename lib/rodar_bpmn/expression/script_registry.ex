@@ -7,21 +7,43 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   `RodarBpmn.Activity.Task.Script` to resolve script languages beyond the
   built-in `"elixir"` and `"feel"` engines.
 
-  ## Examples
+  This GenServer is started automatically as part of the application
+  supervision tree. Register engines at application startup (e.g., in your
+  `Application.start/2` callback) so they are available before process
+  instances execute.
 
-      iex> RodarBpmn.Expression.ScriptRegistry.register("lua", MyLuaEngine)
-      :ok
-      iex> {:ok, MyLuaEngine} = RodarBpmn.Expression.ScriptRegistry.lookup("lua")
-      iex> RodarBpmn.Expression.ScriptRegistry.unregister("lua")
-      :ok
+  ## Usage
 
+      # Register an engine for a language
+      RodarBpmn.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
+
+      # Look up an engine
+      {:ok, MyApp.LuaEngine} = RodarBpmn.Expression.ScriptRegistry.lookup("lua")
+
+      # List all registered engines
+      RodarBpmn.Expression.ScriptRegistry.list()
+      # => [{"lua", MyApp.LuaEngine}]
+
+      # Remove a registration
+      RodarBpmn.Expression.ScriptRegistry.unregister("lua")
+
+  ## See Also
+
+  - `RodarBpmn.Expression.ScriptEngine` -- behaviour that engine modules must implement
+  - `RodarBpmn.TaskRegistry` -- analogous registry for custom task handlers
   """
 
   use GenServer
 
   # --- Client API ---
 
-  @doc "Start the script registry GenServer."
+  @doc """
+  Start the script registry GenServer.
+
+  Accepts an optional `:name` keyword (defaults to `__MODULE__`).
+  Normally started by the supervision tree -- you should not need to
+  call this directly.
+  """
   def start_link(opts \\ []) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, %{}, name: name)
@@ -29,6 +51,12 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
 
   @doc """
   Register an engine module for a script language string.
+
+  The `engine_module` must implement the `RodarBpmn.Expression.ScriptEngine`
+  behaviour. If a registration already exists for the given `language`, it
+  is silently replaced.
+
+  Returns `:ok`.
   """
   @spec register(String.t(), module()) :: :ok
   def register(language, engine_module) do
@@ -36,7 +64,9 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   end
 
   @doc """
-  Remove an engine registration.
+  Remove an engine registration for the given language string.
+
+  Returns `:ok` regardless of whether the language was registered.
   """
   @spec unregister(String.t()) :: :ok
   def unregister(language) do
@@ -44,9 +74,11 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   end
 
   @doc """
-  Look up an engine by language string.
+  Look up the engine module for a language string.
 
-  Returns `{:ok, module}` or `:error`.
+  Returns `{:ok, module}` if a registration exists, or `:error` otherwise.
+  Called internally by `RodarBpmn.Activity.Task.Script` when the script
+  language is not `"elixir"` or `"feel"`.
   """
   @spec lookup(String.t()) :: {:ok, module()} | :error
   def lookup(language) do
@@ -54,7 +86,7 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   end
 
   @doc """
-  List all registered engines.
+  List all registered script engines.
 
   Returns a list of `{language, module}` tuples.
   """

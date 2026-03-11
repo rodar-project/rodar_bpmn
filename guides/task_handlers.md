@@ -87,6 +87,15 @@ end
 RodarBpmn.TaskRegistry.register(:http_task, MyApp.HttpTask)
 ```
 
+## Script Engines vs Task Handlers
+
+Task handlers and script engines serve different extensibility roles:
+
+- **Task handlers** (`RodarBpmn.TaskHandler`) replace the entire execution logic for a task type or specific task ID. Use these for custom business logic like HTTP calls, database operations, or approval workflows.
+- **Script engines** (`RodarBpmn.Expression.ScriptEngine`) add support for new script languages in script tasks. Use these when your BPMN diagrams embed scripts in Lua, Python, or other languages.
+
+See the [Expressions guide](expressions.md#pluggable-script-engines) for details on registering script engines.
+
 ## Next Steps
 
 - [Process Lifecycle](process_lifecycle.md) — Instance creation and status transitions

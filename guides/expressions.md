@@ -72,7 +72,81 @@ RodarBpmn.Expression.Sandbox.eval("1 + 2")
 # => {:ok, 3}
 ```
 
+## Pluggable Script Engines
+
+Beyond FEEL and Elixir, you can register custom script languages for use in BPMN script tasks. This lets you embed Lua, Python, or any other language in your BPMN diagrams.
+
+### Implementing an Engine
+
+Create a module that implements the `RodarBpmn.Expression.ScriptEngine` behaviour:
+
+```elixir
+defmodule MyApp.LuaEngine do
+  @behaviour RodarBpmn.Expression.ScriptEngine
+
+  @impl true
+  def eval(script, bindings) do
+    # script: the script source text (String.t())
+    # bindings: the current process data map
+    case Lua.eval(script, bindings) do
+      {:ok, result} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+end
+```
+
+The `eval/2` callback receives the raw script text and a map of the current process data (the same map from `RodarBpmn.Context.get(context, :data)`).
+
+### Registering an Engine
+
+Register your engine at application startup so it is available before any process instance runs:
+
+```elixir
+# In your Application.start/2 callback, after rodar_bpmn has started:
+RodarBpmn.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
+```
+
+Once registered, any BPMN script task with `type: "lua"` will delegate to your engine:
+
+```xml
+<scriptTask id="Task_1" scriptFormat="lua">
+  <script>return count + 1</script>
+</scriptTask>
+```
+
+### Managing Registrations
+
+```elixir
+# List all registered engines
+RodarBpmn.Expression.ScriptRegistry.list()
+# => [{"lua", MyApp.LuaEngine}]
+
+# Look up an engine
+{:ok, MyApp.LuaEngine} = RodarBpmn.Expression.ScriptRegistry.lookup("lua")
+
+# Remove a registration
+RodarBpmn.Expression.ScriptRegistry.unregister("lua")
+```
+
+### Companion Packages
+
+Ready-made engine packages are planned:
+
+- `rodar_bpmn_lua` -- Lua scripting via Luerl
+- `rodar_bpmn_python` -- Python scripting via Erlport
+
+### Dispatch Order
+
+When a script task executes, the language is resolved in this order:
+
+1. `"elixir"` -- built-in sandboxed Elixir evaluator
+2. `"feel"` -- built-in FEEL evaluator
+3. Any other string -- looked up in `RodarBpmn.Expression.ScriptRegistry`
+4. If no engine is found, returns `{:error, "Unsupported script language: ..."}`
+
 ## Next Steps
 
 - [Gateways](https://hexdocs.pm/rodar_bpmn/gateways.html) -- Conditional routing with expressions
 - [Events](https://hexdocs.pm/rodar_bpmn/events.html) -- Timer, conditional, and message events
+- [Task Handlers](task_handlers.md) -- Register custom task implementations
