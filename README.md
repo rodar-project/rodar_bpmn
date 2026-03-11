@@ -31,7 +31,7 @@ by adding `rodar_bpmn` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:rodar_bpmn, "~> 0.1.0-dev"}]
+  [{:rodar_bpmn, "~> 1.0.0"}]
 end
 ```
 
@@ -440,17 +440,6 @@ mix rodar_bpmn.run path/to/process.bpmn
 mix rodar_bpmn.run path/to/process.bpmn --data '{"username": "alice"}'
 ```
 
-### Create a release
-
-```shell
-mix rodar_bpmn.release patch          # Release current version, bump patch
-mix rodar_bpmn.release minor          # Release current version, bump minor
-mix rodar_bpmn.release major          # Release current version, bump major
-mix rodar_bpmn.release patch --dry-run  # Preview without making changes
-```
-
-See [Versioning & Releases](#versioning--releases) for details.
-
 ## Development
 
 ```shell
@@ -494,13 +483,22 @@ This project follows [Semantic Versioning](https://semver.org/). The current ver
 - **Changelog** follows [Keep a Changelog](https://keepachangelog.com/) format in `CHANGELOG.md`
 - **Git tags** use the `v{version}` format (e.g., `v1.0.0`)
 
+### Create a release
+
+```shell
+mix rodar_bpmn.release patch          # Release current version, bump patch
+mix rodar_bpmn.release minor          # Release current version, bump minor
+mix rodar_bpmn.release major          # Release current version, bump major
+mix rodar_bpmn.release patch --dry-run  # Preview without making changes
+```
+
 ## Acknowledgments
 
 This project is based on [Hashiru BPMN](https://github.com/around25/hashiru-bpmn) by [Around25](https://around25.com). We are grateful for the foundation they built — the original BPMN 2.0 XML parser and token-based execution model that this engine extends.
 
 ## License
 
-Copyright (c) 2017 Around 25 SRL
+Copyright (c) 2026 - Rodrigo Couto
 
 Licensed under the Apache 2.0 license.
 
