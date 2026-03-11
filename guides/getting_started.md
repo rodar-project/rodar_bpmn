@@ -6,7 +6,7 @@ Add `rodar_bpmn` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:rodar_bpmn, github: "rodgco/rodar-bpmn"}]
+  [{:rodar_bpmn, github: "rodar-project/rodar-bpmn"}]
 end
 ```
 

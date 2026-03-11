@@ -29,7 +29,7 @@ Fork and clone the Rodar BPMN repository:
 1. Login to your GitHub account or create one by following the instructions given
    [here](https://github.com/signup/free).
 2. [Fork](http://help.github.com/forking) the [main Rodar BPMN
-   repository](https://github.com/rodgco/rodar-bpmn).
+   repository](https://github.com/rodar-project/rodar-bpmn).
 3. Clone your fork of the repository and define an `upstream` remote pointing back to
    the repository that you forked in the first place.
 
@@ -41,7 +41,7 @@ git clone git@github.com:<github username>/rodar-bpmn.git
 cd rodar-bpmn
 
 # Add the main repository as an upstream remote to your repository:
-git remote add upstream https://github.com/rodgco/rodar-bpmn.git
+git remote add upstream https://github.com/rodar-project/rodar-bpmn.git
 ```
 
 ## Installing HEX packages

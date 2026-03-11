@@ -21,7 +21,7 @@ Do not open issues for general support questions as we want to keep GitHub issue
 
 ## <a name="issue"></a> Found a Bug?
 If you find a bug in the source code, you can help us by
-[submitting an issue](#submit-issue) to our [GitHub Repository](https://github.com/rodgco/rodar-bpmn).
+[submitting an issue](#submit-issue) to our [GitHub Repository](https://github.com/rodar-project/rodar-bpmn).
 Even better, you can [submit a Pull Request](#submit-pr) with a fix.
 
 ## <a name="feature"></a> Missing a Feature?
@@ -56,13 +56,13 @@ reproduceable scenario.
 Unfortunately we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from
 you we are going to close an issue that don't have enough info to be reproduced.
 
-You can file new issues by filling out our [new issue form](https://github.com/rodgco/rodar-bpmn/issues/new).
+You can file new issues by filling out our [new issue form](https://github.com/rodar-project/rodar-bpmn/issues/new).
 
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-* Search [GitHub](https://github.com/rodgco/rodar-bpmn/pulls) for an open or closed PR
+* Search [GitHub](https://github.com/rodar-project/rodar-bpmn/pulls) for an open or closed PR
   that relates to your submission. You don't want to duplicate effort.
 * Make your changes in a new git branch off `develop`:
 

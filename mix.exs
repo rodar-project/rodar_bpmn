@@ -16,8 +16,8 @@ defmodule RodarBpmn.MixProject do
 
       # Docs
       name: "Rodar BPMN",
-      source_url: "https://github.com/rodgco/rodar-bpmn",
-      homepage_url: "https://rodgco.github.io/rodar-bpmn/",
+      source_url: "https://github.com/rodar-project/rodar-bpmn",
+      homepage_url: "https://rodar-project.github.io/rodar-bpmn/",
       test_coverage: [tool: ExCoveralls],
       dialyzer: [plt_add_apps: [:mix, :ex_unit]],
       docs: docs()
@@ -30,7 +30,7 @@ defmodule RodarBpmn.MixProject do
       files: ["lib", "mix.exs", "README*", "LICENSE*", "CHANGELOG.md", "VERSION"],
       maintainers: ["Rodrigo Couto"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/rodgco/rodar-bpmn"}
+      links: %{"GitHub" => "https://github.com/rodar-project/rodar-bpmn"}
     ]
   end
 
