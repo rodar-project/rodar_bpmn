@@ -56,6 +56,91 @@ defmodule RodarBpmn.ExecutionHistoryTest do
       assert entry.node_type == :bpmn_event_start
       assert is_integer(entry.timestamp)
     end
+
+    test "classifies preceding nodes as :ok when process suspends at user task" do
+      # Process: Start -> flow1 -> ServiceTask -> flow2 -> UserTask -> flow3 -> End
+      start =
+        {:bpmn_event_start, %{id: "start_1", incoming: [], outgoing: ["flow_1"]}}
+
+      flow_1 =
+        {:bpmn_sequence_flow,
+         %{
+           id: "flow_1",
+           sourceRef: "start_1",
+           targetRef: "service_1",
+           conditionExpression: nil,
+           isImmediate: nil
+         }}
+
+      service_task =
+        {:bpmn_activity_task_service,
+         %{
+           id: "service_1",
+           outgoing: ["flow_2"],
+           handler: RodarBpmn.Activity.Task.Service.TestHandler
+         }}
+
+      flow_2 =
+        {:bpmn_sequence_flow,
+         %{
+           id: "flow_2",
+           sourceRef: "service_1",
+           targetRef: "user_1",
+           conditionExpression: nil,
+           isImmediate: nil
+         }}
+
+      user_task =
+        {:bpmn_activity_task_user, %{id: "user_1", name: "Review", outgoing: ["flow_3"]}}
+
+      flow_3 =
+        {:bpmn_sequence_flow,
+         %{
+           id: "flow_3",
+           sourceRef: "user_1",
+           targetRef: "end_1",
+           conditionExpression: nil,
+           isImmediate: nil
+         }}
+
+      end_event =
+        {:bpmn_event_end, %{id: "end_1", incoming: ["flow_3"], outgoing: []}}
+
+      process = %{
+        "start_1" => start,
+        "flow_1" => flow_1,
+        "service_1" => service_task,
+        "flow_2" => flow_2,
+        "user_1" => user_task,
+        "flow_3" => flow_3,
+        "end_1" => end_event
+      }
+
+      {:ok, context} = Context.start_link(process, %{})
+      token = RodarBpmn.Token.new()
+
+      # Execution suspends at user task
+      {:manual, _task_data} = RodarBpmn.execute(start, context, token)
+
+      # Start event should be :ok, not :manual
+      [start_entry] = Context.get_node_history(context, "start_1")
+      assert start_entry.result == :ok
+
+      # Service task should be :ok, not :manual
+      [service_entry] = Context.get_node_history(context, "service_1")
+      assert service_entry.result == :ok
+
+      # Sequence flows should be :ok
+      [flow_1_entry] = Context.get_node_history(context, "flow_1")
+      assert flow_1_entry.result == :ok
+
+      [flow_2_entry] = Context.get_node_history(context, "flow_2")
+      assert flow_2_entry.result == :ok
+
+      # Only the user task itself should be :manual
+      [user_entry] = Context.get_node_history(context, "user_1")
+      assert user_entry.result == :manual
+    end
   end
 
   describe "Context history API" do

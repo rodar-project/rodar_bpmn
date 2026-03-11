@@ -18,6 +18,15 @@ defmodule RodarBpmn do
   `release_token/2` passes a token to the next node by ID. `release_token/3`
   forks child tokens for parallel branches (e.g., from a parallel gateway).
 
+  ## Execution History Classification
+
+  `execute/3` records each node's completion result in the execution history.
+  A node that calls `release_token` is classified as `:ok` regardless of the
+  downstream result, because calling `release_token` means the node itself
+  completed its work successfully. Only nodes that return directly without
+  releasing (e.g., a user task returning `{:manual, _}`) are classified by
+  their own return value.
+
   ## Return Values
 
   All handlers return one of:
@@ -94,12 +103,15 @@ defmodule RodarBpmn do
   """
   @spec release_token(String.t() | [String.t()], context()) :: result()
   def release_token(targets, context) when is_list(targets) do
+    mark_token_released(context)
+
     targets
     |> Task.async_stream(&release_token(&1, context))
     |> Enum.reduce({:ok, context}, &reduce_result/2)
   end
 
   def release_token(target, context) do
+    mark_token_released(context)
     process = Context.get(context, :process)
     next = next(target, process)
 
@@ -117,6 +129,8 @@ defmodule RodarBpmn do
   """
   @spec release_token(String.t() | [String.t()], context(), RodarBpmn.Token.t()) :: result()
   def release_token(targets, context, %Token{} = token) when is_list(targets) do
+    mark_token_released(context)
+
     targets
     |> Task.async_stream(fn target ->
       child_token = Token.fork(token)
@@ -126,6 +140,7 @@ defmodule RodarBpmn do
   end
 
   def release_token(target, context, %Token{} = token) do
+    mark_token_released(context)
     process = Context.get(context, :process)
     next = next(target, process)
 
@@ -154,6 +169,7 @@ defmodule RodarBpmn do
   def execute({type, %{id: id} = _attrs} = elem, context, %Token{} = token) do
     token = %{token | current_node: id}
     Context.put_meta(context, :current_token, token)
+    Context.put_meta(context, {:_token_released, token.id}, false)
 
     Context.record_visit(context, %{
       node_id: id,
@@ -183,7 +199,15 @@ defmodule RodarBpmn do
       result: result
     })
 
-    result_type = classify_result(result, context, id)
+    token_was_released = Context.get_meta(context, {:_token_released, token.id})
+    Context.put_meta(context, {:_token_released, token.id}, nil)
+
+    result_type =
+      if token_was_released do
+        :ok
+      else
+        classify_result(result, context, id)
+      end
 
     Context.record_completion(context, id, token.id, result_type)
 
@@ -299,6 +323,16 @@ defmodule RodarBpmn do
   defp classify_result(_, _context, _id), do: :unknown
 
   defp activity_type?(type), do: type in @activity_types
+
+  defp mark_token_released(context) do
+    case Context.get_meta(context, :current_token) do
+      %Token{id: token_id} ->
+        Context.put_meta(context, {:_token_released, token_id}, true)
+
+      _ ->
+        :ok
+    end
+  end
 
   defp pre_register_compensation(context, activity_id) do
     process = Context.get(context, :process)
