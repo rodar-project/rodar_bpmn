@@ -506,4 +506,3 @@ Licensed under the Apache 2.0 license.
 
 - [BPMN 2.0 Specification](https://www.omg.org/spec/BPMN/2.0/About-BPMN/)
 - [Elixir](https://elixir-lang.org/)
-- [Roadmap](ROADMAP.md)

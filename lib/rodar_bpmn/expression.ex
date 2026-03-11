@@ -1,36 +1,35 @@
 defmodule RodarBpmn.Expression do
   @moduledoc """
-  RodarBpmn.Expression
-  ===============
-
-  Validate a BPMN condition expression and return its value.
+  Validates a BPMN condition expression and returns its value.
 
   Supports multiple expression languages:
 
   - `"elixir"` — Sandboxed Elixir expression evaluation via `RodarBpmn.Expression.Sandbox`
   - `"feel"` — FEEL (Friendly Enough Expression Language) via `RodarBpmn.Expression.Feel`
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-    iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1==2"}}, context)
-    {:ok, false}
+  ## Examples
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-    iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1<2"}}, context)
-    {:ok, true}
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1==2"}}, context)
+      {:ok, false}
 
-    The following example illustrates how we can execute an Elixir expression on the data in our context:
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1<2"}}, context)
+      {:ok, true}
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-    iex> RodarBpmn.Context.put_data(context, "count", 4)
-    iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "data[\\"count\\"]==4"}}, context)
-    {:ok, true}
+  Elixir expressions can access the context data map:
 
-    FEEL expressions receive the raw data map — identifiers resolve directly:
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> RodarBpmn.Context.put_data(context, "count", 4)
+      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "data[\\"count\\"]==4"}}, context)
+      {:ok, true}
 
-    iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-    iex> RodarBpmn.Context.put_data(context, "count", 4)
-    iex> RodarBpmn.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
-    {:ok, true}
+  FEEL expressions receive the raw data map — identifiers resolve directly:
+
+      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> RodarBpmn.Context.put_data(context, "count", 4)
+      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
+      {:ok, true}
 
   """
 
