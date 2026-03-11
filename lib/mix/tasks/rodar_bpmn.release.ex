@@ -103,7 +103,7 @@ defmodule Mix.Tasks.RodarBpmn.Release do
 
       if publish do
         step("Publishing v#{release_version} to Hex", fn ->
-          Mix.Task.run("hex.publish", ["--yes"])
+          mix!(["hex.publish", "--yes"])
         end)
       end
 
@@ -181,6 +181,16 @@ defmodule Mix.Tasks.RodarBpmn.Release do
       )
 
     File.write!(@changelog_file, updated)
+  end
+
+  defp mix!(args) do
+    case System.cmd("mix", args, stderr_to_stdout: true) do
+      {output, 0} ->
+        output
+
+      {output, code} ->
+        Mix.raise("mix #{Enum.join(args, " ")} failed (exit #{code}):\n#{output}")
+    end
   end
 
   defp git!(args) do
