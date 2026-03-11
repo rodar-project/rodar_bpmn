@@ -7,6 +7,15 @@ defmodule RodarBpmn.Activity.Task.Service do
   the task attributes and context data, and returns a result map that gets
   merged into the context.
 
+  Handler resolution follows this priority:
+
+  1. **Inline `:handler` attribute** — if the element has a `:handler` key (e.g.,
+     injected by `Diagram.load/2` with `:handler_map`), that module is used directly.
+  2. **`RodarBpmn.TaskRegistry` lookup** — if no inline handler is present, the task's
+     `:id` is looked up in the `TaskRegistry`. This allows registering handlers at
+     runtime without modifying the parsed diagram.
+  3. **Fallback** — if neither source provides a handler, `{:not_implemented}` is returned.
+
   ## Handler Behaviour
 
   Implement the `execute/2` callback:
@@ -21,7 +30,8 @@ defmodule RodarBpmn.Activity.Task.Service do
         end
       end
 
-  Then reference the module in the BPMN element via the `:handler` attribute.
+  Then reference the module in the BPMN element via the `:handler` attribute,
+  or register it in `RodarBpmn.TaskRegistry` using the task's ID.
 
   ## Examples
 
@@ -44,12 +54,31 @@ defmodule RodarBpmn.Activity.Task.Service do
 
   @doc """
   Execute the service task business logic.
+
+  Resolves the handler from the element's `:handler` attribute first, then
+  falls back to `RodarBpmn.TaskRegistry` lookup by the task's `:id`.
   """
   @spec execute(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
   def execute(
-        {:bpmn_activity_task_service, %{outgoing: outgoing, handler: handler} = attrs},
+        {:bpmn_activity_task_service, %{handler: handler} = attrs},
         context
       ) do
+    invoke_handler(handler, attrs, context)
+  end
+
+  def execute(
+        {:bpmn_activity_task_service, %{id: id} = attrs},
+        context
+      ) do
+    case RodarBpmn.TaskRegistry.lookup(id) do
+      {:ok, handler} -> invoke_handler(handler, attrs, context)
+      :error -> {:not_implemented}
+    end
+  end
+
+  def execute(_elem, _context), do: {:not_implemented}
+
+  defp invoke_handler(handler, %{outgoing: outgoing} = attrs, context) do
     data = RodarBpmn.Context.get(context, :data)
 
     case handler.execute(attrs, data) do
@@ -67,6 +96,4 @@ defmodule RodarBpmn.Activity.Task.Service do
         {:error, reason}
     end
   end
-
-  def execute(_elem, _context), do: {:not_implemented}
 end

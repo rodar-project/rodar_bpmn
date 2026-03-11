@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Diagram.load/2` accepts a `:handler_map` option to inject handler modules into service task elements at parse time
+- `Activity.Task.Service` falls back to `TaskRegistry` lookup by task ID when no inline `:handler` attribute is present
+
 ## [1.0.6] - 2026-03-11
 
 ## [1.0.5] - 2026-03-11

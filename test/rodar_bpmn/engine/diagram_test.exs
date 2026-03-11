@@ -250,6 +250,76 @@ defmodule RodarBpmn.Engine.DiagramTest do
     end
   end
 
+  describe "load/2 with handler_map option" do
+    @service_task_xml """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+      <bpmn:process id="Process_1" isExecutable="true">
+        <bpmn:startEvent id="Start_1">
+          <bpmn:outgoing>Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:serviceTask id="Task_Validate" name="Validate">
+          <bpmn:incoming>Flow_1</bpmn:incoming>
+          <bpmn:outgoing>Flow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:serviceTask id="Task_Fulfill" name="Fulfill">
+          <bpmn:incoming>Flow_2</bpmn:incoming>
+          <bpmn:outgoing>Flow_3</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:endEvent id="End_1">
+          <bpmn:incoming>Flow_3</bpmn:incoming>
+        </bpmn:endEvent>
+      </bpmn:process>
+    </bpmn:definitions>
+    """
+
+    test "injects handler into matching service task elements" do
+      handler_map = %{
+        "Task_Validate" => RodarBpmn.Activity.Task.Service.TestHandler
+      }
+
+      diagram = Diagram.load(@service_task_xml, handler_map: handler_map)
+      {:bpmn_process, _, elements} = hd(diagram.processes)
+
+      {:bpmn_activity_task_service, attrs} = elements["Task_Validate"]
+      assert attrs.handler == RodarBpmn.Activity.Task.Service.TestHandler
+    end
+
+    test "does not inject handler into elements not in the map" do
+      handler_map = %{
+        "Task_Validate" => RodarBpmn.Activity.Task.Service.TestHandler
+      }
+
+      diagram = Diagram.load(@service_task_xml, handler_map: handler_map)
+      {:bpmn_process, _, elements} = hd(diagram.processes)
+
+      {:bpmn_activity_task_service, attrs} = elements["Task_Fulfill"]
+      refute Map.has_key?(attrs, :handler)
+    end
+
+    test "does not affect non-service-task elements" do
+      handler_map = %{
+        "Start_1" => RodarBpmn.Activity.Task.Service.TestHandler
+      }
+
+      diagram = Diagram.load(@service_task_xml, handler_map: handler_map)
+      {:bpmn_process, _, elements} = hd(diagram.processes)
+
+      {:bpmn_event_start, attrs} = elements["Start_1"]
+      refute Map.has_key?(attrs, :handler)
+    end
+
+    test "returns unchanged diagram when no handler_map option is given" do
+      diagram_plain = Diagram.load(@service_task_xml)
+      diagram_opts = Diagram.load(@service_task_xml, [])
+
+      {:bpmn_process, _, elems_plain} = hd(diagram_plain.processes)
+      {:bpmn_process, _, elems_opts} = hd(diagram_opts.processes)
+
+      assert elems_plain == elems_opts
+    end
+  end
+
   defp load_elements do
     Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
   end

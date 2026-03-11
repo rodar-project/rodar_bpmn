@@ -15,6 +15,10 @@ defmodule RodarBpmn.Engine.Diagram do
   `export/1` delegates to `RodarBpmn.Engine.Diagram.Export.to_xml/1` for the
   inverse operation.
 
+  `load/2` accepts options for post-parse transformations. The `:handler_map`
+  option injects handler modules into service task elements, enabling handler
+  wiring at parse time instead of at runtime via `RodarBpmn.TaskRegistry`.
+
   ## Examples
 
       iex> diagram = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/hiring/hiring.bpmn2"))
@@ -32,13 +36,84 @@ defmodule RodarBpmn.Engine.Diagram do
 
   """
 
+  @doc """
+  Parses a BPMN 2.0 XML string into Elixir data structures.
+  """
   @spec load(binary()) :: map()
   def load(diagram) do
     {:ok, bpmn, _} = :erlsom.simple_form(diagram, nameFun: &format_tag/3)
     load_definition(bpmn)
   end
 
+  @doc """
+  Parses a BPMN 2.0 XML string with options.
+
+  ## Options
+
+    * `:handler_map` — a map of element ID (string) to handler module. For each
+      service task whose `id` appears as a key in the map, the corresponding
+      module is injected as the `:handler` attribute. This allows wiring service
+      task handlers at parse time rather than at runtime via `RodarBpmn.TaskRegistry`.
+
+  ## Examples
+
+      iex> xml = \"\"\"
+      ...> <?xml version="1.0" encoding="UTF-8"?>
+      ...> <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D1">
+      ...>   <bpmn:process id="P1" isExecutable="true">
+      ...>     <bpmn:serviceTask id="Task_1" name="My Service">
+      ...>       <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      ...>     </bpmn:serviceTask>
+      ...>   </bpmn:process>
+      ...> </bpmn:definitions>
+      ...> \"\"\"
+      iex> diagram = RodarBpmn.Engine.Diagram.load(xml, handler_map: %{"Task_1" => RodarBpmn.Activity.Task.Service.TestHandler})
+      iex> {:bpmn_process, _, elements} = hd(diagram.processes)
+      iex> {:bpmn_activity_task_service, attrs} = elements["Task_1"]
+      iex> attrs.handler
+      RodarBpmn.Activity.Task.Service.TestHandler
+
+  """
+  @spec load(binary(), keyword()) :: map()
+  def load(diagram, opts) when is_list(opts) do
+    result = load(diagram)
+    apply_opts(result, opts)
+  end
+
   defdelegate export(diagram), to: RodarBpmn.Engine.Diagram.Export, as: :to_xml
+
+  defp apply_opts(result, opts) do
+    case Keyword.get(opts, :handler_map) do
+      nil -> result
+      handler_map when is_map(handler_map) -> inject_handlers(result, handler_map)
+    end
+  end
+
+  defp inject_handlers(result, handler_map) do
+    updated_processes =
+      Enum.map(result.processes, fn {:bpmn_process, proc_attrs, elements} ->
+        {:bpmn_process, proc_attrs, inject_handlers_into_elements(elements, handler_map)}
+      end)
+
+    %{result | processes: updated_processes}
+  end
+
+  defp inject_handlers_into_elements(elements, handler_map) do
+    Map.new(elements, fn
+      {id, {:bpmn_activity_task_service, attrs}} ->
+        {id, maybe_inject_handler({:bpmn_activity_task_service, attrs}, id, handler_map)}
+
+      {id, elem} ->
+        {id, elem}
+    end)
+  end
+
+  defp maybe_inject_handler({:bpmn_activity_task_service, attrs}, id, handler_map) do
+    case Map.fetch(handler_map, id) do
+      {:ok, handler} -> {:bpmn_activity_task_service, Map.put(attrs, :handler, handler)}
+      :error -> {:bpmn_activity_task_service, attrs}
+    end
+  end
 
   defp format_tag(name, _namespace, []) do
     "#{name}"

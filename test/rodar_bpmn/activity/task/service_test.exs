@@ -61,6 +61,33 @@ defmodule RodarBpmn.Activity.Task.ServiceTest do
     end
   end
 
+  describe "TaskRegistry fallback" do
+    test "uses handler from TaskRegistry when no inline handler is present" do
+      process = build_process()
+      {:ok, context} = Context.start_link(process, %{})
+
+      RodarBpmn.TaskRegistry.register("task", Service.TestHandler)
+
+      elem =
+        {:bpmn_activity_task_service, %{id: "task", outgoing: ["flow_out"]}}
+
+      assert {:ok, ^context} = Service.token_in(elem, context)
+      assert Context.get_data(context, :result) == "handled"
+
+      RodarBpmn.TaskRegistry.unregister("task")
+    end
+
+    test "returns {:not_implemented} when no handler and no registry entry" do
+      process = build_process()
+      {:ok, context} = Context.start_link(process, %{})
+
+      elem =
+        {:bpmn_activity_task_service, %{id: "unregistered_task", outgoing: ["flow_out"]}}
+
+      assert {:not_implemented} = Service.token_in(elem, context)
+    end
+  end
+
   describe "fallback" do
     test "returns {:not_implemented} for unrecognized element shape" do
       assert {:not_implemented} = Service.execute(:bad, nil)
