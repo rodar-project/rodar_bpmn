@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Engine.DiagramTest do
+defmodule Rodar.Engine.DiagramTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Engine.Diagram
+  alias Rodar.Engine.Diagram
 
-  doctest RodarBpmn.Engine.Diagram
+  doctest Rodar.Engine.Diagram
 
   describe "parser support for task types" do
     test "parses sendTask elements" do
@@ -275,19 +275,19 @@ defmodule RodarBpmn.Engine.DiagramTest do
 
     test "injects handler into matching service task elements" do
       handler_map = %{
-        "Task_Validate" => RodarBpmn.Activity.Task.Service.TestHandler
+        "Task_Validate" => Rodar.Activity.Task.Service.TestHandler
       }
 
       diagram = Diagram.load(@service_task_xml, handler_map: handler_map)
       {:bpmn_process, _, elements} = hd(diagram.processes)
 
       {:bpmn_activity_task_service, attrs} = elements["Task_Validate"]
-      assert attrs.handler == RodarBpmn.Activity.Task.Service.TestHandler
+      assert attrs.handler == Rodar.Activity.Task.Service.TestHandler
     end
 
     test "does not inject handler into elements not in the map" do
       handler_map = %{
-        "Task_Validate" => RodarBpmn.Activity.Task.Service.TestHandler
+        "Task_Validate" => Rodar.Activity.Task.Service.TestHandler
       }
 
       diagram = Diagram.load(@service_task_xml, handler_map: handler_map)
@@ -299,7 +299,7 @@ defmodule RodarBpmn.Engine.DiagramTest do
 
     test "does not affect non-service-task elements" do
       handler_map = %{
-        "Start_1" => RodarBpmn.Activity.Task.Service.TestHandler
+        "Start_1" => Rodar.Activity.Task.Service.TestHandler
       }
 
       diagram = Diagram.load(@service_task_xml, handler_map: handler_map)

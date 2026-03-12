@@ -1,21 +1,21 @@
-defmodule RodarBpmn.Workflow.Server do
+defmodule Rodar.Workflow.Server do
   @moduledoc """
   GenServer abstraction for BPMN workflow management.
 
-  Builds on `RodarBpmn.Workflow` (Layer 1) to eliminate GenServer boilerplate
+  Builds on `Rodar.Workflow` (Layer 1) to eliminate GenServer boilerplate
   for common BPMN patterns: instance creation, task completion, and instance
   tracking.
 
   ## Usage
 
       defmodule MyApp.OrderManager do
-        use RodarBpmn.Workflow.Server,
+        use Rodar.Workflow.Server,
           bpmn_file: "priv/bpmn/order_processing.bpmn",
           process_id: "order_processing",
           otp_app: :my_app,
           app_name: "MyApp"
 
-        @impl RodarBpmn.Workflow.Server
+        @impl Rodar.Workflow.Server
         def init_data(params, instance_id) do
           %{
             "customer" => params["customer"],
@@ -24,7 +24,7 @@ defmodule RodarBpmn.Workflow.Server do
         end
 
         # Optional
-        @impl RodarBpmn.Workflow.Server
+        @impl Rodar.Workflow.Server
         def map_status(:suspended), do: :pending_approval
         def map_status(other), do: other
 
@@ -81,9 +81,9 @@ defmodule RodarBpmn.Workflow.Server do
   defmacro __using__(opts) do
     quote do
       use GenServer
-      use RodarBpmn.Workflow, unquote(opts)
+      use Rodar.Workflow, unquote(opts)
 
-      @behaviour RodarBpmn.Workflow.Server
+      @behaviour Rodar.Workflow.Server
 
       @__server_opts__ unquote(opts)
 
@@ -135,9 +135,9 @@ defmodule RodarBpmn.Workflow.Server do
 
         process_id = Keyword.fetch!(@__server_opts__, :process_id)
 
-        case RodarBpmn.Workflow.start_process(process_id, data) do
+        case Rodar.Workflow.start_process(process_id, data) do
           {:ok, pid} ->
-            status = RodarBpmn.Workflow.process_status(pid)
+            status = Rodar.Workflow.process_status(pid)
             mapped = unquote(__MODULE__).__apply_map_status__(__MODULE__, status)
 
             instance = %{
@@ -163,8 +163,8 @@ defmodule RodarBpmn.Workflow.Server do
           ) do
         case Map.fetch(state.instances, instance_id) do
           {:ok, instance} ->
-            _result = RodarBpmn.Workflow.resume_user_task(instance.process_pid, task_id, input)
-            status = RodarBpmn.Workflow.process_status(instance.process_pid)
+            _result = Rodar.Workflow.resume_user_task(instance.process_pid, task_id, input)
+            status = Rodar.Workflow.process_status(instance.process_pid)
             mapped = unquote(__MODULE__).__apply_map_status__(__MODULE__, status)
 
             updated = %{instance | status: mapped}

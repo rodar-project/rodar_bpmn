@@ -1,7 +1,7 @@
-defmodule RodarBpmn.IntegrationTest do
+defmodule Rodar.IntegrationTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{
+  alias Rodar.{
     Activity.Task.Send,
     Context,
     Engine.Diagram,
@@ -82,14 +82,14 @@ defmodule RodarBpmn.IntegrationTest do
       assert {:ok, ^context} = End.token_in(end_event, context)
     end
 
-    test "full dispatch through RodarBpmn.execute/2", %{diagram: diagram} do
+    test "full dispatch through Rodar.execute/2", %{diagram: diagram} do
       [{:bpmn_process, _attrs, elements}] = diagram.processes
 
       {:ok, context} = Context.start_link(elements, %{})
 
       # Execute start event through the main dispatcher
       start_event = elements["StartEvent_1"]
-      result = RodarBpmn.execute(start_event, context)
+      result = Rodar.execute(start_event, context)
 
       # Should reach the script task stub and return {:not_implemented}
       assert {:not_implemented} = result
@@ -266,7 +266,7 @@ defmodule RodarBpmn.IntegrationTest do
       {:ok, context} = Context.start_link(process, %{"key" => "value"})
 
       # Execute the full flow
-      result = RodarBpmn.execute(start_event, context)
+      result = Rodar.execute(start_event, context)
       assert {:ok, ^context} = result
 
       # Verify initial data is preserved

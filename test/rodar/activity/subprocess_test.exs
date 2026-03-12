@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Activity.SubprocessTest do
+defmodule Rodar.Activity.SubprocessTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Subprocess, Context, Registry}
+  alias Rodar.{Activity.Subprocess, Context, Registry}
 
   describe "call activity" do
     test "executes external process from registry and merges data back" do
@@ -123,7 +123,7 @@ defmodule RodarBpmn.Activity.SubprocessTest do
     end
   end
 
-  describe "dispatch via RodarBpmn.execute/2" do
+  describe "dispatch via Rodar.execute/2" do
     test "dispatches call activity correctly" do
       child_start = {:bpmn_event_start, %{id: "cs", incoming: [], outgoing: ["cf1"]}}
       child_end = {:bpmn_event_end, %{id: "ce", incoming: ["cf1"], outgoing: []}}
@@ -161,7 +161,7 @@ defmodule RodarBpmn.Activity.SubprocessTest do
         {:bpmn_activity_subprocess,
          %{id: "call1", calledElement: process_id, outgoing: ["flow_out"]}}
 
-      assert {:ok, ^context} = RodarBpmn.execute(elem, context)
+      assert {:ok, ^context} = Rodar.execute(elem, context)
 
       Registry.unregister(process_id)
     end

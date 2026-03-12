@@ -1,11 +1,11 @@
-defmodule RodarBpmn.Engine.Diagram do
+defmodule Rodar.Engine.Diagram do
   @moduledoc """
   Parses BPMN 2.0 XML into Elixir data structures.
 
   Uses `:erlsom.simple_form/2` to parse XML, then transforms the result into a
   map containing `:processes`, `:item_definitions`, and `:collaboration`. Each
   process is a map of element ID to `{:bpmn_type, %{...}}` tuples that the
-  `RodarBpmn` dispatcher can execute.
+  `Rodar` dispatcher can execute.
 
   Element types are mapped from XML tag names (e.g., `intermediateThrowEvent` becomes
   `:bpmn_event_intermediate_throw`, `intermediateCatchEvent` becomes
@@ -14,15 +14,15 @@ defmodule RodarBpmn.Engine.Diagram do
 
   Lane sets (`laneSet`, `lane`, `flowNodeRef`, `childLaneSet`) are extracted from
   process elements and stored in the process attrs under the `:lane_set` key. When
-  a process has no lanes, `:lane_set` is `nil`. Use `RodarBpmn.Lane` to query lane
+  a process has no lanes, `:lane_set` is `nil`. Use `Rodar.Lane` to query lane
   assignments at runtime.
 
-  `export/1` delegates to `RodarBpmn.Engine.Diagram.Export.to_xml/1` for the
+  `export/1` delegates to `Rodar.Engine.Diagram.Export.to_xml/1` for the
   inverse operation.
 
   `load/2` accepts options for post-parse transformations. The `:handler_map`
   option injects handler modules into service task elements, enabling handler
-  wiring at parse time instead of at runtime via `RodarBpmn.TaskRegistry`.
+  wiring at parse time instead of at runtime via `Rodar.TaskRegistry`.
 
   When `:bpmn_file` and `:app_name` are provided, convention-based handler
   auto-discovery is enabled by default. Discovered handlers are merged with
@@ -32,28 +32,28 @@ defmodule RodarBpmn.Engine.Diagram do
 
   ## See Also
 
-  - `RodarBpmn.Lane` -- lane assignment queries
-  - `RodarBpmn.Engine.Diagram.Export` -- inverse XML export
-  - `RodarBpmn.Validation` -- structural validation including lane integrity
+  - `Rodar.Lane` -- lane assignment queries
+  - `Rodar.Engine.Diagram.Export` -- inverse XML export
+  - `Rodar.Validation` -- structural validation including lane integrity
 
   ## Examples
 
-      iex> diagram = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/hiring/hiring.bpmn2"))
+      iex> diagram = Rodar.Engine.Diagram.load(File.read!("./priv/bpmn/examples/hiring/hiring.bpmn2"))
       iex> is_map(diagram)
       true
 
-      iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
+      iex> %{processes: processes} = Rodar.Engine.Diagram.load(File.read!("./priv/bpmn/examples/user_login.bpmn"))
       iex> is_list(processes)
       true
 
-      iex> %{processes: processes} = RodarBpmn.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
+      iex> %{processes: processes} = Rodar.Engine.Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
       iex> Enum.map(processes, &IO.inspect/1)
       iex> is_list(processes)
       true
 
   """
 
-  alias RodarBpmn.Scaffold.Discovery
+  alias Rodar.Scaffold.Discovery
 
   @doc """
   Parses a BPMN 2.0 XML string into Elixir data structures.
@@ -72,7 +72,7 @@ defmodule RodarBpmn.Engine.Diagram do
     * `:handler_map` — a map of element ID (string) to handler module. For each
       service task whose `id` appears as a key in the map, the corresponding
       module is injected as the `:handler` attribute. This allows wiring service
-      task handlers at parse time rather than at runtime via `RodarBpmn.TaskRegistry`.
+      task handlers at parse time rather than at runtime via `Rodar.TaskRegistry`.
     * `:bpmn_file` — the BPMN file path (e.g., `"order_processing.bpmn"`). When
       present together with `:app_name`, triggers convention-based handler
       auto-discovery.
@@ -97,11 +97,11 @@ defmodule RodarBpmn.Engine.Diagram do
       ...>   </bpmn:process>
       ...> </bpmn:definitions>
       ...> \"\"\"
-      iex> diagram = RodarBpmn.Engine.Diagram.load(xml, handler_map: %{"Task_1" => RodarBpmn.Activity.Task.Service.TestHandler})
+      iex> diagram = Rodar.Engine.Diagram.load(xml, handler_map: %{"Task_1" => Rodar.Activity.Task.Service.TestHandler})
       iex> {:bpmn_process, _, elements} = hd(diagram.processes)
       iex> {:bpmn_activity_task_service, attrs} = elements["Task_1"]
       iex> attrs.handler
-      RodarBpmn.Activity.Task.Service.TestHandler
+      Rodar.Activity.Task.Service.TestHandler
 
   """
   @spec load(binary(), keyword()) :: map()
@@ -110,7 +110,7 @@ defmodule RodarBpmn.Engine.Diagram do
     apply_opts(result, opts)
   end
 
-  defdelegate export(diagram), to: RodarBpmn.Engine.Diagram.Export, as: :to_xml
+  defdelegate export(diagram), to: Rodar.Engine.Diagram.Export, as: :to_xml
 
   defp apply_opts(result, opts) do
     {result, discovery} = maybe_discover(result, opts)

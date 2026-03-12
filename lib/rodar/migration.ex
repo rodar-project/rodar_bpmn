@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Migration do
+defmodule Rodar.Migration do
   @moduledoc """
   Process instance migration between definition versions.
 
@@ -22,8 +22,8 @@ defmodule RodarBpmn.Migration do
   migration is safe despite structural differences).
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Registry
+  alias Rodar.Context
+  alias Rodar.Registry
 
   @doc """
   Check whether a process instance is compatible with a target definition version.
@@ -34,8 +34,8 @@ defmodule RodarBpmn.Migration do
   """
   @spec check_compatibility(pid(), pos_integer()) :: :compatible | {:incompatible, [map()]}
   def check_compatibility(instance_pid, target_version) do
-    process_id = RodarBpmn.Process.process_id(instance_pid)
-    context = RodarBpmn.Process.get_context(instance_pid)
+    process_id = Rodar.Process.process_id(instance_pid)
+    context = Rodar.Process.get_context(instance_pid)
 
     case Registry.lookup(process_id, target_version) do
       :error ->
@@ -79,19 +79,19 @@ defmodule RodarBpmn.Migration do
   end
 
   defp do_migrate(instance_pid, target_version) do
-    process_id = RodarBpmn.Process.process_id(instance_pid)
-    status = RodarBpmn.Process.status(instance_pid)
+    process_id = Rodar.Process.process_id(instance_pid)
+    status = Rodar.Process.status(instance_pid)
     was_running = status == :running
 
     with :ok <- maybe_suspend(instance_pid, status),
          {:ok, target_def} <- lookup_target(process_id, target_version),
          :ok <- swap_definition(instance_pid, target_def, target_version) do
-      if was_running, do: RodarBpmn.Process.resume(instance_pid)
+      if was_running, do: Rodar.Process.resume(instance_pid)
       :ok
     end
   end
 
-  defp maybe_suspend(pid, :running), do: RodarBpmn.Process.suspend(pid)
+  defp maybe_suspend(pid, :running), do: Rodar.Process.suspend(pid)
   defp maybe_suspend(_pid, _status), do: :ok
 
   defp lookup_target(process_id, version) do
@@ -102,10 +102,10 @@ defmodule RodarBpmn.Migration do
   end
 
   defp swap_definition(instance_pid, target_def, target_version) do
-    context = RodarBpmn.Process.get_context(instance_pid)
+    context = Rodar.Process.get_context(instance_pid)
     target_map = build_process_map(target_def)
     Context.swap_process(context, target_map)
-    RodarBpmn.Process.update_definition_version(instance_pid, target_version)
+    Rodar.Process.update_definition_version(instance_pid, target_version)
     :ok
   end
 

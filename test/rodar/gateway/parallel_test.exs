@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Gateway.ParallelTest do
+defmodule Rodar.Gateway.ParallelTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Gateway.Parallel}
+  alias Rodar.{Context, Gateway.Parallel}
 
   describe "fork (diverge)" do
     test "releases tokens to all outgoing flows" do

@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Boundary do
+defmodule Rodar.Event.Boundary do
   @moduledoc """
   Handle passing the token through a boundary event element.
 
@@ -6,7 +6,7 @@ defmodule RodarBpmn.Event.Boundary do
   various event types:
 
   - **Error** — activated directly by the parent activity on error
-    (existing pattern in `RodarBpmn.Activity.Subprocess.Embedded`)
+    (existing pattern in `Rodar.Activity.Subprocess.Embedded`)
   - **Message** — subscribes to the event bus for a matching message
   - **Signal** — subscribes to the event bus for a matching signal
   - **Timer** — schedules a timer callback
@@ -17,22 +17,22 @@ defmodule RodarBpmn.Event.Boundary do
       iex> end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow"], outgoing: []}}
       iex> flow = {:bpmn_sequence_flow, %{id: "flow", sourceRef: "b1", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> process = %{"flow" => flow, "end" => end_event}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(process, %{})
       iex> elem = {:bpmn_event_boundary, %{id: "b1", outgoing: ["flow"], attachedToRef: "task1", errorEventDefinition: {:bpmn_event_definition_error, %{_elems: []}}, messageEventDefinition: nil, signalEventDefinition: nil, timerEventDefinition: nil, escalationEventDefinition: nil}}
-      iex> {:ok, ^context} = RodarBpmn.Event.Boundary.token_in(elem, context)
+      iex> {:ok, ^context} = Rodar.Event.Boundary.token_in(elem, context)
       iex> true
       true
 
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Event.Timer
+  alias Rodar.Context
+  alias Rodar.Event.Bus
+  alias Rodar.Event.Timer
 
   @doc """
   Receive the token for the element and handle the boundary event.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in({:bpmn_event_boundary, %{id: id, outgoing: outgoing} = attrs}, context) do
     cond do
       has_error?(attrs) ->
@@ -55,7 +55,7 @@ defmodule RodarBpmn.Event.Boundary do
 
       has_compensate?(attrs) ->
         # Compensation boundary events are passive — handler registration
-        # happens in RodarBpmn.execute/3 when the attached activity completes
+        # happens in Rodar.execute/3 when the attached activity completes
         {:ok, context}
 
       true ->
@@ -93,7 +93,7 @@ defmodule RodarBpmn.Event.Boundary do
 
   # Error boundaries are activated directly by the parent activity
   defp handle_error_boundary(_id, outgoing, context) do
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 
   defp handle_message_boundary(id, attrs, outgoing, context) do

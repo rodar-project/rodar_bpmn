@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Gateway.InclusiveTest do
+defmodule Rodar.Gateway.InclusiveTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Gateway.Inclusive}
+  alias Rodar.{Context, Gateway.Inclusive}
 
   defp make_flow(id, target, condition \\ nil) do
     {:bpmn_sequence_flow,

@@ -1,11 +1,11 @@
-defmodule RodarBpmn.PersistenceTest do
+defmodule Rodar.PersistenceTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Persistence
-  alias RodarBpmn.Persistence.Adapter.ETS
+  alias Rodar.Persistence
+  alias Rodar.Persistence.Adapter.ETS
 
   setup do
-    :ets.delete_all_objects(:rodar_bpmn_persistence)
+    :ets.delete_all_objects(:rodar_persistence)
 
     # Register a simple process with a user task
     process_id = "persist_test_#{:erlang.unique_integer([:positive])}"
@@ -43,10 +43,10 @@ defmodule RodarBpmn.PersistenceTest do
     definition =
       {:bpmn_process, %{id: process_id}, [start_event, flow1, user_task, flow2, end_event]}
 
-    :ok = RodarBpmn.Registry.register(process_id, definition)
+    :ok = Rodar.Registry.register(process_id, definition)
 
     on_exit(fn ->
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Registry.unregister(process_id)
     end)
 
     %{process_id: process_id}
@@ -57,82 +57,82 @@ defmodule RodarBpmn.PersistenceTest do
       process_id: process_id
     } do
       # Start and run until user task suspends
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id, %{order_id: "ORD-001"})
+      {:ok, pid} = Rodar.Process.create_and_run(process_id, %{order_id: "ORD-001"})
 
-      assert RodarBpmn.Process.status(pid) == :suspended
+      assert Rodar.Process.status(pid) == :suspended
 
       # Store some data in context before dehydrating
-      context = RodarBpmn.Process.get_context(pid)
-      RodarBpmn.Context.put_data(context, :step, "waiting_for_input")
-      instance_id = RodarBpmn.Process.instance_id(pid)
+      context = Rodar.Process.get_context(pid)
+      Rodar.Context.put_data(context, :step, "waiting_for_input")
+      instance_id = Rodar.Process.instance_id(pid)
 
       # Dehydrate
-      assert {:ok, ^instance_id} = RodarBpmn.Process.dehydrate(pid)
+      assert {:ok, ^instance_id} = Rodar.Process.dehydrate(pid)
 
       # Verify snapshot is persisted
       assert {:ok, _snapshot} = Persistence.load(instance_id)
 
       # Stop the original process
-      RodarBpmn.Process.terminate(pid)
+      Rodar.Process.terminate(pid)
 
       # Rehydrate
-      assert {:ok, new_pid} = RodarBpmn.Process.rehydrate(instance_id)
+      assert {:ok, new_pid} = Rodar.Process.rehydrate(instance_id)
       assert new_pid != pid
 
       # Verify status
-      assert RodarBpmn.Process.status(new_pid) == :suspended
+      assert Rodar.Process.status(new_pid) == :suspended
 
       # Verify context data is preserved
-      new_context = RodarBpmn.Process.get_context(new_pid)
-      assert RodarBpmn.Context.get_data(new_context, :step) == "waiting_for_input"
-      assert RodarBpmn.Context.get(new_context, :init) == %{order_id: "ORD-001"}
+      new_context = Rodar.Process.get_context(new_pid)
+      assert Rodar.Context.get_data(new_context, :step) == "waiting_for_input"
+      assert Rodar.Context.get(new_context, :init) == %{order_id: "ORD-001"}
 
       # Verify instance ID is preserved
-      assert RodarBpmn.Process.instance_id(new_pid) == instance_id
+      assert Rodar.Process.instance_id(new_pid) == instance_id
 
       # Cleanup
-      RodarBpmn.Process.terminate(new_pid)
+      Rodar.Process.terminate(new_pid)
     end
   end
 
   describe "auto-dehydrate" do
     test "automatically saves snapshot on {:manual, _}", %{process_id: process_id} do
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id, %{})
-      instance_id = RodarBpmn.Process.instance_id(pid)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id, %{})
+      instance_id = Rodar.Process.instance_id(pid)
 
       # Auto-dehydrate should have saved the snapshot
       assert {:ok, snapshot} = Persistence.load(instance_id)
       assert snapshot.status == :suspended
       assert snapshot.process_id == process_id
 
-      RodarBpmn.Process.terminate(pid)
+      Rodar.Process.terminate(pid)
     end
 
     test "does not auto-dehydrate when disabled", %{process_id: process_id} do
       # Temporarily disable auto-dehydrate
-      original = Application.get_env(:rodar_bpmn, :persistence)
+      original = Application.get_env(:rodar, :persistence)
 
       Application.put_env(
-        :rodar_bpmn,
+        :rodar,
         :persistence,
         Keyword.put(original, :auto_dehydrate, false)
       )
 
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id, %{})
-      instance_id = RodarBpmn.Process.instance_id(pid)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id, %{})
+      instance_id = Rodar.Process.instance_id(pid)
 
       # Should NOT have auto-saved
       assert {:error, :not_found} = Persistence.load(instance_id)
 
       # Restore config
-      Application.put_env(:rodar_bpmn, :persistence, original)
-      RodarBpmn.Process.terminate(pid)
+      Application.put_env(:rodar, :persistence, original)
+      Rodar.Process.terminate(pid)
     end
   end
 
   describe "rehydrate error cases" do
     test "returns error for missing snapshot" do
-      assert {:error, :not_found} = RodarBpmn.Process.rehydrate("nonexistent-id")
+      assert {:error, :not_found} = Rodar.Process.rehydrate("nonexistent-id")
     end
 
     test "returns error when process definition not in registry" do
@@ -161,7 +161,7 @@ defmodule RodarBpmn.PersistenceTest do
 
       ETS.save("orphan-id", snapshot)
 
-      assert {:error, _} = RodarBpmn.Process.rehydrate("orphan-id")
+      assert {:error, _} = Rodar.Process.rehydrate("orphan-id")
     end
   end
 
@@ -178,7 +178,7 @@ defmodule RodarBpmn.PersistenceTest do
     end
 
     test "adapter/0 returns configured adapter" do
-      assert Persistence.adapter() == RodarBpmn.Persistence.Adapter.ETS
+      assert Persistence.adapter() == Rodar.Persistence.Adapter.ETS
     end
   end
 end

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.BusTest do
+defmodule Rodar.Event.BusTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Event.Bus
+  alias Rodar.Event.Bus
 
   describe "subscribe/3 and unsubscribe/2" do
     test "subscribes and returns event key" do

@@ -14,7 +14,7 @@ BPMN events represent things that happen during process execution. The engine su
 
 ## Event Bus
 
-`RodarBpmn.Event.Bus` provides pub/sub for inter-node and inter-process communication with two delivery modes:
+`Rodar.Event.Bus` provides pub/sub for inter-node and inter-process communication with two delivery modes:
 
 - **Message** -- point-to-point delivery to the first matching subscriber, then unregisters it
 - **Signal and Escalation** -- broadcast delivery to all matching subscribers
@@ -22,13 +22,13 @@ BPMN events represent things that happen during process execution. The engine su
 ### Subscribing and Publishing
 
 ```elixir
-{:ok, _key} = RodarBpmn.Event.Bus.subscribe(:message, "order_placed", %{
+{:ok, _key} = Rodar.Event.Bus.subscribe(:message, "order_placed", %{
   context: context,
   node_id: "catch_order",
   outgoing: ["flow_next"]
 })
 
-RodarBpmn.Event.Bus.publish(:message, "order_placed", %{order_id: "ORD-42"})
+Rodar.Event.Bus.publish(:message, "order_placed", %{order_id: "ORD-42"})
 ```
 
 ### Message Correlation
@@ -37,13 +37,13 @@ When multiple process instances subscribe to the same message name, correlation 
 
 ```elixir
 # Subscriber includes correlation metadata
-RodarBpmn.Event.Bus.subscribe(:message, "payment_received", %{
+Rodar.Event.Bus.subscribe(:message, "payment_received", %{
   context: context,
   correlation: %{key: "order_id", value: "ORD-42"}
 })
 
 # Publisher targets the correlated subscriber
-RodarBpmn.Event.Bus.publish(:message, "payment_received", %{
+Rodar.Event.Bus.publish(:message, "payment_received", %{
   correlation: %{key: "order_id", value: "ORD-42"},
   amount: 99.99
 })
@@ -53,12 +53,12 @@ If no correlated match is found, the bus falls back to the first uncorrelated su
 
 ## Timers
 
-`RodarBpmn.Event.Timer` parses ISO 8601 durations and repeating intervals:
+`Rodar.Event.Timer` parses ISO 8601 durations and repeating intervals:
 
 ```elixir
-{:ok, 5_000} = RodarBpmn.Event.Timer.parse_duration("PT5S")
-{:ok, 90_000} = RodarBpmn.Event.Timer.parse_duration("PT1M30S")
-{:ok, 3_600_000} = RodarBpmn.Event.Timer.parse_duration("PT1H")
+{:ok, 5_000} = Rodar.Event.Timer.parse_duration("PT5S")
+{:ok, 90_000} = Rodar.Event.Timer.parse_duration("PT1M30S")
+{:ok, 3_600_000} = Rodar.Event.Timer.parse_duration("PT1H")
 ```
 
 ### Cycles
@@ -66,8 +66,8 @@ If no correlated match is found, the bus falls back to the first uncorrelated su
 Repeating timers use the `R/duration` format:
 
 ```elixir
-{:ok, %{repetitions: 3, duration_ms: 10_000}} = RodarBpmn.Event.Timer.parse_cycle("R3/PT10S")
-{:ok, %{repetitions: :infinite, duration_ms: 60_000}} = RodarBpmn.Event.Timer.parse_cycle("R/PT1M")
+{:ok, %{repetitions: 3, duration_ms: 10_000}} = Rodar.Event.Timer.parse_cycle("R3/PT10S")
+{:ok, %{repetitions: :infinite, duration_ms: 60_000}} = Rodar.Event.Timer.parse_cycle("R/PT1M")
 ```
 
 Timers are scheduled via `Process.send_after/3` and fire `{:timer_fired, ...}` or `{:timer_cycle_fired, ...}` messages to the context.
@@ -88,21 +88,21 @@ Boundary events attach to activities and trigger when specific conditions occur.
 
 ## Triggered Start Events
 
-`RodarBpmn.Event.Start.Trigger` scans process definitions for message or signal start events and subscribes to the event bus. When a matching event fires, it automatically creates and runs a new process instance:
+`Rodar.Event.Start.Trigger` scans process definitions for message or signal start events and subscribes to the event bus. When a matching event fires, it automatically creates and runs a new process instance:
 
 ```elixir
-RodarBpmn.Event.Start.Trigger.register(process_definition)
+Rodar.Event.Start.Trigger.register(process_definition)
 # Now publishing a matching signal/message auto-starts instances
-RodarBpmn.Event.Bus.publish(:signal, "new_order", %{item: "widget"})
+Rodar.Event.Bus.publish(:signal, "new_order", %{item: "widget"})
 ```
 
 ## Compensation
 
-`RodarBpmn.Compensation` tracks completed activities and their compensation handlers. The engine pre-registers handlers for activities with compensation boundary events. Compensation can be targeted or global:
+`Rodar.Compensation` tracks completed activities and their compensation handlers. The engine pre-registers handlers for activities with compensation boundary events. Compensation can be targeted or global:
 
 ```elixir
-RodarBpmn.Compensation.compensate_activity(context, "book_hotel")
-RodarBpmn.Compensation.compensate_all(context)  # reverse execution order
+Rodar.Compensation.compensate_activity(context, "book_hotel")
+Rodar.Compensation.compensate_all(context)  # reverse execution order
 ```
 
 ## Next Steps

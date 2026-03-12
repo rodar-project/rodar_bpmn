@@ -1,40 +1,40 @@
-defmodule RodarBpmn.Expression do
+defmodule Rodar.Expression do
   @moduledoc """
   Validates a BPMN condition expression and returns its value.
 
   Supports multiple expression languages:
 
-  - `"elixir"` — Sandboxed Elixir expression evaluation via `RodarBpmn.Expression.Sandbox`
-  - `"feel"` — FEEL (Friendly Enough Expression Language) via `RodarBpmn.Expression.Feel`
+  - `"elixir"` — Sandboxed Elixir expression evaluation via `Rodar.Expression.Sandbox`
+  - `"feel"` — FEEL (Friendly Enough Expression Language) via `Rodar.Expression.Feel`
 
   ## Examples
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1==2"}}, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> Rodar.Expression.execute({:bpmn_expression, {"elixir", "1==2"}}, context)
       {:ok, false}
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "1<2"}}, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> Rodar.Expression.execute({:bpmn_expression, {"elixir", "1<2"}}, context)
       {:ok, true}
 
   Elixir expressions can access the context data map:
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> RodarBpmn.Context.put_data(context, "count", 4)
-      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "data[\\"count\\"]==4"}}, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> Rodar.Context.put_data(context, "count", 4)
+      iex> Rodar.Expression.execute({:bpmn_expression, {"elixir", "data[\\"count\\"]==4"}}, context)
       {:ok, true}
 
   FEEL expressions receive the raw data map — identifiers resolve directly:
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> RodarBpmn.Context.put_data(context, "count", 4)
-      iex> RodarBpmn.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> Rodar.Context.put_data(context, "count", 4)
+      iex> Rodar.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
       {:ok, true}
 
   """
 
-  alias RodarBpmn.Expression.Feel
-  alias RodarBpmn.Expression.Sandbox
+  alias Rodar.Expression.Feel
+  alias Rodar.Expression.Sandbox
 
   @doc """
   Validate a BPMN condition expression and return the result
@@ -42,7 +42,7 @@ defmodule RodarBpmn.Expression do
   @spec execute(
           {:bpmn_expression, {String.t(), String.t()}}
           | {:bpmn_condition_expression, map()},
-          RodarBpmn.context()
+          Rodar.context()
         ) :: {:ok, term()}
   def execute({:bpmn_expression, {_, ""}}, _), do: {:ok, true}
   def execute({:bpmn_expression, {lang, expr}}, context), do: {:ok, evaluate(lang, expr, context)}
@@ -58,9 +58,9 @@ defmodule RodarBpmn.Expression do
 
   Supports `"elixir"` (via Sandbox) and `"feel"` (via FEEL evaluator).
   """
-  @spec evaluate(String.t(), String.t(), RodarBpmn.context()) :: term()
+  @spec evaluate(String.t(), String.t(), Rodar.context()) :: term()
   def evaluate("elixir", expr, context) do
-    data = RodarBpmn.Context.get(context, :data)
+    data = Rodar.Context.get(context, :data)
 
     case Sandbox.eval(expr, %{"data" => data}) do
       {:ok, result} -> result
@@ -69,7 +69,7 @@ defmodule RodarBpmn.Expression do
   end
 
   def evaluate("feel", expr, context) do
-    data = RodarBpmn.Context.get(context, :data)
+    data = Rodar.Context.get(context, :data)
 
     case Feel.eval(expr, data) do
       {:ok, result} -> result

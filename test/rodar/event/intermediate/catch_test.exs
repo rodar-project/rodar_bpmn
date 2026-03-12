@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.Intermediate.CatchTest do
+defmodule Rodar.Event.Intermediate.CatchTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Event.Bus, Event.Intermediate.Catch, Event.Timer}
+  alias Rodar.{Context, Event.Bus, Event.Intermediate.Catch, Event.Timer}
 
   describe "message catch event" do
     test "subscribes to event bus and returns manual" do
@@ -239,7 +239,7 @@ defmodule RodarBpmn.Event.Intermediate.CatchTest do
     end
   end
 
-  describe "dispatch via RodarBpmn.execute/2" do
+  describe "dispatch via Rodar.execute/2" do
     test "dispatches intermediate catch events correctly" do
       {:ok, context} = Context.start_link(%{}, %{})
       msg_name = "msg_dispatch_#{:erlang.unique_integer()}"
@@ -254,7 +254,7 @@ defmodule RodarBpmn.Event.Intermediate.CatchTest do
            timerEventDefinition: nil
          }}
 
-      assert {:manual, _} = RodarBpmn.execute(elem, context)
+      assert {:manual, _} = Rodar.execute(elem, context)
     end
   end
 end

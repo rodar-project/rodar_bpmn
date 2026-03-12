@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Workflow do
+defmodule Rodar.Workflow do
   @moduledoc """
   Functional API and thin `use` macro for BPMN workflow management.
 
@@ -8,13 +8,13 @@ defmodule RodarBpmn.Workflow do
 
   ## Using the macro
 
-      use RodarBpmn.Workflow,
+      use Rodar.Workflow,
         bpmn_file: "priv/bpmn/order_processing.bpmn",
         process_id: "order_processing",
         otp_app: :my_app,           # optional — resolves path via Application.app_dir
         app_name: "MyApp"           # optional — enables handler auto-discovery
 
-  This injects convenience functions that delegate to `RodarBpmn.Workflow.*`
+  This injects convenience functions that delegate to `Rodar.Workflow.*`
   with the configured options baked in:
 
     * `setup/0` — load BPMN, register definition + discovered handlers
@@ -27,21 +27,21 @@ defmodule RodarBpmn.Workflow do
 
   ## Using the functional API directly
 
-      RodarBpmn.Workflow.setup(
+      Rodar.Workflow.setup(
         bpmn_file: "priv/bpmn/order.bpmn",
         process_id: "order"
       )
 
-      {:ok, pid} = RodarBpmn.Workflow.start_process("order", %{"item" => "widget"})
-      :suspended = RodarBpmn.Workflow.process_status(pid)
-      RodarBpmn.Workflow.resume_user_task(pid, "Task_Approval", %{"approved" => true})
+      {:ok, pid} = Rodar.Workflow.start_process("order", %{"item" => "widget"})
+      :suspended = Rodar.Workflow.process_status(pid)
+      Rodar.Workflow.resume_user_task(pid, "Task_Approval", %{"approved" => true})
   """
 
-  alias RodarBpmn.Activity.Task.User, as: UserTask
-  alias RodarBpmn.Context
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Process
-  alias RodarBpmn.Scaffold.Discovery
+  alias Rodar.Activity.Task.User, as: UserTask
+  alias Rodar.Context
+  alias Rodar.Engine.Diagram
+  alias Rodar.Process
+  alias Rodar.Scaffold.Discovery
 
   @doc """
   Load a BPMN file, parse it, register the definition, and discover handlers.
@@ -75,7 +75,7 @@ defmodule RodarBpmn.Workflow do
   @doc """
   Create a process instance with data, then activate it.
 
-  Unlike `RodarBpmn.Process.create_and_run/2` which activates immediately,
+  Unlike `Rodar.Process.create_and_run/2` which activates immediately,
   this function sets data BEFORE activation: start_child → put_data × N → activate.
 
   Returns `{:ok, pid}` on success.
@@ -83,7 +83,7 @@ defmodule RodarBpmn.Workflow do
   @spec start_process(String.t(), map()) :: {:ok, pid()} | {:error, any()}
   def start_process(process_id, data \\ %{}) do
     case DynamicSupervisor.start_child(
-           RodarBpmn.ProcessSupervisor,
+           Rodar.ProcessSupervisor,
            {Process, {process_id, %{}}}
          ) do
       {:ok, pid} ->
@@ -105,12 +105,12 @@ defmodule RodarBpmn.Workflow do
   Resume a user task on a process instance.
 
   Looks up the task element in the process map, verifies it is a user task,
-  and delegates to `RodarBpmn.Activity.Task.User.resume/3`.
+  and delegates to `Rodar.Activity.Task.User.resume/3`.
 
   Returns the result of `UserTask.resume/3`, or `{:error, reason}` if the
   task is not found or not a user task.
   """
-  @spec resume_user_task(pid(), String.t(), map()) :: RodarBpmn.result() | {:error, String.t()}
+  @spec resume_user_task(pid(), String.t(), map()) :: Rodar.result() | {:error, String.t()}
   def resume_user_task(pid, task_id, input) when is_map(input) do
     context = Process.get_context(pid)
     process_map = Context.get(context, :process)
@@ -136,7 +136,7 @@ defmodule RodarBpmn.Workflow do
   actually completed via an external `resume_user_task` call, so `:completed`
   is returned instead.
   """
-  @spec process_status(pid()) :: RodarBpmn.Process.status()
+  @spec process_status(pid()) :: Rodar.Process.status()
   def process_status(pid) do
     case Process.status(pid) do
       :suspended ->
@@ -193,7 +193,7 @@ defmodule RodarBpmn.Workflow do
   defp register_definition(diagram, process_id) do
     case diagram.processes do
       [process | _] ->
-        RodarBpmn.Registry.register(process_id, process)
+        Rodar.Registry.register(process_id, process)
         :ok
 
       [] ->
@@ -216,33 +216,33 @@ defmodule RodarBpmn.Workflow do
 
       @doc false
       def setup do
-        RodarBpmn.Workflow.setup(@__workflow_opts__)
+        Rodar.Workflow.setup(@__workflow_opts__)
       end
 
       @doc false
       def start_process(data \\ %{}) do
         process_id = Keyword.fetch!(@__workflow_opts__, :process_id)
-        RodarBpmn.Workflow.start_process(process_id, data)
+        Rodar.Workflow.start_process(process_id, data)
       end
 
       @doc false
       def resume_user_task(pid, task_id, input) do
-        RodarBpmn.Workflow.resume_user_task(pid, task_id, input)
+        Rodar.Workflow.resume_user_task(pid, task_id, input)
       end
 
       @doc false
       def process_status(pid) do
-        RodarBpmn.Workflow.process_status(pid)
+        Rodar.Workflow.process_status(pid)
       end
 
       @doc false
       def process_data(pid) do
-        RodarBpmn.Workflow.process_data(pid)
+        Rodar.Workflow.process_data(pid)
       end
 
       @doc false
       def process_history(pid) do
-        RodarBpmn.Workflow.process_history(pid)
+        Rodar.Workflow.process_history(pid)
       end
 
       defoverridable setup: 0,

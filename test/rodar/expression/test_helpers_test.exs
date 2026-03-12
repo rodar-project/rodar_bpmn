@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Expression.TestHelpersTest do
+defmodule Rodar.Expression.TestHelpersTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.TestHelpers
+  alias Rodar.Expression.TestHelpers
 
-  doctest RodarBpmn.Expression.TestHelpers
+  doctest Rodar.Expression.TestHelpers
 
   describe "eval_expression/2" do
     test "evaluates expression with data bindings" do

@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Task.Receive do
+defmodule Rodar.Activity.Task.Receive do
   @moduledoc """
   Handle passing the token through a receive task element.
 
@@ -13,20 +13,20 @@ defmodule RodarBpmn.Activity.Task.Receive do
 
       iex> elem = {:bpmn_activity_task_receive, %{id: "task_1", name: "Wait for Payment", outgoing: ["flow_out"]}}
       iex> {:ok, context} = Context.start_link(%{}, %{})
-      iex> {:manual, task_data} = RodarBpmn.Activity.Task.Receive.token_in(elem, context)
+      iex> {:manual, task_data} = Rodar.Activity.Task.Receive.token_in(elem, context)
       iex> task_data.id
       "task_1"
 
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
+  alias Rodar.Context
+  alias Rodar.Event.Bus
 
   @doc """
   Receive the token for the element. Pauses execution and returns task data.
   If `messageRef` is present, subscribes to event bus for auto-resume.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(
         {:bpmn_activity_task_receive, %{id: id, outgoing: outgoing} = attrs},
         context
@@ -60,7 +60,7 @@ defmodule RodarBpmn.Activity.Task.Receive do
   The `input` map is merged into the context data, and the token is released
   to the outgoing flows.
   """
-  @spec resume(RodarBpmn.element(), RodarBpmn.context(), map()) :: RodarBpmn.result()
+  @spec resume(Rodar.element(), Rodar.context(), map()) :: Rodar.result()
   def resume({:bpmn_activity_task_receive, %{id: id, outgoing: outgoing}}, context, input)
       when is_map(input) do
     Enum.each(input, fn {key, value} ->
@@ -69,7 +69,7 @@ defmodule RodarBpmn.Activity.Task.Receive do
 
     Context.put_meta(context, id, %{active: false, completed: true, type: :receive_task})
 
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 
   defp put_correlation(metadata, attrs, context) do

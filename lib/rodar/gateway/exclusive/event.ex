@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Gateway.Exclusive.Event do
+defmodule Rodar.Gateway.Exclusive.Event do
   @moduledoc """
   Handle passing the token through an event-based exclusive gateway element.
 
@@ -8,9 +8,9 @@ defmodule RodarBpmn.Gateway.Exclusive.Event do
 
   ## Examples
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
       iex> elem = {:bpmn_gateway_exclusive_event, %{id: "egw1", outgoing: ["f1", "f2"]}}
-      iex> {:manual, task_data} = RodarBpmn.Gateway.Exclusive.Event.token_in(elem, context)
+      iex> {:manual, task_data} = Rodar.Gateway.Exclusive.Event.token_in(elem, context)
       iex> task_data.id
       "egw1"
 
@@ -19,9 +19,9 @@ defmodule RodarBpmn.Gateway.Exclusive.Event do
   @doc """
   Receive the token for the element and set up event subscriptions.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in({:bpmn_gateway_exclusive_event, %{id: id, outgoing: outgoing}}, context) do
-    process = RodarBpmn.Context.get(context, :process)
+    process = Rodar.Context.get(context, :process)
 
     # Find downstream catch events
     catch_events =
@@ -37,7 +37,7 @@ defmodule RodarBpmn.Gateway.Exclusive.Event do
       end)
       |> Enum.reject(fn {_flow_id, elem} -> is_nil(elem) end)
 
-    RodarBpmn.Context.put_meta(context, id, %{
+    Rodar.Context.put_meta(context, id, %{
       active: true,
       completed: false,
       type: :event_gateway,

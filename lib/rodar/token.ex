@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Token do
+defmodule Rodar.Token do
   @moduledoc """
   Token struct for tracking execution flow through BPMN processes.
 
@@ -30,19 +30,19 @@ defmodule RodarBpmn.Token do
 
   ## Examples
 
-      iex> token = RodarBpmn.Token.new()
+      iex> token = Rodar.Token.new()
       iex> is_binary(token.id) and byte_size(token.id) == 36
       true
 
-      iex> token = RodarBpmn.Token.new(current_node: "start_1")
+      iex> token = Rodar.Token.new(current_node: "start_1")
       iex> token.current_node
       "start_1"
 
-      iex> token = RodarBpmn.Token.new()
+      iex> token = Rodar.Token.new()
       iex> token.state
       :active
 
-      iex> token = RodarBpmn.Token.new()
+      iex> token = Rodar.Token.new()
       iex> is_integer(token.created_at)
       true
   """
@@ -57,7 +57,7 @@ defmodule RodarBpmn.Token do
         )
       )
 
-    RodarBpmn.Telemetry.token_created(token)
+    Rodar.Telemetry.token_created(token)
     token
   end
 
@@ -69,18 +69,18 @@ defmodule RodarBpmn.Token do
 
   ## Examples
 
-      iex> parent = RodarBpmn.Token.new(current_node: "gateway_1")
-      iex> child = RodarBpmn.Token.fork(parent)
+      iex> parent = Rodar.Token.new(current_node: "gateway_1")
+      iex> child = Rodar.Token.fork(parent)
       iex> child.parent_id == parent.id
       true
 
-      iex> parent = RodarBpmn.Token.new(current_node: "gateway_1")
-      iex> child = RodarBpmn.Token.fork(parent)
+      iex> parent = Rodar.Token.new(current_node: "gateway_1")
+      iex> child = Rodar.Token.fork(parent)
       iex> child.id != parent.id
       true
 
-      iex> parent = RodarBpmn.Token.new(current_node: "gateway_1")
-      iex> child = RodarBpmn.Token.fork(parent)
+      iex> parent = Rodar.Token.new(current_node: "gateway_1")
+      iex> child = Rodar.Token.fork(parent)
       iex> child.current_node
       "gateway_1"
   """

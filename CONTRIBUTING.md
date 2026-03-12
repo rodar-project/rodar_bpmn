@@ -1,6 +1,6 @@
 # Contributing
 
-We would love for you to contribute to Rodar BPMN and help make it even better than it is
+We would love for you to contribute to Rodar Workflow and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
  - [Code of Conduct](#coc)
@@ -13,7 +13,7 @@ today! As a contributor, here are the guidelines we would like you to follow:
  - [Commit Message Guidelines](#commit)
 
 ## <a name="coc"></a> Code of Conduct
-Help us keep Rodar BPMN open and inclusive. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Help us keep Rodar Workflow open and inclusive. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## <a name="question"></a> Got a Question or Problem?
 
@@ -21,7 +21,7 @@ Do not open issues for general support questions as we want to keep GitHub issue
 
 ## <a name="issue"></a> Found a Bug?
 If you find a bug in the source code, you can help us by
-[submitting an issue](#submit-issue) to our [GitHub Repository](https://github.com/rodar-project/rodar_bpmn).
+[submitting an issue](#submit-issue) to our [GitHub Repository](https://github.com/rodar-project/rodar).
 Even better, you can [submit a Pull Request](#submit-pr) with a fix.
 
 ## <a name="feature"></a> Missing a Feature?
@@ -46,7 +46,7 @@ We want to fix all the issues as soon as possible, but before fixing a bug we ne
 to reproduce bugs we will systematically ask you to provide a minimal reproduction scenario. Having a reproducible
 scenario gives us wealth of important information without going back and forth to you with additional questions like:
 
-- version of Rodar BPMN used
+- version of Rodar Workflow used
 - and most importantly - a use-case that fails
 
 We will be insisting on a minimal reproduce scenario in order to save maintainers time and ultimately be able to fix
@@ -56,13 +56,13 @@ reproduceable scenario.
 Unfortunately we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from
 you we are going to close an issue that don't have enough info to be reproduced.
 
-You can file new issues by filling out our [new issue form](https://github.com/rodar-project/rodar_bpmn/issues/new).
+You can file new issues by filling out our [new issue form](https://github.com/rodar-project/rodar/issues/new).
 
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-* Search [GitHub](https://github.com/rodar-project/rodar_bpmn/pulls) for an open or closed PR
+* Search [GitHub](https://github.com/rodar-project/rodar/pulls) for an open or closed PR
   that relates to your submission. You don't want to duplicate effort.
 * Make your changes in a new git branch off `develop`:
 
@@ -90,7 +90,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
     git push origin my-fix-branch
     ```
 
-* In GitHub, send a pull request to `rodar_bpmn:develop`.
+* In GitHub, send a pull request to `rodar:develop`.
 * If we suggest changes then:
   * Make the required updates.
   * Re-run the test suites to ensure tests are still passing.

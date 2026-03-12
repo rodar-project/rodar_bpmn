@@ -1,4 +1,4 @@
-defmodule RodarBpmn.SequenceFlowTest do
+defmodule Rodar.SequenceFlowTest do
   use ExUnit.Case, async: true
-  doctest RodarBpmn.SequenceFlow
+  doctest Rodar.SequenceFlow
 end

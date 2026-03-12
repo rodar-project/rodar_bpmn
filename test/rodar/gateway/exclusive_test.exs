@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Gateway.ExclusiveTest do
+defmodule Rodar.Gateway.ExclusiveTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Gateway.Exclusive}
+  alias Rodar.{Context, Gateway.Exclusive}
 
   describe "diverging (split)" do
     test "routes token to the first flow whose condition is true" do

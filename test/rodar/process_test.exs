@@ -1,7 +1,7 @@
-defmodule RodarBpmn.ProcessTest do
+defmodule Rodar.ProcessTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{Context, Registry}
+  alias Rodar.{Context, Registry}
 
   @process_id "test_process"
 
@@ -42,32 +42,32 @@ defmodule RodarBpmn.ProcessTest do
   describe "start_link/2" do
     test "creates a process instance in :created status" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert RodarBpmn.Process.status(pid) == :created
+      assert Rodar.Process.status(pid) == :created
     end
 
     test "returns error for unregistered process" do
       Process.flag(:trap_exit, true)
-      assert {:error, _} = RodarBpmn.Process.start_link("nonexistent")
+      assert {:error, _} = Rodar.Process.start_link("nonexistent")
     end
   end
 
   describe "activate/1" do
     test "runs the process to completion" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert :ok = RodarBpmn.Process.activate(pid)
-      assert RodarBpmn.Process.status(pid) == :completed
+      assert :ok = Rodar.Process.activate(pid)
+      assert Rodar.Process.status(pid) == :completed
     end
 
     test "cannot activate a non-created process" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      RodarBpmn.Process.activate(pid)
-      assert {:error, _} = RodarBpmn.Process.activate(pid)
+      Rodar.Process.activate(pid)
+      assert {:error, _} = Rodar.Process.activate(pid)
     end
   end
 
@@ -75,41 +75,41 @@ defmodule RodarBpmn.ProcessTest do
     test "creates and runs a process in one step" do
       register_simple_process()
 
-      {:ok, pid} = RodarBpmn.Process.create_and_run(@process_id)
-      assert RodarBpmn.Process.status(pid) == :completed
+      {:ok, pid} = Rodar.Process.create_and_run(@process_id)
+      assert Rodar.Process.status(pid) == :completed
     end
 
     test "returns error for unregistered process" do
-      assert {:error, _} = RodarBpmn.Process.create_and_run("nonexistent")
+      assert {:error, _} = Rodar.Process.create_and_run("nonexistent")
     end
   end
 
   describe "suspend/1 and resume/1" do
     test "suspend/resume status transitions" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
       # Cannot suspend a :created process
-      assert {:error, _} = RodarBpmn.Process.suspend(pid)
+      assert {:error, _} = Rodar.Process.suspend(pid)
     end
 
     test "cannot resume a non-suspended process" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert {:error, _} = RodarBpmn.Process.resume(pid)
+      assert {:error, _} = Rodar.Process.resume(pid)
     end
   end
 
   describe "terminate/1" do
     test "terminates and stops context" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
-      context = RodarBpmn.Process.get_context(pid)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
+      context = Rodar.Process.get_context(pid)
 
       assert Process.alive?(context)
-      assert :ok = RodarBpmn.Process.terminate(pid)
-      assert RodarBpmn.Process.status(pid) == :terminated
+      assert :ok = Rodar.Process.terminate(pid)
+      assert Rodar.Process.status(pid) == :terminated
 
       # Context should be stopped (give it a moment to shut down)
       Process.sleep(10)
@@ -120,9 +120,9 @@ defmodule RodarBpmn.ProcessTest do
   describe "get_context/1" do
     test "returns a live context pid" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      context = RodarBpmn.Process.get_context(pid)
+      context = Rodar.Process.get_context(pid)
       assert is_pid(context)
       assert Process.alive?(context)
     end
@@ -131,20 +131,20 @@ defmodule RodarBpmn.ProcessTest do
   describe "instance_id/1" do
     test "returns a unique instance ID" do
       register_simple_process()
-      {:ok, pid1} = RodarBpmn.Process.start_link(@process_id)
-      {:ok, pid2} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid1} = Rodar.Process.start_link(@process_id)
+      {:ok, pid2} = Rodar.Process.start_link(@process_id)
 
-      assert RodarBpmn.Process.instance_id(pid1) != RodarBpmn.Process.instance_id(pid2)
+      assert Rodar.Process.instance_id(pid1) != Rodar.Process.instance_id(pid2)
     end
   end
 
   describe "execution history integration" do
     test "records execution history during activate" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
-      RodarBpmn.Process.activate(pid)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
+      Rodar.Process.activate(pid)
 
-      context = RodarBpmn.Process.get_context(pid)
+      context = Rodar.Process.get_context(pid)
       history = Context.get_history(context)
 
       assert length(history) >= 2
@@ -158,9 +158,9 @@ defmodule RodarBpmn.ProcessTest do
   describe "definition_version/1" do
     test "returns the version number of the definition" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert RodarBpmn.Process.definition_version(pid) == 1
+      assert Rodar.Process.definition_version(pid) == 1
     end
 
     test "returns latest version after re-registration" do
@@ -184,27 +184,27 @@ defmodule RodarBpmn.ProcessTest do
 
       Registry.register(@process_id, definition)
 
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
-      assert RodarBpmn.Process.definition_version(pid) == 2
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
+      assert Rodar.Process.definition_version(pid) == 2
     end
   end
 
   describe "process_id/1" do
     test "returns the process ID string" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert RodarBpmn.Process.process_id(pid) == @process_id
+      assert Rodar.Process.process_id(pid) == @process_id
     end
   end
 
   describe "validation on activate" do
     setup do
       # Enable validation for this test
-      Application.put_env(:rodar_bpmn, :validate_on_activate, true)
+      Application.put_env(:rodar, :validate_on_activate, true)
 
       on_exit(fn ->
-        Application.delete_env(:rodar_bpmn, :validate_on_activate)
+        Application.delete_env(:rodar, :validate_on_activate)
       end)
     end
 
@@ -217,19 +217,19 @@ defmodule RodarBpmn.ProcessTest do
       definition = {:bpmn_process, %{id: "invalid_process"}, elements}
       Registry.register("invalid_process", definition)
 
-      {:ok, pid} = RodarBpmn.Process.start_link("invalid_process")
+      {:ok, pid} = Rodar.Process.start_link("invalid_process")
 
-      assert {:error, {:validation_failed, issues}} = RodarBpmn.Process.activate(pid)
+      assert {:error, {:validation_failed, issues}} = Rodar.Process.activate(pid)
       assert is_list(issues)
       assert Enum.any?(issues, &(&1.rule == :end_event_exists))
     end
 
     test "valid process activates normally with validation enabled" do
       register_simple_process()
-      {:ok, pid} = RodarBpmn.Process.start_link(@process_id)
+      {:ok, pid} = Rodar.Process.start_link(@process_id)
 
-      assert :ok = RodarBpmn.Process.activate(pid)
-      assert RodarBpmn.Process.status(pid) == :completed
+      assert :ok = Rodar.Process.activate(pid)
+      assert Rodar.Process.status(pid) == :completed
     end
   end
 end

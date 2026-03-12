@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Gateway.Exclusive.EventTest do
+defmodule Rodar.Gateway.Exclusive.EventTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Gateway.Exclusive.Event}
+  alias Rodar.{Context, Gateway.Exclusive.Event}
 
   describe "event-based gateway" do
     test "returns manual with catch event info" do
@@ -55,10 +55,10 @@ defmodule RodarBpmn.Gateway.Exclusive.EventTest do
       assert length(task_data.catch_events) == 2
     end
 
-    test "dispatches via RodarBpmn.execute/2" do
+    test "dispatches via Rodar.execute/2" do
       {:ok, context} = Context.start_link(%{}, %{})
       elem = {:bpmn_gateway_exclusive_event, %{id: "egw", outgoing: []}}
-      assert {:manual, _} = RodarBpmn.execute(elem, context)
+      assert {:manual, _} = Rodar.execute(elem, context)
     end
   end
 end

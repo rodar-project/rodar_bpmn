@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Expression.Feel.Evaluator do
+defmodule Rodar.Expression.Feel.Evaluator do
   @moduledoc """
   Tree-walking evaluator for FEEL AST nodes.
 
@@ -16,21 +16,21 @@ defmodule RodarBpmn.Expression.Feel.Evaluator do
 
   ## Examples
 
-      iex> alias RodarBpmn.Expression.Feel.Evaluator
+      iex> alias Rodar.Expression.Feel.Evaluator
       iex> Evaluator.evaluate({:literal, 42}, %{})
       {:ok, 42}
 
-      iex> alias RodarBpmn.Expression.Feel.Evaluator
+      iex> alias Rodar.Expression.Feel.Evaluator
       iex> Evaluator.evaluate({:binop, :+, {:literal, 1}, {:literal, 2}}, %{})
       {:ok, 3}
 
-      iex> alias RodarBpmn.Expression.Feel.Evaluator
+      iex> alias Rodar.Expression.Feel.Evaluator
       iex> Evaluator.evaluate({:path, ["x"]}, %{"x" => 10})
       {:ok, 10}
 
   """
 
-  alias RodarBpmn.Expression.Feel.Functions
+  alias Rodar.Expression.Feel.Functions
 
   @doc """
   Evaluate a FEEL AST node against the given bindings map.

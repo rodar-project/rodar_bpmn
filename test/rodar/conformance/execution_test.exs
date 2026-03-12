@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Conformance.ExecutionTest do
+defmodule Rodar.Conformance.ExecutionTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{
+  alias Rodar.{
     Compensation,
     Context,
     Event.Bus,
@@ -10,7 +10,7 @@ defmodule RodarBpmn.Conformance.ExecutionTest do
     TaskRegistry
   }
 
-  alias RodarBpmn.Conformance.{ErrorHandler, PassThroughHandler, TestHelper}
+  alias Rodar.Conformance.{ErrorHandler, PassThroughHandler, TestHelper}
 
   @moduletag :conformance
 
@@ -335,7 +335,7 @@ defmodule RodarBpmn.Conformance.ExecutionTest do
       {:ok, context} = Context.start_link(process, %{})
 
       # Execute the process
-      result = RodarBpmn.execute(start, context)
+      result = Rodar.execute(start, context)
       assert {:ok, _} = result
 
       # Manually register compensation handlers
@@ -414,7 +414,7 @@ defmodule RodarBpmn.Conformance.ExecutionTest do
       Context.put_data(context, "x", 10)
       Context.put_data(context, "y", 32)
 
-      result = RodarBpmn.execute(start, context)
+      result = Rodar.execute(start, context)
       assert {:ok, _} = result
 
       TestHelper.assert_visited(context, ["script1", "end"])

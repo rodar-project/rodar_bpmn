@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.RodarBpmn.Scaffold do
+defmodule Mix.Tasks.Rodar.Scaffold do
   @moduledoc """
   Generate handler modules for actionable tasks in a BPMN 2.0 file.
 
@@ -8,7 +8,7 @@ defmodule Mix.Tasks.RodarBpmn.Scaffold do
 
   ## Usage
 
-      mix rodar_bpmn.scaffold path/to/order.bpmn [options]
+      mix rodar.scaffold path/to/order.bpmn [options]
 
   ## Options
 
@@ -25,8 +25,8 @@ defmodule Mix.Tasks.RodarBpmn.Scaffold do
 
   use Mix.Task
 
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Scaffold
+  alias Rodar.Engine.Diagram
+  alias Rodar.Scaffold
 
   @shortdoc "Generate handler modules from a BPMN file"
 
@@ -52,7 +52,7 @@ defmodule Mix.Tasks.RodarBpmn.Scaffold do
 
       _ ->
         Mix.shell().error(
-          "Usage: mix rodar_bpmn.scaffold <file.bpmn> [--output-dir DIR] " <>
+          "Usage: mix rodar.scaffold <file.bpmn> [--output-dir DIR] " <>
             "[--module-prefix PREFIX] [--dry-run] [--force]"
         )
     end
@@ -223,7 +223,7 @@ defmodule Mix.Tasks.RodarBpmn.Scaffold do
     Mix.shell().info("# Register handlers in your application startup:")
 
     Enum.each(tasks, fn r ->
-      Mix.shell().info(~s[RodarBpmn.TaskRegistry.register("#{r.task.id}", #{r.full_module})])
+      Mix.shell().info(~s[Rodar.TaskRegistry.register("#{r.task.id}", #{r.full_module})])
     end)
   end
 
@@ -254,7 +254,7 @@ defmodule Mix.Tasks.RodarBpmn.Scaffold do
   defp default_output_dir(app_name, bpmn_name) do
     snake_app = Macro.underscore(app_name)
     snake_bpmn = Macro.underscore(bpmn_name)
-    namespace = Application.get_env(:rodar_bpmn, :scaffold_namespace, "Workflow")
+    namespace = Application.get_env(:rodar, :scaffold_namespace, "Workflow")
     snake_namespace = Macro.underscore(namespace)
     Path.join(["lib", snake_app, snake_namespace, snake_bpmn, "handlers"])
   end

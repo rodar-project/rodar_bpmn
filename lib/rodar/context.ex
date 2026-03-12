@@ -1,11 +1,11 @@
-defmodule RodarBpmn.Context do
+defmodule Rodar.Context do
   @moduledoc """
   GenServer-based execution context for a running BPMN process instance.
 
   Holds all mutable state during process execution: the process definition,
   initial and current data, node metadata, token counts, and execution history.
   Each process instance gets its own context, typically started under
-  `RodarBpmn.ContextSupervisor` via `start_supervised/2`.
+  `Rodar.ContextSupervisor` via `start_supervised/2`.
 
   ## State Management
 
@@ -40,9 +40,9 @@ defmodule RodarBpmn.Context do
 
   use GenServer
 
-  alias RodarBpmn.Event.Timer
-  alias RodarBpmn.Expression.Feel
-  alias RodarBpmn.Expression.Sandbox
+  alias Rodar.Event.Timer
+  alias Rodar.Expression.Feel
+  alias Rodar.Expression.Sandbox
 
   # --- Client API ---
 
@@ -57,12 +57,12 @@ defmodule RodarBpmn.Context do
   end
 
   @doc """
-  Start a supervised context under `RodarBpmn.ContextSupervisor`.
+  Start a supervised context under `Rodar.ContextSupervisor`.
   """
   @spec start_supervised(map(), map()) :: {:ok, pid()} | {:error, any()}
   def start_supervised(process, init_data) do
     DynamicSupervisor.start_child(
-      RodarBpmn.ContextSupervisor,
+      Rodar.ContextSupervisor,
       {__MODULE__, {process, init_data}}
     )
   end
@@ -387,7 +387,7 @@ defmodule RodarBpmn.Context do
     subs = Map.delete(state.conditional_subscriptions, node_id)
     new_state = %{state | nodes: nodes, conditional_subscriptions: subs}
     context = self()
-    spawn(fn -> RodarBpmn.release_token(outgoing, context) end)
+    spawn(fn -> Rodar.release_token(outgoing, context) end)
     {:noreply, new_state}
   end
 
@@ -395,13 +395,13 @@ defmodule RodarBpmn.Context do
     nodes = Map.put(state.nodes, node_id, %{active: false, completed: true, type: :catch_event})
     new_state = %{state | nodes: nodes}
     context = self()
-    spawn(fn -> RodarBpmn.release_token(outgoing, context) end)
+    spawn(fn -> Rodar.release_token(outgoing, context) end)
     {:noreply, new_state}
   end
 
   def handle_info({:timer_cycle_fired, node_id, outgoing, remaining, duration_ms}, state) do
     context = self()
-    spawn(fn -> RodarBpmn.release_token(outgoing, context) end)
+    spawn(fn -> Rodar.release_token(outgoing, context) end)
 
     new_state =
       if remaining == 0 do
@@ -431,7 +431,7 @@ defmodule RodarBpmn.Context do
     %{node_id: node_id, outgoing: outgoing, context: context} = metadata
     nodes = Map.put(state.nodes, node_id, %{active: false, completed: true, type: :catch_event})
     new_state = %{state | nodes: nodes}
-    spawn(fn -> RodarBpmn.release_token(outgoing, context) end)
+    spawn(fn -> Rodar.release_token(outgoing, context) end)
     {:noreply, new_state}
   end
 

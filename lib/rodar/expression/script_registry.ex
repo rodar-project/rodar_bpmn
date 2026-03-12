@@ -1,10 +1,10 @@
-defmodule RodarBpmn.Expression.ScriptRegistry do
+defmodule Rodar.Expression.ScriptRegistry do
   @moduledoc """
   Registry for custom script language engines.
 
   Maps language strings (e.g., `"lua"`, `"python"`) to engine modules
-  implementing the `RodarBpmn.Expression.ScriptEngine` behaviour. Used by
-  `RodarBpmn.Activity.Task.Script` to resolve script languages beyond the
+  implementing the `Rodar.Expression.ScriptEngine` behaviour. Used by
+  `Rodar.Activity.Task.Script` to resolve script languages beyond the
   built-in `"elixir"` and `"feel"` engines.
 
   This GenServer is started automatically as part of the application
@@ -15,22 +15,22 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   ## Usage
 
       # Register an engine for a language
-      RodarBpmn.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
+      Rodar.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
 
       # Look up an engine
-      {:ok, MyApp.LuaEngine} = RodarBpmn.Expression.ScriptRegistry.lookup("lua")
+      {:ok, MyApp.LuaEngine} = Rodar.Expression.ScriptRegistry.lookup("lua")
 
       # List all registered engines
-      RodarBpmn.Expression.ScriptRegistry.list()
+      Rodar.Expression.ScriptRegistry.list()
       # => [{"lua", MyApp.LuaEngine}]
 
       # Remove a registration
-      RodarBpmn.Expression.ScriptRegistry.unregister("lua")
+      Rodar.Expression.ScriptRegistry.unregister("lua")
 
   ## See Also
 
-  - `RodarBpmn.Expression.ScriptEngine` -- behaviour that engine modules must implement
-  - `RodarBpmn.TaskRegistry` -- analogous registry for custom task handlers
+  - `Rodar.Expression.ScriptEngine` -- behaviour that engine modules must implement
+  - `Rodar.TaskRegistry` -- analogous registry for custom task handlers
   """
 
   use GenServer
@@ -52,7 +52,7 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   @doc """
   Register an engine module for a script language string.
 
-  The `engine_module` must implement the `RodarBpmn.Expression.ScriptEngine`
+  The `engine_module` must implement the `Rodar.Expression.ScriptEngine`
   behaviour. If a registration already exists for the given `language`, it
   is silently replaced.
 
@@ -77,7 +77,7 @@ defmodule RodarBpmn.Expression.ScriptRegistry do
   Look up the engine module for a language string.
 
   Returns `{:ok, module}` if a registration exists, or `:error` otherwise.
-  Called internally by `RodarBpmn.Activity.Task.Script` when the script
+  Called internally by `Rodar.Activity.Task.Script` when the script
   language is not `"elixir"` or `"feel"`.
   """
   @spec lookup(String.t()) :: {:ok, module()} | :error

@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Expression.Feel do
+defmodule Rodar.Expression.Feel do
   @moduledoc """
   FEEL (Friendly Enough Expression Language) evaluator for BPMN 2.0.
 
@@ -11,22 +11,22 @@ defmodule RodarBpmn.Expression.Feel do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Feel.eval("1 + 2", %{})
+      iex> Rodar.Expression.Feel.eval("1 + 2", %{})
       {:ok, 3}
 
-      iex> RodarBpmn.Expression.Feel.eval("amount > 1000", %{"amount" => 1500})
+      iex> Rodar.Expression.Feel.eval("amount > 1000", %{"amount" => 1500})
       {:ok, true}
 
-      iex> RodarBpmn.Expression.Feel.eval("null", %{})
+      iex> Rodar.Expression.Feel.eval("null", %{})
       {:ok, nil}
 
-      iex> RodarBpmn.Expression.Feel.eval("if x > 10 then \"high\" else \"low\"", %{"x" => 15})
+      iex> Rodar.Expression.Feel.eval("if x > 10 then \"high\" else \"low\"", %{"x" => 15})
       {:ok, "high"}
 
   """
 
-  alias RodarBpmn.Expression.Feel.Evaluator
-  alias RodarBpmn.Expression.Feel.Parser
+  alias Rodar.Expression.Feel.Evaluator
+  alias Rodar.Expression.Feel.Parser
 
   @doc """
   Parse and evaluate a FEEL expression string against the given bindings.
@@ -35,10 +35,10 @@ defmodule RodarBpmn.Expression.Feel do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Feel.eval("2 * 3 + 1", %{})
+      iex> Rodar.Expression.Feel.eval("2 * 3 + 1", %{})
       {:ok, 7}
 
-      iex> RodarBpmn.Expression.Feel.eval("name", %{"name" => "Alice"})
+      iex> Rodar.Expression.Feel.eval("name", %{"name" => "Alice"})
       {:ok, "Alice"}
 
   """

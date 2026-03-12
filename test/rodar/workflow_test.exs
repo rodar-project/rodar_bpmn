@@ -1,7 +1,7 @@
-defmodule RodarBpmn.WorkflowTest do
+defmodule Rodar.WorkflowTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Workflow
+  alias Rodar.Workflow
 
   @fixture_path Path.join([__DIR__, "..", "fixtures", "run_user_task.bpmn"])
   @process_id "workflow-test-#{:erlang.unique_integer([:positive])}"
@@ -27,7 +27,7 @@ defmodule RodarBpmn.WorkflowTest do
                )
 
       assert is_map(diagram)
-      assert {:ok, _} = RodarBpmn.Registry.lookup(id)
+      assert {:ok, _} = Rodar.Registry.lookup(id)
     end
 
     test "returns error for missing file" do
@@ -113,9 +113,9 @@ defmodule RodarBpmn.WorkflowTest do
     end
   end
 
-  describe "use RodarBpmn.Workflow" do
+  describe "use Rodar.Workflow" do
     defmodule TestWorkflow do
-      use RodarBpmn.Workflow,
+      use Rodar.Workflow,
         bpmn_file: Path.join([__DIR__, "..", "fixtures", "run_user_task.bpmn"]),
         process_id: "macro-workflow-test"
     end

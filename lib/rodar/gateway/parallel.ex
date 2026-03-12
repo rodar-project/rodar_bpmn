@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Gateway.Parallel do
+defmodule Rodar.Gateway.Parallel do
   @moduledoc """
   Handle passing the token through a parallel gateway element.
 
@@ -21,8 +21,8 @@ defmodule RodarBpmn.Gateway.Parallel do
       iex> flow_out = {:bpmn_sequence_flow, %{id: "flow_out", sourceRef: "gw", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> gateway = {:bpmn_gateway_parallel, %{id: "gw", incoming: ["in"], outgoing: ["flow_out"]}}
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(process, %{})
-      iex> {:ok, ^context} = RodarBpmn.Gateway.Parallel.token_in(gateway, context)
+      iex> {:ok, context} = Rodar.Context.start_link(process, %{})
+      iex> {:ok, ^context} = Rodar.Gateway.Parallel.token_in(gateway, context)
       iex> true
       true
 
@@ -31,13 +31,13 @@ defmodule RodarBpmn.Gateway.Parallel do
   @doc """
   Receive the token for the element and execute the gateway logic.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(elem, context), do: token_in(elem, context, nil)
 
   @doc """
   Receive the token with the source flow ID for join tracking.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context(), String.t() | nil) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context(), String.t() | nil) :: Rodar.result()
   def token_in({:bpmn_gateway_parallel, %{incoming: incoming}} = elem, context, from_flow)
       when length(incoming) > 1 do
     join(elem, context, from_flow)
@@ -48,15 +48,15 @@ defmodule RodarBpmn.Gateway.Parallel do
   @doc """
   Fork: release tokens to all outgoing flows.
   """
-  @spec fork(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec fork(Rodar.element(), Rodar.context()) :: Rodar.result()
   def fork({:bpmn_gateway_parallel, %{outgoing: outgoing}}, context) do
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 
   @doc """
   Join: wait for all incoming tokens before continuing.
   """
-  @spec join(RodarBpmn.element(), RodarBpmn.context(), String.t() | nil) :: RodarBpmn.result()
+  @spec join(Rodar.element(), Rodar.context(), String.t() | nil) :: Rodar.result()
   def join(
         {:bpmn_gateway_parallel, %{id: id, incoming: incoming, outgoing: outgoing}},
         context,
@@ -64,14 +64,14 @@ defmodule RodarBpmn.Gateway.Parallel do
       ) do
     arrived =
       if from_flow do
-        RodarBpmn.Context.record_token(context, id, from_flow)
+        Rodar.Context.record_token(context, id, from_flow)
       else
-        RodarBpmn.Context.token_count(context, id)
+        Rodar.Context.token_count(context, id)
       end
 
     if arrived >= length(incoming) do
-      RodarBpmn.Context.clear_tokens(context, id)
-      RodarBpmn.release_token(outgoing, context)
+      Rodar.Context.clear_tokens(context, id)
+      Rodar.release_token(outgoing, context)
     else
       {:ok, context}
     end

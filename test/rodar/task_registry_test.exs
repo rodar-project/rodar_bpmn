@@ -1,7 +1,7 @@
-defmodule RodarBpmn.TaskRegistryTest do
+defmodule Rodar.TaskRegistryTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.TaskRegistry
+  alias Rodar.TaskRegistry
 
   setup do
     # Clean up any registrations from previous tests

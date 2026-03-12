@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Task.User do
+defmodule Rodar.Activity.Task.User do
   @moduledoc """
   Handle passing the token through a user task element.
 
@@ -9,8 +9,8 @@ defmodule RodarBpmn.Activity.Task.User do
   ## Examples
 
       iex> elem = {:bpmn_activity_task_user, %{id: "task_1", name: "Review", outgoing: ["flow_out"]}}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> {:manual, task_data} = RodarBpmn.Activity.Task.User.token_in(elem, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> {:manual, task_data} = Rodar.Activity.Task.User.token_in(elem, context)
       iex> task_data.id
       "task_1"
 
@@ -19,7 +19,7 @@ defmodule RodarBpmn.Activity.Task.User do
   @doc """
   Receive the token for the element. Pauses execution and returns task data.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(
         {:bpmn_activity_task_user, %{id: id, outgoing: outgoing} = attrs},
         context
@@ -31,7 +31,7 @@ defmodule RodarBpmn.Activity.Task.User do
       context: context
     }
 
-    RodarBpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :user_task})
+    Rodar.Context.put_meta(context, id, %{active: true, completed: false, type: :user_task})
 
     {:manual, task_data}
   end
@@ -42,15 +42,15 @@ defmodule RodarBpmn.Activity.Task.User do
   The `input` map is merged into the context data, and the token is released
   to the outgoing flows.
   """
-  @spec resume(RodarBpmn.element(), RodarBpmn.context(), map()) :: RodarBpmn.result()
+  @spec resume(Rodar.element(), Rodar.context(), map()) :: Rodar.result()
   def resume({:bpmn_activity_task_user, %{id: id, outgoing: outgoing}}, context, input)
       when is_map(input) do
     Enum.each(input, fn {key, value} ->
-      RodarBpmn.Context.put_data(context, key, value)
+      Rodar.Context.put_data(context, key, value)
     end)
 
-    RodarBpmn.Context.put_meta(context, id, %{active: false, completed: true, type: :user_task})
+    Rodar.Context.put_meta(context, id, %{active: false, completed: true, type: :user_task})
 
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 end

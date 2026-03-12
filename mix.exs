@@ -1,9 +1,9 @@
-defmodule RodarBpmn.MixProject do
+defmodule Rodar.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :rodar_bpmn,
+      app: :rodar,
       version: "1.3.0",
       elixir: "~> 1.16",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -13,9 +13,9 @@ defmodule RodarBpmn.MixProject do
       description: "A BPMN engine for Elixir",
 
       # Docs
-      name: "Rodar BPMN",
-      source_url: "https://github.com/rodar-project/rodar_bpmn",
-      homepage_url: "https://rodar-project.github.io/rodar_bpmn/",
+      name: "Rodar Workflow",
+      source_url: "https://github.com/rodar-project/rodar",
+      homepage_url: "https://rodar-project.github.io/rodar/",
       test_coverage: [tool: ExCoveralls],
       dialyzer: [plt_add_apps: [:mix, :ex_unit]],
       docs: docs()
@@ -24,11 +24,11 @@ defmodule RodarBpmn.MixProject do
 
   defp package do
     [
-      name: "rodar_bpmn",
+      name: "rodar",
       files: ["lib", "mix.exs", "README*", "LICENSE*", "CHANGELOG.md", "usage-rules.md"],
       maintainers: ["Rodrigo Couto"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/rodar-project/rodar_bpmn"}
+      links: %{"GitHub" => "https://github.com/rodar-project/rodar"}
     ]
   end
 
@@ -39,7 +39,7 @@ defmodule RodarBpmn.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {RodarBpmn.Application, []}
+      mod: {Rodar.Application, []}
     ]
   end
 
@@ -86,64 +86,64 @@ defmodule RodarBpmn.MixProject do
       ],
       groups_for_modules: [
         Core: [
-          RodarBpmn,
-          RodarBpmn.Token,
-          RodarBpmn.Context,
-          RodarBpmn.Process,
-          RodarBpmn.Registry,
-          RodarBpmn.Migration,
-          RodarBpmn.Lane
+          Rodar,
+          Rodar.Token,
+          Rodar.Context,
+          Rodar.Process,
+          Rodar.Registry,
+          Rodar.Migration,
+          Rodar.Lane
         ],
         Events: [
-          RodarBpmn.Event.Start,
-          RodarBpmn.Event.Start.Trigger,
-          RodarBpmn.Event.End,
-          RodarBpmn.Event.Intermediate,
-          RodarBpmn.Event.Intermediate.Throw,
-          RodarBpmn.Event.Intermediate.Catch,
-          RodarBpmn.Event.Boundary,
-          RodarBpmn.Event.Bus,
-          RodarBpmn.Event.Timer,
-          RodarBpmn.Compensation
+          Rodar.Event.Start,
+          Rodar.Event.Start.Trigger,
+          Rodar.Event.End,
+          Rodar.Event.Intermediate,
+          Rodar.Event.Intermediate.Throw,
+          Rodar.Event.Intermediate.Catch,
+          Rodar.Event.Boundary,
+          Rodar.Event.Bus,
+          Rodar.Event.Timer,
+          Rodar.Compensation
         ],
         Gateways: [
-          RodarBpmn.Gateway.Exclusive,
-          RodarBpmn.Gateway.Parallel,
-          RodarBpmn.Gateway.Inclusive,
-          RodarBpmn.Gateway.Complex,
-          RodarBpmn.Gateway.Exclusive.Event
+          Rodar.Gateway.Exclusive,
+          Rodar.Gateway.Parallel,
+          Rodar.Gateway.Inclusive,
+          Rodar.Gateway.Complex,
+          Rodar.Gateway.Exclusive.Event
         ],
         Tasks: [
-          RodarBpmn.Activity.Task.Script,
-          RodarBpmn.Activity.Task.User,
-          RodarBpmn.Activity.Task.Service,
-          RodarBpmn.Activity.Task.Send,
-          RodarBpmn.Activity.Task.Receive,
-          RodarBpmn.Activity.Task.Manual
+          Rodar.Activity.Task.Script,
+          Rodar.Activity.Task.User,
+          Rodar.Activity.Task.Service,
+          Rodar.Activity.Task.Send,
+          Rodar.Activity.Task.Receive,
+          Rodar.Activity.Task.Manual
         ],
-        Extensions: [RodarBpmn.TaskHandler, RodarBpmn.TaskRegistry, RodarBpmn.Hooks],
+        Extensions: [Rodar.TaskHandler, Rodar.TaskRegistry, Rodar.Hooks],
         Observability: [
-          RodarBpmn.Telemetry,
-          RodarBpmn.Telemetry.LogHandler,
-          RodarBpmn.Observability
+          Rodar.Telemetry,
+          Rodar.Telemetry.LogHandler,
+          Rodar.Observability
         ],
         Persistence: [
-          RodarBpmn.Persistence,
-          RodarBpmn.Persistence.Serializer,
-          RodarBpmn.Persistence.Adapter.ETS
+          Rodar.Persistence,
+          Rodar.Persistence.Serializer,
+          Rodar.Persistence.Adapter.ETS
         ],
         Internals: [
-          RodarBpmn.Engine.Diagram,
-          RodarBpmn.Engine.Diagram.Export,
-          RodarBpmn.Expression,
-          RodarBpmn.Expression.Sandbox,
-          RodarBpmn.Expression.Feel,
-          RodarBpmn.Expression.Feel.Parser,
-          RodarBpmn.Expression.Feel.Evaluator,
-          RodarBpmn.Expression.Feel.Functions,
-          RodarBpmn.Validation,
-          RodarBpmn.Collaboration,
-          RodarBpmn.SequenceFlow
+          Rodar.Engine.Diagram,
+          Rodar.Engine.Diagram.Export,
+          Rodar.Expression,
+          Rodar.Expression.Sandbox,
+          Rodar.Expression.Feel,
+          Rodar.Expression.Feel.Parser,
+          Rodar.Expression.Feel.Evaluator,
+          Rodar.Expression.Feel.Functions,
+          Rodar.Validation,
+          Rodar.Collaboration,
+          Rodar.SequenceFlow
         ]
       ]
     ]

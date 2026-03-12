@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Expression.Sandbox do
+defmodule Rodar.Expression.Sandbox do
   @moduledoc """
   Sandboxed Elixir expression evaluator using AST restriction.
 
@@ -24,16 +24,16 @@ defmodule RodarBpmn.Expression.Sandbox do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Sandbox.eval("1 + 2")
+      iex> Rodar.Expression.Sandbox.eval("1 + 2")
       {:ok, 3}
 
-      iex> RodarBpmn.Expression.Sandbox.eval("data[\\"x\\"] > 5", %{"data" => %{"x" => 10}})
+      iex> Rodar.Expression.Sandbox.eval("data[\\"x\\"] > 5", %{"data" => %{"x" => 10}})
       {:ok, true}
 
-      iex> RodarBpmn.Expression.Sandbox.eval("System.cmd(\\"ls\\", [])")
+      iex> Rodar.Expression.Sandbox.eval("System.cmd(\\"ls\\", [])")
       {:error, "disallowed: module call System.cmd/2"}
 
-      iex> RodarBpmn.Expression.Sandbox.eval("File.read!(\\"/etc/passwd\\")")
+      iex> Rodar.Expression.Sandbox.eval("File.read!(\\"/etc/passwd\\")")
       {:error, "disallowed: module call File.read!/1"}
 
   """

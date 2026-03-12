@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Expression.Feel.FunctionsTest do
+defmodule Rodar.Expression.Feel.FunctionsTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.Feel.Functions
+  alias Rodar.Expression.Feel.Functions
 
   describe "numeric functions" do
     test "abs" do

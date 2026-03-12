@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Hooks do
+defmodule Rodar.Hooks do
   @moduledoc """
   Per-context hook/listener system for observing BPMN execution.
 
@@ -14,8 +14,8 @@ defmodule RodarBpmn.Hooks do
 
   ## Example
 
-      {:ok, context} = RodarBpmn.Context.start_link(process, %{})
-      RodarBpmn.Hooks.register(context, :before_node, fn meta ->
+      {:ok, context} = Rodar.Context.start_link(process, %{})
+      Rodar.Hooks.register(context, :before_node, fn meta ->
         IO.inspect(meta.node_id, label: "entering")
         :ok
       end)
@@ -32,10 +32,10 @@ defmodule RodarBpmn.Hooks do
   """
   @spec register(pid(), hook_event(), hook_fn()) :: :ok
   def register(context, event, fun) when is_function(fun, 1) do
-    hooks = RodarBpmn.Context.get_meta(context, :hooks) || %{}
+    hooks = Rodar.Context.get_meta(context, :hooks) || %{}
     existing = Map.get(hooks, event, [])
     updated = Map.put(hooks, event, existing ++ [fun])
-    RodarBpmn.Context.put_meta(context, :hooks, updated)
+    Rodar.Context.put_meta(context, :hooks, updated)
   end
 
   @doc """
@@ -43,9 +43,9 @@ defmodule RodarBpmn.Hooks do
   """
   @spec unregister(pid(), hook_event()) :: :ok
   def unregister(context, event) do
-    hooks = RodarBpmn.Context.get_meta(context, :hooks) || %{}
+    hooks = Rodar.Context.get_meta(context, :hooks) || %{}
     updated = Map.delete(hooks, event)
-    RodarBpmn.Context.put_meta(context, :hooks, updated)
+    Rodar.Context.put_meta(context, :hooks, updated)
   end
 
   @doc """
@@ -55,7 +55,7 @@ defmodule RodarBpmn.Hooks do
   """
   @spec notify(pid(), hook_event(), map()) :: :ok
   def notify(context, event, metadata) do
-    hooks = RodarBpmn.Context.get_meta(context, :hooks) || %{}
+    hooks = Rodar.Context.get_meta(context, :hooks) || %{}
     funs = Map.get(hooks, event, [])
 
     Enum.each(funs, fn fun ->

@@ -1,8 +1,8 @@
-defmodule RodarBpmn.Engine.Diagram.ExportTest do
+defmodule Rodar.Engine.Diagram.ExportTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Engine.Diagram.Export
+  alias Rodar.Engine.Diagram
+  alias Rodar.Engine.Diagram.Export
 
   # --- Unit tests by element type ---
 

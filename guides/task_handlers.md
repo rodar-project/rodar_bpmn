@@ -1,20 +1,20 @@
 # Task Handlers
 
-The `RodarBpmn.TaskHandler` behaviour lets you register custom task types or override specific task instances without modifying the engine.
+The `Rodar.TaskHandler` behaviour lets you register custom task types or override specific task instances without modifying the engine.
 
 ## Defining a Handler
 
-Implement the `RodarBpmn.TaskHandler` behaviour with a `token_in/2` callback:
+Implement the `Rodar.TaskHandler` behaviour with a `token_in/2` callback:
 
 ```elixir
 defmodule MyApp.ApprovalHandler do
-  @behaviour RodarBpmn.TaskHandler
+  @behaviour Rodar.TaskHandler
 
   @impl true
   def token_in({_type, %{id: id}} = _element, context) do
     # Your business logic here
-    RodarBpmn.Context.put_data(context, "approved", true)
-    RodarBpmn.release_token(["next_flow"], context)
+    Rodar.Context.put_data(context, "approved", true)
+    Rodar.release_token(["next_flow"], context)
   end
 end
 ```
@@ -28,7 +28,7 @@ The callback receives the BPMN element tuple and the context pid, and should ret
 Register a handler for all tasks of a custom type:
 
 ```elixir
-RodarBpmn.TaskRegistry.register(:my_approval_task, MyApp.ApprovalHandler)
+Rodar.TaskRegistry.register(:my_approval_task, MyApp.ApprovalHandler)
 ```
 
 Any element with type `:my_approval_task` will be dispatched to this handler.
@@ -38,7 +38,7 @@ Any element with type `:my_approval_task` will be dispatched to this handler.
 Register a handler for a specific task instance:
 
 ```elixir
-RodarBpmn.TaskRegistry.register("Task_approval_1", MyApp.ApprovalHandler)
+Rodar.TaskRegistry.register("Task_approval_1", MyApp.ApprovalHandler)
 ```
 
 ### Lookup Priority
@@ -55,14 +55,14 @@ This lets you override individual tasks while keeping a generic handler for the 
 
 ```elixir
 # List all registered handlers
-RodarBpmn.TaskRegistry.list()
+Rodar.TaskRegistry.list()
 # => [{:my_task, MyApp.Handler}, {"Task_1", MyApp.Other}]
 
 # Remove a registration
-RodarBpmn.TaskRegistry.unregister(:my_task)
+Rodar.TaskRegistry.unregister(:my_task)
 
 # Check if a handler exists
-case RodarBpmn.TaskRegistry.lookup(:my_task) do
+case Rodar.TaskRegistry.lookup(:my_task) do
   {:ok, module} -> # handler found
   :error -> # no handler registered
 end
@@ -72,28 +72,28 @@ end
 
 ```elixir
 defmodule MyApp.HttpTask do
-  @behaviour RodarBpmn.TaskHandler
+  @behaviour Rodar.TaskHandler
 
   @impl true
   def token_in({_type, %{id: _id, outgoing: outgoing} = attrs}, context) do
-    url = Map.get(attrs, :url, RodarBpmn.Context.get_data(context, "request_url"))
+    url = Map.get(attrs, :url, Rodar.Context.get_data(context, "request_url"))
     # Perform HTTP request...
-    RodarBpmn.Context.put_data(context, "response", %{status: 200})
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.Context.put_data(context, "response", %{status: 200})
+    Rodar.release_token(outgoing, context)
   end
 end
 
 # Register for all :http_task elements
-RodarBpmn.TaskRegistry.register(:http_task, MyApp.HttpTask)
+Rodar.TaskRegistry.register(:http_task, MyApp.HttpTask)
 ```
 
 ## Service Task Handlers
 
-Service tasks use a separate handler mechanism from `RodarBpmn.TaskHandler`. A service task handler implements the `RodarBpmn.Activity.Task.Service.Handler` behaviour, which has an `execute/2` callback instead of `token_in/2`:
+Service tasks use a separate handler mechanism from `Rodar.TaskHandler`. A service task handler implements the `Rodar.Activity.Task.Service.Handler` behaviour, which has an `execute/2` callback instead of `token_in/2`:
 
 ```elixir
 defmodule MyApp.CheckInventory do
-  @behaviour RodarBpmn.Activity.Task.Service.Handler
+  @behaviour Rodar.Activity.Task.Service.Handler
 
   @impl true
   def execute(attrs, data) do
@@ -107,7 +107,7 @@ end
 The `execute/2` callback receives:
 
 - `attrs` -- the BPMN element attribute map (including `:id`, `:name`, `:outgoing`, etc.)
-- `data` -- the current process data map (from `RodarBpmn.Context.get(context, :data)`)
+- `data` -- the current process data map (from `Rodar.Context.get(context, :data)`)
 
 Return `{:ok, result_map}` to merge keys into the context data, or `{:error, reason}` to signal failure.
 
@@ -117,7 +117,7 @@ There are two ways to connect a handler to a service task:
 
 #### 1. At parse time with `handler_map`
 
-Pass a `:handler_map` option to `RodarBpmn.Engine.Diagram.load/2`. The map keys are BPMN element ID strings, and the values are handler modules:
+Pass a `:handler_map` option to `Rodar.Engine.Diagram.load/2`. The map keys are BPMN element ID strings, and the values are handler modules:
 
 ```elixir
 handler_map = %{
@@ -125,7 +125,7 @@ handler_map = %{
   "Task_send_email" => MyApp.SendEmail
 }
 
-diagram = RodarBpmn.Engine.Diagram.load(xml, handler_map: handler_map)
+diagram = Rodar.Engine.Diagram.load(xml, handler_map: handler_map)
 ```
 
 This injects a `:handler` attribute directly into the parsed element, so the handler is resolved without any registry lookup at runtime.
@@ -135,18 +135,18 @@ This injects a `:handler` attribute directly into the parsed element, so the han
 Register the handler by the task's BPMN element ID:
 
 ```elixir
-RodarBpmn.TaskRegistry.register("Task_check_inventory", MyApp.CheckInventory)
+Rodar.TaskRegistry.register("Task_check_inventory", MyApp.CheckInventory)
 ```
 
 The service task module looks up the task ID in the `TaskRegistry` when no inline `:handler` attribute is present.
 
 ### Convention-Based Auto-Discovery
 
-When you scaffold handlers with `mix rodar_bpmn.scaffold`, modules are placed at predictable paths (e.g., `MyApp.Workflow.OrderProcessing.Handlers.ValidateOrder`). The engine can auto-discover these handlers when you provide the `:bpmn_file` and `:app_name` options to `Diagram.load/2`:
+When you scaffold handlers with `mix rodar.scaffold`, modules are placed at predictable paths (e.g., `MyApp.Workflow.OrderProcessing.Handlers.ValidateOrder`). The engine can auto-discover these handlers when you provide the `:bpmn_file` and `:app_name` options to `Diagram.load/2`:
 
 ```elixir
 # Discovery is ON by default when bpmn_file + app_name are provided
-diagram = RodarBpmn.Engine.Diagram.load(xml,
+diagram = Rodar.Engine.Diagram.load(xml,
   bpmn_file: "order_processing.bpmn",
   app_name: "MyApp"
 )
@@ -166,7 +166,7 @@ Discovery checks each task for a module at the expected namespace and verifies i
 You can mix explicit `handler_map` entries with discovery — explicit entries always win for overlapping task IDs:
 
 ```elixir
-diagram = RodarBpmn.Engine.Diagram.load(xml,
+diagram = Rodar.Engine.Diagram.load(xml,
   bpmn_file: "order.bpmn",
   app_name: "MyApp",
   handler_map: %{"Task_1" => MyApp.CustomOverride}
@@ -176,7 +176,7 @@ diagram = RodarBpmn.Engine.Diagram.load(xml,
 To disable discovery, set `discover_handlers: false`:
 
 ```elixir
-diagram = RodarBpmn.Engine.Diagram.load(xml,
+diagram = Rodar.Engine.Diagram.load(xml,
   bpmn_file: "order.bpmn",
   app_name: "MyApp",
   discover_handlers: false
@@ -186,13 +186,13 @@ diagram = RodarBpmn.Engine.Diagram.load(xml,
 For non-service task handlers (user, send, receive, manual), discovery returns them in `task_registry_entries`. Register them with:
 
 ```elixir
-RodarBpmn.Scaffold.Discovery.register_discovered(diagram.discovery)
+Rodar.Scaffold.Discovery.register_discovered(diagram.discovery)
 ```
 
 You can also use the `Discovery` module directly for programmatic discovery without `Diagram.load/2`:
 
 ```elixir
-alias RodarBpmn.Scaffold.Discovery
+alias Rodar.Scaffold.Discovery
 
 result = Discovery.discover(diagram, module_prefix: "MyApp.Workflow.OrderProcessing.Handlers")
 diagram = Discovery.apply_handlers(diagram, result.handler_map)
@@ -204,15 +204,15 @@ Discovery.register_discovered(result)
 When a service task executes, the handler is resolved in this order:
 
 1. **Inline `:handler` attribute** -- if the element has a `:handler` key (set by `Diagram.load/2` `:handler_map` or convention discovery), that module is used directly.
-2. **`RodarBpmn.TaskRegistry` lookup** -- the task's `:id` is looked up in the registry. This works for both service-task-specific registrations and general type registrations.
+2. **`Rodar.TaskRegistry` lookup** -- the task's `:id` is looked up in the registry. This works for both service-task-specific registrations and general type registrations.
 3. **Fallback** -- if neither source provides a handler, `{:not_implemented}` is returned.
 
 ## Script Engines vs Task Handlers
 
 Task handlers and script engines serve different extensibility roles:
 
-- **Task handlers** (`RodarBpmn.TaskHandler`) replace the entire execution logic for a task type or specific task ID. Use these for custom business logic like HTTP calls, database operations, or approval workflows.
-- **Script engines** (`RodarBpmn.Expression.ScriptEngine`) add support for new script languages in script tasks. Use these when your BPMN diagrams embed scripts in Lua, Python, or other languages.
+- **Task handlers** (`Rodar.TaskHandler`) replace the entire execution logic for a task type or specific task ID. Use these for custom business logic like HTTP calls, database operations, or approval workflows.
+- **Script engines** (`Rodar.Expression.ScriptEngine`) add support for new script languages in script tasks. Use these when your BPMN diagrams embed scripts in Lua, Python, or other languages.
 
 See the [Expressions guide](expressions.md#pluggable-script-engines) for details on registering script engines.
 

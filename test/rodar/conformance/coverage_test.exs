@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Conformance.CoverageTest do
+defmodule Rodar.Conformance.CoverageTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Conformance.TestHelper
+  alias Rodar.Conformance.TestHelper
 
   @moduletag :conformance
 

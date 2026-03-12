@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Timer do
+defmodule Rodar.Event.Timer do
   @moduledoc """
   Timer parsing and scheduling utilities for BPMN timer events.
 
@@ -7,27 +7,27 @@ defmodule RodarBpmn.Event.Timer do
 
   ## Duration Examples
 
-      iex> RodarBpmn.Event.Timer.parse_duration("PT5S")
+      iex> Rodar.Event.Timer.parse_duration("PT5S")
       {:ok, 5_000}
 
-      iex> RodarBpmn.Event.Timer.parse_duration("PT1H")
+      iex> Rodar.Event.Timer.parse_duration("PT1H")
       {:ok, 3_600_000}
 
-      iex> RodarBpmn.Event.Timer.parse_duration("PT1M30S")
+      iex> Rodar.Event.Timer.parse_duration("PT1M30S")
       {:ok, 90_000}
 
-      iex> RodarBpmn.Event.Timer.parse_duration("invalid")
+      iex> Rodar.Event.Timer.parse_duration("invalid")
       {:error, "invalid ISO 8601 duration: \\"invalid\\""}
 
   ## Cycle Examples
 
-      iex> RodarBpmn.Event.Timer.parse_cycle("R3/PT10S")
+      iex> Rodar.Event.Timer.parse_cycle("R3/PT10S")
       {:ok, %{repetitions: 3, duration_ms: 10_000}}
 
-      iex> RodarBpmn.Event.Timer.parse_cycle("R/PT1M")
+      iex> Rodar.Event.Timer.parse_cycle("R/PT1M")
       {:ok, %{repetitions: :infinite, duration_ms: 60_000}}
 
-      iex> RodarBpmn.Event.Timer.parse_cycle("PT30S")
+      iex> Rodar.Event.Timer.parse_cycle("PT30S")
       {:ok, %{repetitions: :infinite, duration_ms: 30_000}}
 
   """

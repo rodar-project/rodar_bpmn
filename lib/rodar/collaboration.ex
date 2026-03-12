@@ -1,26 +1,26 @@
-defmodule RodarBpmn.Collaboration do
+defmodule Rodar.Collaboration do
   @moduledoc """
   Multi-participant collaboration orchestration.
 
   Manages starting and wiring multiple BPMN processes that communicate
-  via message flows, using the existing `RodarBpmn.Event.Bus` for inter-process
+  via message flows, using the existing `Rodar.Event.Bus` for inter-process
   messaging.
 
   ## Usage
 
-      diagram = RodarBpmn.Engine.Diagram.load(xml)
-      {:ok, result} = RodarBpmn.Collaboration.start(diagram)
+      diagram = Rodar.Engine.Diagram.load(xml)
+      {:ok, result} = Rodar.Collaboration.start(diagram)
       # result = %{collaboration_id: id, instances: %{process_id => pid}}
 
-      RodarBpmn.Collaboration.stop(result)
+      Rodar.Collaboration.stop(result)
   """
 
   require Logger
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Process, as: BpmnProcess
-  alias RodarBpmn.Registry
+  alias Rodar.Context
+  alias Rodar.Event.Bus
+  alias Rodar.Process, as: BpmnProcess
+  alias Rodar.Registry
 
   @doc """
   Start a collaboration from a parsed diagram map.
@@ -103,7 +103,7 @@ defmodule RodarBpmn.Collaboration do
     Registry.register(process_id, process_def)
 
     case DynamicSupervisor.start_child(
-           RodarBpmn.ProcessSupervisor,
+           Rodar.ProcessSupervisor,
            {BpmnProcess, {process_id, init_data}}
          ) do
       {:ok, pid} ->

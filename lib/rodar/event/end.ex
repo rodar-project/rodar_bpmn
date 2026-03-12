@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.End do
+defmodule Rodar.Event.End do
   @moduledoc """
   Handle passing the token through an end event element.
 
@@ -11,21 +11,21 @@ defmodule RodarBpmn.Event.End do
 
   ## Examples
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      iex> {:ok, ^context} = RodarBpmn.Event.End.token_in({:bpmn_event_end, %{incoming: []}}, context)
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      iex> {:ok, ^context} = Rodar.Event.End.token_in({:bpmn_event_end, %{incoming: []}}, context)
       iex> true
       true
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
       iex> elem = {:bpmn_event_end, %{id: "end_err", incoming: ["f1"], errorEventDefinition: {:bpmn_event_definition_error, %{errorRef: "Error_001"}}}}
-      iex> {:error, "Error_001"} = RodarBpmn.Event.End.token_in(elem, context)
+      iex> {:error, "Error_001"} = Rodar.Event.End.token_in(elem, context)
       iex> true
       true
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
       iex> elem = {:bpmn_event_end, %{id: "end_term", incoming: ["f1"], terminateEventDefinition: %{}}}
-      iex> {:ok, ^context} = RodarBpmn.Event.End.token_in(elem, context)
-      iex> RodarBpmn.Context.get_meta(context, :terminated)
+      iex> {:ok, ^context} = Rodar.Event.End.token_in(elem, context)
+      iex> Rodar.Context.get_meta(context, :terminated)
       true
 
   """
@@ -33,7 +33,7 @@ defmodule RodarBpmn.Event.End do
   @doc """
   Receive the token for the element and handle end event logic.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in({:bpmn_event_end, attrs} = _elem, context) do
     result =
       cond do
@@ -53,7 +53,7 @@ defmodule RodarBpmn.Event.End do
     node_id = Map.get(attrs, :id)
 
     if match?({:ok, _}, result) do
-      RodarBpmn.Hooks.notify(context, :on_complete, %{node_id: node_id})
+      Rodar.Hooks.notify(context, :on_complete, %{node_id: node_id})
     end
 
     result
@@ -69,12 +69,12 @@ defmodule RodarBpmn.Event.End do
 
   defp handle_error(attrs, context) do
     {:bpmn_event_definition_error, %{errorRef: error_ref}} = attrs.errorEventDefinition
-    RodarBpmn.Context.put_meta(context, :error, error_ref)
+    Rodar.Context.put_meta(context, :error, error_ref)
     {:error, error_ref}
   end
 
   defp handle_terminate(context) do
-    RodarBpmn.Context.put_meta(context, :terminated, true)
+    Rodar.Context.put_meta(context, :terminated, true)
     {:ok, context}
   end
 
@@ -87,9 +87,9 @@ defmodule RodarBpmn.Event.End do
     activity_ref = Map.get(def_attrs, :activityRef)
 
     if activity_ref do
-      RodarBpmn.Compensation.compensate_activity(context, to_string(activity_ref))
+      Rodar.Compensation.compensate_activity(context, to_string(activity_ref))
     else
-      RodarBpmn.Compensation.compensate_all(context)
+      Rodar.Compensation.compensate_all(context)
     end
 
     {:ok, context}

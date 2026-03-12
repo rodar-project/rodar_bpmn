@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Conformance.TestHelper do
+defmodule Rodar.Conformance.TestHelper do
   @moduledoc false
 
-  alias RodarBpmn.{Context, Engine.Diagram}
+  alias Rodar.{Context, Engine.Diagram}
 
   @fixture_base "test/fixtures/conformance"
 
@@ -27,7 +27,7 @@ defmodule RodarBpmn.Conformance.TestHelper do
     end)
 
     start = find_start_event(elements)
-    result = RodarBpmn.execute(start, context)
+    result = Rodar.execute(start, context)
     {result, context}
   end
 
@@ -85,19 +85,19 @@ defmodule RodarBpmn.Conformance.TestHelper do
   end
 end
 
-defmodule RodarBpmn.Conformance.PassThroughHandler do
+defmodule Rodar.Conformance.PassThroughHandler do
   @moduledoc false
-  @behaviour RodarBpmn.TaskHandler
+  @behaviour Rodar.TaskHandler
 
   @impl true
   def token_in({_type, %{outgoing: outgoing}}, context) do
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 end
 
-defmodule RodarBpmn.Conformance.ErrorHandler do
+defmodule Rodar.Conformance.ErrorHandler do
   @moduledoc false
-  @behaviour RodarBpmn.TaskHandler
+  @behaviour Rodar.TaskHandler
 
   @impl true
   def token_in(_elem, _context) do

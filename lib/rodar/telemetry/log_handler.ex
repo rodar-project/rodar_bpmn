@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Telemetry.LogHandler do
+defmodule Rodar.Telemetry.LogHandler do
   @moduledoc """
   Default telemetry handler that logs BPMN engine events via `Logger`.
 
@@ -12,16 +12,16 @@ defmodule RodarBpmn.Telemetry.LogHandler do
   ## Usage
 
       # Attach the handler (typically in Application.start/2)
-      RodarBpmn.Telemetry.LogHandler.attach()
+      Rodar.Telemetry.LogHandler.attach()
 
       # Detach when no longer needed
-      RodarBpmn.Telemetry.LogHandler.detach()
+      Rodar.Telemetry.LogHandler.detach()
 
   """
 
   require Logger
 
-  @handler_id "rodar_bpmn-default-log-handler"
+  @handler_id "rodar-default-log-handler"
 
   @doc """
   Attach the log handler to all BPMN telemetry events.
@@ -30,7 +30,7 @@ defmodule RodarBpmn.Telemetry.LogHandler do
   def attach do
     :telemetry.attach_many(
       @handler_id,
-      RodarBpmn.Telemetry.events(),
+      Rodar.Telemetry.events(),
       &handle_event/4,
       nil
     )
@@ -45,13 +45,13 @@ defmodule RodarBpmn.Telemetry.LogHandler do
   end
 
   @doc false
-  def handle_event([:rodar_bpmn, :node, :start], _measurements, metadata, _config) do
+  def handle_event([:rodar, :node, :start], _measurements, metadata, _config) do
     Logger.debug(fn ->
       "BPMN node started: #{metadata.node_id} (#{metadata.node_type}) token=#{metadata.token_id}"
     end)
   end
 
-  def handle_event([:rodar_bpmn, :node, :stop], measurements, metadata, _config) do
+  def handle_event([:rodar, :node, :stop], measurements, metadata, _config) do
     duration_us = System.convert_time_unit(measurements.duration, :native, :microsecond)
 
     Logger.debug(fn ->
@@ -60,7 +60,7 @@ defmodule RodarBpmn.Telemetry.LogHandler do
     end)
   end
 
-  def handle_event([:rodar_bpmn, :node, :exception], measurements, metadata, _config) do
+  def handle_event([:rodar, :node, :exception], measurements, metadata, _config) do
     duration_us = System.convert_time_unit(measurements.duration, :native, :microsecond)
 
     Logger.error(fn ->
@@ -69,13 +69,13 @@ defmodule RodarBpmn.Telemetry.LogHandler do
     end)
   end
 
-  def handle_event([:rodar_bpmn, :process, :start], _measurements, metadata, _config) do
+  def handle_event([:rodar, :process, :start], _measurements, metadata, _config) do
     Logger.info(fn ->
       "BPMN process started: instance=#{metadata.instance_id} process=#{metadata.process_id}"
     end)
   end
 
-  def handle_event([:rodar_bpmn, :process, :stop], measurements, metadata, _config) do
+  def handle_event([:rodar, :process, :stop], measurements, metadata, _config) do
     duration_us = System.convert_time_unit(measurements.duration, :native, :microsecond)
 
     Logger.info(fn ->
@@ -84,21 +84,21 @@ defmodule RodarBpmn.Telemetry.LogHandler do
     end)
   end
 
-  def handle_event([:rodar_bpmn, :token, :create], _measurements, metadata, _config) do
+  def handle_event([:rodar, :token, :create], _measurements, metadata, _config) do
     Logger.debug(fn ->
       "BPMN token created: #{metadata.token_id} parent=#{inspect(metadata.parent_id)} " <>
         "node=#{inspect(metadata.node_id)}"
     end)
   end
 
-  def handle_event([:rodar_bpmn, :event_bus, :publish], _measurements, metadata, _config) do
+  def handle_event([:rodar, :event_bus, :publish], _measurements, metadata, _config) do
     Logger.debug(fn ->
       "BPMN event published: #{metadata.event_type}/#{metadata.event_name} " <>
         "subscribers=#{metadata.subscriber_count}"
     end)
   end
 
-  def handle_event([:rodar_bpmn, :event_bus, :subscribe], _measurements, metadata, _config) do
+  def handle_event([:rodar, :event_bus, :subscribe], _measurements, metadata, _config) do
     Logger.debug(fn ->
       "BPMN event subscription: #{metadata.event_type}/#{metadata.event_name} " <>
         "node=#{inspect(metadata.node_id)}"

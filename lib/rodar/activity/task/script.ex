@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Task.Script do
+defmodule Rodar.Activity.Task.Script do
   @moduledoc """
   Handles passing the token through a script task element.
 
@@ -16,19 +16,19 @@ defmodule RodarBpmn.Activity.Task.Script do
 
   ## Supported Languages
 
-  - `"elixir"` -- sandboxed AST evaluation via `RodarBpmn.Expression.Sandbox`
-  - `"feel"` -- FEEL expression language via `RodarBpmn.Expression.Feel`
-  - Any other language string -- resolved through `RodarBpmn.Expression.ScriptRegistry`
+  - `"elixir"` -- sandboxed AST evaluation via `Rodar.Expression.Sandbox`
+  - `"feel"` -- FEEL expression language via `Rodar.Expression.Feel`
+  - Any other language string -- resolved through `Rodar.Expression.ScriptRegistry`
 
   For custom languages, register an engine module implementing the
-  `RodarBpmn.Expression.ScriptEngine` behaviour before executing processes
+  `Rodar.Expression.ScriptEngine` behaviour before executing processes
   that use that language. If no engine is registered for the language,
   the task returns `{:error, "Unsupported script language: ..."}`.
 
   ## See Also
 
-  - `RodarBpmn.Expression.ScriptEngine` -- behaviour for custom script engines
-  - `RodarBpmn.Expression.ScriptRegistry` -- runtime registration of engines
+  - `Rodar.Expression.ScriptEngine` -- behaviour for custom script engines
+  - `Rodar.Expression.ScriptRegistry` -- runtime registration of engines
 
   ## Examples
 
@@ -37,23 +37,23 @@ defmodule RodarBpmn.Activity.Task.Script do
       iex> elem = {:bpmn_activity_task_script, %{id: "task", outgoing: ["flow_out"], type: "elixir", script: "2 + 2"}}
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
       iex> {:ok, context} = Context.start_link(process, %{})
-      iex> {:ok, ^context} = RodarBpmn.Activity.Task.Script.token_in(elem, context)
+      iex> {:ok, ^context} = Rodar.Activity.Task.Script.token_in(elem, context)
       iex> Context.get_data(context, :script_result)
       4
 
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Expression.Feel
-  alias RodarBpmn.Expression.Sandbox
-  alias RodarBpmn.Expression.ScriptRegistry
+  alias Rodar.Context
+  alias Rodar.Expression.Feel
+  alias Rodar.Expression.Sandbox
+  alias Rodar.Expression.ScriptRegistry
 
   @doc """
   Receives the token for a script task element and executes the script.
 
   Delegates to `execute/2`.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(elem, context), do: execute(elem, context)
 
   @doc """
@@ -68,7 +68,7 @@ defmodule RodarBpmn.Activity.Task.Script do
   Returns `{:ok, context}` on success, `{:error, reason}` on script
   evaluation failure, or `{:not_implemented}` for unrecognized elements.
   """
-  @spec execute(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec execute(Rodar.element(), Rodar.context()) :: Rodar.result()
   def execute(
         {:bpmn_activity_task_script, %{outgoing: outgoing, script: script} = attrs},
         context
@@ -94,7 +94,7 @@ defmodule RodarBpmn.Activity.Task.Script do
     Map.get(attrs, :type) || Map.get(attrs, :scriptFormat, "elixir")
   end
 
-  defp token_out(targets, context), do: RodarBpmn.release_token(targets, context)
+  defp token_out(targets, context), do: Rodar.release_token(targets, context)
 
   defp run_script("elixir", {:bpmn_script, %{expression: script}}, data) do
     Sandbox.eval(script, %{"data" => data})

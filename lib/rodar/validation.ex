@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Validation do
+defmodule Rodar.Validation do
   @moduledoc """
   Structural validation for parsed BPMN process element maps.
 
@@ -16,8 +16,8 @@ defmodule RodarBpmn.Validation do
 
   ## See Also
 
-  - `RodarBpmn.Lane` -- lane assignment queries
-  - `RodarBpmn.Engine.Diagram` -- parser that produces the maps this module validates
+  - `Rodar.Lane` -- lane assignment queries
+  - `Rodar.Engine.Diagram` -- parser that produces the maps this module validates
 
   ## Examples
 
@@ -25,11 +25,11 @@ defmodule RodarBpmn.Validation do
       iex> end_ev = {:bpmn_event_end, %{id: "e", incoming: ["f1"], outgoing: []}}
       iex> flow = {:bpmn_sequence_flow, %{id: "f1", sourceRef: "s", targetRef: "e", conditionExpression: nil}}
       iex> process_map = %{"s" => start, "e" => end_ev, "f1" => flow}
-      iex> {:ok, ^process_map} = RodarBpmn.Validation.validate(process_map)
+      iex> {:ok, ^process_map} = Rodar.Validation.validate(process_map)
       iex> true
       true
 
-      iex> {:error, issues} = RodarBpmn.Validation.validate(%{})
+      iex> {:error, issues} = Rodar.Validation.validate(%{})
       iex> Enum.any?(issues, & &1.rule == :start_event_exists)
       true
 
@@ -101,7 +101,7 @@ defmodule RodarBpmn.Validation do
       ...>   "end_1" => {:bpmn_event_end, %{id: "end_1", incoming: ["f1"], outgoing: []}},
       ...>   "f1" => {:bpmn_sequence_flow, %{id: "f1", sourceRef: "start_1", targetRef: "end_1", conditionExpression: nil}}
       ...> }
-      iex> {:ok, ^lane_set} = RodarBpmn.Validation.validate_lanes(lane_set, process_map)
+      iex> {:ok, ^lane_set} = Rodar.Validation.validate_lanes(lane_set, process_map)
       iex> true
       true
 

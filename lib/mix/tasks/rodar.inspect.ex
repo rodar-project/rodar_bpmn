@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.RodarBpmn.Inspect do
+defmodule Mix.Tasks.Rodar.Inspect do
   @moduledoc """
   Print the parsed structure of a BPMN 2.0 XML file.
 
@@ -12,7 +12,7 @@ defmodule Mix.Tasks.RodarBpmn.Inspect do
 
   use Mix.Task
 
-  alias RodarBpmn.Engine.Diagram
+  alias Rodar.Engine.Diagram
 
   @shortdoc "Print the parsed structure of a BPMN file"
 

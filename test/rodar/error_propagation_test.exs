@@ -1,7 +1,7 @@
-defmodule RodarBpmn.ErrorPropagationTest do
+defmodule Rodar.ErrorPropagationTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Subprocess.Embedded, Context}
+  alias Rodar.{Activity.Subprocess.Embedded, Context}
 
   describe "subprocess with attached error boundary event" do
     test "routes to boundary event outgoing flows on subprocess error" do

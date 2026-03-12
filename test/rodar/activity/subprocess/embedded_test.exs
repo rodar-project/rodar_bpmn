@@ -1,5 +1,5 @@
-defmodule RodarBpmn.Activity.Subprocess.EmbeddedTest.SubprocessHandler do
-  @behaviour RodarBpmn.Activity.Task.Service.Handler
+defmodule Rodar.Activity.Subprocess.EmbeddedTest.SubprocessHandler do
+  @behaviour Rodar.Activity.Task.Service.Handler
 
   @impl true
   def execute(_attrs, _data) do
@@ -7,13 +7,13 @@ defmodule RodarBpmn.Activity.Subprocess.EmbeddedTest.SubprocessHandler do
   end
 end
 
-defmodule RodarBpmn.Activity.Subprocess.EmbeddedTest do
+defmodule Rodar.Activity.Subprocess.EmbeddedTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Subprocess.Embedded, Context}
-  alias RodarBpmn.Activity.Subprocess.EmbeddedTest.SubprocessHandler
+  alias Rodar.{Activity.Subprocess.Embedded, Context}
+  alias Rodar.Activity.Subprocess.EmbeddedTest.SubprocessHandler
 
-  doctest RodarBpmn.Activity.Subprocess.Embedded
+  doctest Rodar.Activity.Subprocess.Embedded
 
   defp build_nested_elements do
     start = {:bpmn_event_start, %{id: "sub_start", incoming: [], outgoing: ["sub_flow"]}}

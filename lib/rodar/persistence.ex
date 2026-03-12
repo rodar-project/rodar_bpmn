@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Persistence do
+defmodule Rodar.Persistence do
   @moduledoc """
   Persistence behaviour and facade for BPMN process snapshots.
 
@@ -6,8 +6,8 @@ defmodule RodarBpmn.Persistence do
   delegates to the configured adapter. The adapter is read from application
   config:
 
-      config :rodar_bpmn, :persistence,
-        adapter: RodarBpmn.Persistence.Adapter.ETS,
+      config :rodar, :persistence,
+        adapter: Rodar.Persistence.Adapter.ETS,
         auto_dehydrate: true
 
   ## Callbacks
@@ -42,14 +42,14 @@ defmodule RodarBpmn.Persistence do
   @doc "Return the configured persistence adapter module."
   @spec adapter() :: module()
   def adapter do
-    config = Application.get_env(:rodar_bpmn, :persistence, [])
-    Keyword.get(config, :adapter, RodarBpmn.Persistence.Adapter.ETS)
+    config = Application.get_env(:rodar, :persistence, [])
+    Keyword.get(config, :adapter, Rodar.Persistence.Adapter.ETS)
   end
 
   @doc "Return whether auto-dehydrate is enabled."
   @spec auto_dehydrate?() :: boolean()
   def auto_dehydrate? do
-    config = Application.get_env(:rodar_bpmn, :persistence, [])
+    config = Application.get_env(:rodar, :persistence, [])
     Keyword.get(config, :auto_dehydrate, true)
   end
 end

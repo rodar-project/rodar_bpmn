@@ -1,6 +1,6 @@
 # Building and Testing
 
-This document describes how to set up your development environment to build and test Rodar BPMN.
+This document describes how to set up your development environment to build and test Rodar Workflow.
 
 * [Prerequisite Software](#prerequisite-software)
 * [Getting the Sources](#getting-the-sources)
@@ -9,11 +9,11 @@ This document describes how to set up your development environment to build and 
 * [Building Documentation Locally](#building-documentation-locally)
 * [Running Tests Locally](#running-tests-locally)
 
-See the [contribution guidelines](CONTRIBUTING.md) if you'd like to contribute to Rodar BPMN.
+See the [contribution guidelines](CONTRIBUTING.md) if you'd like to contribute to Rodar Workflow.
 
 ## Prerequisite Software
 
-Before you can build and test Rodar BPMN, you must install and configure the
+Before you can build and test Rodar Workflow, you must install and configure the
 following products on your development machine:
 
 * [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or
@@ -24,29 +24,29 @@ following products on your development machine:
 
 ## Getting the Sources
 
-Fork and clone the Rodar BPMN repository:
+Fork and clone the Rodar Workflow repository:
 
 1. Login to your GitHub account or create one by following the instructions given
    [here](https://github.com/signup/free).
-2. [Fork](http://help.github.com/forking) the [main Rodar BPMN
-   repository](https://github.com/rodar-project/rodar_bpmn).
+2. [Fork](http://help.github.com/forking) the [main Rodar Workflow
+   repository](https://github.com/rodar-project/rodar).
 3. Clone your fork of the repository and define an `upstream` remote pointing back to
    the repository that you forked in the first place.
 
 ```shell
 # Clone your GitHub repository:
-git clone git@github.com:<github username>/rodar_bpmn.git
+git clone git@github.com:<github username>/rodar.git
 
-# Go to the rodar_bpmn directory:
-cd rodar_bpmn
+# Go to the rodar directory:
+cd rodar
 
 # Add the main repository as an upstream remote to your repository:
-git remote add upstream https://github.com/rodar-project/rodar_bpmn.git
+git remote add upstream https://github.com/rodar-project/rodar.git
 ```
 
 ## Installing HEX packages
 
-Next, install the Hex packages needed to build and test Rodar BPMN:
+Next, install the Hex packages needed to build and test Rodar Workflow:
 
 ```shell
 mix local.hex --force
@@ -58,7 +58,7 @@ mix compile
 
 ## Building
 
-To build Rodar BPMN for release run:
+To build Rodar Workflow for release run:
 
 ```shell
 mix deps.get --only prod

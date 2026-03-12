@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Bus do
+defmodule Rodar.Event.Bus do
   @moduledoc """
   Registry-based pub/sub event bus for BPMN events.
 
@@ -34,7 +34,7 @@ defmodule RodarBpmn.Event.Bus do
   when an event fires.
   """
 
-  @registry RodarBpmn.EventRegistry
+  @registry Rodar.EventRegistry
 
   @doc """
   Subscribe the calling process to events of the given type and name.
@@ -48,7 +48,7 @@ defmodule RodarBpmn.Event.Bus do
 
   ## Examples
 
-      iex> {:ok, key} = RodarBpmn.Event.Bus.subscribe(:message, "order_received")
+      iex> {:ok, key} = Rodar.Event.Bus.subscribe(:message, "order_received")
       iex> match?({:message, "order_received"}, key)
       true
 
@@ -57,7 +57,7 @@ defmodule RodarBpmn.Event.Bus do
   def subscribe(event_type, event_name, metadata \\ %{}) do
     key = {event_type, event_name}
     {:ok, _} = Registry.register(@registry, key, metadata)
-    RodarBpmn.Telemetry.event_subscribed(event_type, event_name, Map.get(metadata, :node_id))
+    Rodar.Telemetry.event_subscribed(event_type, event_name, Map.get(metadata, :node_id))
     {:ok, key}
   end
 
@@ -66,8 +66,8 @@ defmodule RodarBpmn.Event.Bus do
 
   ## Examples
 
-      iex> RodarBpmn.Event.Bus.subscribe(:message, "test_unsub")
-      iex> RodarBpmn.Event.Bus.unsubscribe(:message, "test_unsub")
+      iex> Rodar.Event.Bus.subscribe(:message, "test_unsub")
+      iex> Rodar.Event.Bus.unsubscribe(:message, "test_unsub")
       :ok
 
   """
@@ -87,7 +87,7 @@ defmodule RodarBpmn.Event.Bus do
 
   ## Examples
 
-      iex> RodarBpmn.Event.Bus.publish(:signal, "no_listeners", %{})
+      iex> Rodar.Event.Bus.publish(:signal, "no_listeners", %{})
       :ok
 
   """
@@ -97,19 +97,19 @@ defmodule RodarBpmn.Event.Bus do
 
     case Registry.lookup(@registry, key) do
       [] ->
-        RodarBpmn.Telemetry.event_published(:message, event_name, 0)
+        Rodar.Telemetry.event_published(:message, event_name, 0)
         {:error, :no_subscriber}
 
       subscribers ->
         case find_correlated_subscriber(subscribers, payload) do
           nil ->
-            RodarBpmn.Telemetry.event_published(:message, event_name, 0)
+            Rodar.Telemetry.event_published(:message, event_name, 0)
             {:error, :no_subscriber}
 
           {pid, metadata} ->
             send(pid, {:bpmn_event, :message, event_name, payload, metadata})
             Registry.unregister_match(@registry, key, metadata, [])
-            RodarBpmn.Telemetry.event_published(:message, event_name, 1)
+            Rodar.Telemetry.event_published(:message, event_name, 1)
             :ok
         end
     end
@@ -125,7 +125,7 @@ defmodule RodarBpmn.Event.Bus do
     end)
 
     count = Registry.lookup(@registry, key) |> length()
-    RodarBpmn.Telemetry.event_published(:signal, event_name, count)
+    Rodar.Telemetry.event_published(:signal, event_name, count)
 
     :ok
   end
@@ -140,7 +140,7 @@ defmodule RodarBpmn.Event.Bus do
     end)
 
     count = Registry.lookup(@registry, key) |> length()
-    RodarBpmn.Telemetry.event_published(:escalation, event_name, count)
+    Rodar.Telemetry.event_published(:escalation, event_name, count)
 
     :ok
   end
@@ -150,7 +150,7 @@ defmodule RodarBpmn.Event.Bus do
 
   ## Examples
 
-      iex> RodarBpmn.Event.Bus.subscriptions(:message, "nonexistent")
+      iex> Rodar.Event.Bus.subscriptions(:message, "nonexistent")
       []
 
   """

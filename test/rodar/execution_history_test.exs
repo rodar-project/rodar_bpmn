@@ -1,9 +1,9 @@
-defmodule RodarBpmn.ExecutionHistoryTest do
+defmodule Rodar.ExecutionHistoryTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Context
+  alias Rodar.Context
 
-  describe "execution history via RodarBpmn.execute/3" do
+  describe "execution history via Rodar.execute/3" do
     test "records visit and completion for a simple start->end flow" do
       end_event = {:bpmn_event_end, %{id: "end_1", incoming: ["flow_1"], outgoing: []}}
 
@@ -26,9 +26,9 @@ defmodule RodarBpmn.ExecutionHistoryTest do
       }
 
       {:ok, context} = Context.start_link(process, %{})
-      token = RodarBpmn.Token.new()
+      token = Rodar.Token.new()
 
-      {:ok, ^context} = RodarBpmn.execute(start, context, token)
+      {:ok, ^context} = Rodar.execute(start, context, token)
 
       history = Context.get_history(context)
       assert length(history) >= 2
@@ -47,9 +47,9 @@ defmodule RodarBpmn.ExecutionHistoryTest do
       process = %{"start_1" => start}
 
       {:ok, context} = Context.start_link(process, %{})
-      token = RodarBpmn.Token.new()
+      token = Rodar.Token.new()
 
-      RodarBpmn.execute(start, context, token)
+      Rodar.execute(start, context, token)
 
       [entry] = Context.get_node_history(context, "start_1")
       assert entry.token_id == token.id
@@ -77,7 +77,7 @@ defmodule RodarBpmn.ExecutionHistoryTest do
          %{
            id: "service_1",
            outgoing: ["flow_2"],
-           handler: RodarBpmn.Activity.Task.Service.TestHandler
+           handler: Rodar.Activity.Task.Service.TestHandler
          }}
 
       flow_2 =
@@ -117,10 +117,10 @@ defmodule RodarBpmn.ExecutionHistoryTest do
       }
 
       {:ok, context} = Context.start_link(process, %{})
-      token = RodarBpmn.Token.new()
+      token = Rodar.Token.new()
 
       # Execution suspends at user task
-      {:manual, _task_data} = RodarBpmn.execute(start, context, token)
+      {:manual, _task_data} = Rodar.execute(start, context, token)
 
       # Start event should be :ok, not :manual
       [start_entry] = Context.get_node_history(context, "start_1")

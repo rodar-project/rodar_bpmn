@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.RodarBpmn.Validate do
+defmodule Mix.Tasks.Rodar.Validate do
   @moduledoc """
   Validate a BPMN 2.0 XML file for structural issues.
 
@@ -14,8 +14,8 @@ defmodule Mix.Tasks.RodarBpmn.Validate do
 
   use Mix.Task
 
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Validation
+  alias Rodar.Engine.Diagram
+  alias Rodar.Validation
 
   @shortdoc "Validate a BPMN 2.0 XML file"
 

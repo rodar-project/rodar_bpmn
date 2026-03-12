@@ -1,17 +1,17 @@
-defmodule RodarBpmn.TaskRegistry do
+defmodule Rodar.TaskRegistry do
   @moduledoc """
   Registry for custom task handlers.
 
   Maps task type atoms or task ID strings to handler modules implementing
-  the `RodarBpmn.TaskHandler` behaviour. Lookup priority: task ID (string) first,
+  the `Rodar.TaskHandler` behaviour. Lookup priority: task ID (string) first,
   then task type (atom).
 
   ## Examples
 
-      iex> RodarBpmn.TaskRegistry.register(:my_task, MyHandler)
+      iex> Rodar.TaskRegistry.register(:my_task, MyHandler)
       :ok
-      iex> {:ok, MyHandler} = RodarBpmn.TaskRegistry.lookup(:my_task)
-      iex> RodarBpmn.TaskRegistry.unregister(:my_task)
+      iex> {:ok, MyHandler} = Rodar.TaskRegistry.lookup(:my_task)
+      iex> Rodar.TaskRegistry.unregister(:my_task)
       :ok
 
   """

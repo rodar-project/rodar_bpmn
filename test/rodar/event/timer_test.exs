@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.TimerTest do
+defmodule Rodar.Event.TimerTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Event.Timer
+  alias Rodar.Event.Timer
 
   describe "parse_duration/1" do
     test "parses seconds" do
@@ -59,7 +59,7 @@ defmodule RodarBpmn.Event.TimerTest do
 
   describe "schedule/4 and cancel/1" do
     test "schedules a timer and receives the message" do
-      {:ok, _context} = RodarBpmn.Context.start_link(%{}, %{})
+      {:ok, _context} = Rodar.Context.start_link(%{}, %{})
       timer_ref = Timer.schedule(10, self(), "node1", ["flow_out"])
 
       assert is_reference(timer_ref)
@@ -99,26 +99,26 @@ defmodule RodarBpmn.Event.TimerTest do
 
   describe "cycle timer integration with Context" do
     test "context marks node completed on last cycle firing" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
 
       # Simulate last cycle firing (remaining = 0)
       send(context, {:timer_cycle_fired, "node1", [], 0, 10})
       Process.sleep(20)
 
-      meta = RodarBpmn.Context.get_meta(context, "node1")
+      meta = Rodar.Context.get_meta(context, "node1")
       assert meta.completed == true
       assert meta.active == false
     end
 
     test "context reschedules when remaining > 0" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
 
       # Simulate a cycle firing with 1 remaining
       send(context, {:timer_cycle_fired, "node1", [], 1, 500})
       Process.sleep(20)
 
       # Should have rescheduled — node stays active
-      meta = RodarBpmn.Context.get_meta(context, "node1")
+      meta = Rodar.Context.get_meta(context, "node1")
       assert meta.active == true
       assert meta.completed == false
       assert is_reference(meta.timer_ref)
@@ -128,7 +128,7 @@ defmodule RodarBpmn.Event.TimerTest do
     end
 
     test "full cycle fires expected number of times" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
 
       # 2 repetitions at 20ms interval
       Timer.schedule_cycle(20, context, "node1", [], 2)
@@ -136,7 +136,7 @@ defmodule RodarBpmn.Event.TimerTest do
       # Wait enough for both firings to complete (2 * 20ms + buffer)
       Process.sleep(100)
 
-      meta = RodarBpmn.Context.get_meta(context, "node1")
+      meta = Rodar.Context.get_meta(context, "node1")
       assert meta.completed == true
       assert meta.active == false
     end

@@ -1,8 +1,8 @@
-defmodule RodarBpmn.ValidationTest do
+defmodule Rodar.ValidationTest do
   use ExUnit.Case, async: true
-  doctest RodarBpmn.Validation
+  doctest Rodar.Validation
 
-  alias RodarBpmn.Validation
+  alias Rodar.Validation
 
   defp valid_process_map do
     %{

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Gateway.ComplexTest do
+defmodule Rodar.Gateway.ComplexTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Gateway.Complex}
+  alias Rodar.{Context, Gateway.Complex}
 
   describe "fork (single incoming)" do
     test "releases token to all matching outgoing flows" do
@@ -116,7 +116,7 @@ defmodule RodarBpmn.Gateway.ComplexTest do
     end
   end
 
-  describe "dispatch via RodarBpmn.execute/2" do
+  describe "dispatch via Rodar.execute/2" do
     test "dispatches complex gateway correctly" do
       end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
 
@@ -134,7 +134,7 @@ defmodule RodarBpmn.Gateway.ComplexTest do
       {:ok, context} = Context.start_link(process, %{})
 
       gw = {:bpmn_gateway_complex, %{id: "gw", incoming: ["in"], outgoing: ["flow_out"]}}
-      assert {:ok, ^context} = RodarBpmn.execute(gw, context)
+      assert {:ok, ^context} = Rodar.execute(gw, context)
     end
   end
 end

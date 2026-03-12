@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Expression.Feel.Functions do
+defmodule Rodar.Expression.Feel.Functions do
   @moduledoc """
   Built-in FEEL function implementations.
 
@@ -15,16 +15,16 @@ defmodule RodarBpmn.Expression.Feel.Functions do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Feel.Functions.call("abs", [-5])
+      iex> Rodar.Expression.Feel.Functions.call("abs", [-5])
       {:ok, 5}
 
-      iex> RodarBpmn.Expression.Feel.Functions.call("string length", ["hello"])
+      iex> Rodar.Expression.Feel.Functions.call("string length", ["hello"])
       {:ok, 5}
 
-      iex> RodarBpmn.Expression.Feel.Functions.call("is null", [nil])
+      iex> Rodar.Expression.Feel.Functions.call("is null", [nil])
       {:ok, true}
 
-      iex> RodarBpmn.Expression.Feel.Functions.call("abs", [nil])
+      iex> Rodar.Expression.Feel.Functions.call("abs", [nil])
       {:ok, nil}
 
   """

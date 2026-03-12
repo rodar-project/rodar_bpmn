@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Task.Send do
+defmodule Rodar.Activity.Task.Send do
   @moduledoc """
   Handle passing the token through a send task element.
 
@@ -13,20 +13,20 @@ defmodule RodarBpmn.Activity.Task.Send do
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
       iex> {:ok, context} = Context.start_link(process, %{})
       iex> elem = {:bpmn_activity_task_send, %{id: "task_1", name: "Send Invoice", outgoing: ["flow_out"]}}
-      iex> {:ok, ^context} = RodarBpmn.Activity.Task.Send.token_in(elem, context)
+      iex> {:ok, ^context} = Rodar.Activity.Task.Send.token_in(elem, context)
       iex> true
       true
 
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
+  alias Rodar.Context
+  alias Rodar.Event.Bus
 
   @doc """
   Receive the token for the element. Stores message metadata and releases token.
   If `messageRef` is present, publishes to the event bus.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(
         {:bpmn_activity_task_send, %{id: id, outgoing: outgoing} = attrs},
         context
@@ -50,7 +50,7 @@ defmodule RodarBpmn.Activity.Task.Send do
         Bus.publish(:message, message_ref, payload)
     end
 
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 
   defp put_correlation(payload, attrs, context) do

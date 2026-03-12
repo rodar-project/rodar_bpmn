@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.RodarBpmn.ValidateTest do
+defmodule Mix.Tasks.Rodar.ValidateTest do
   use ExUnit.Case, async: true
 
-  alias Mix.Tasks.RodarBpmn.Validate
+  alias Mix.Tasks.Rodar.Validate
 
   import ExUnit.CaptureIO
 

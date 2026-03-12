@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Persistence.Adapter.ETS do
+defmodule Rodar.Persistence.Adapter.ETS do
   @moduledoc """
   ETS-based persistence adapter for BPMN process snapshots.
 
@@ -7,11 +7,11 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
   """
 
   use GenServer
-  @behaviour RodarBpmn.Persistence
+  @behaviour Rodar.Persistence
 
-  alias RodarBpmn.Persistence.Serializer
+  alias Rodar.Persistence.Serializer
 
-  @table :rodar_bpmn_persistence
+  @table :rodar_persistence
 
   # --- Client API ---
 
@@ -22,7 +22,7 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
   end
 
   @doc "Serializes and stores a process snapshot in ETS, keyed by instance ID."
-  @impl RodarBpmn.Persistence
+  @impl Rodar.Persistence
   def save(instance_id, snapshot) do
     binary = Serializer.serialize(snapshot)
     :ets.insert(@table, {instance_id, binary})
@@ -30,7 +30,7 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
   end
 
   @doc "Loads and deserializes a snapshot by instance ID. Returns `{:error, :not_found}` if missing."
-  @impl RodarBpmn.Persistence
+  @impl Rodar.Persistence
   def load(instance_id) do
     case :ets.lookup(@table, instance_id) do
       [{^instance_id, binary}] ->
@@ -42,14 +42,14 @@ defmodule RodarBpmn.Persistence.Adapter.ETS do
   end
 
   @doc "Removes a snapshot from ETS by instance ID."
-  @impl RodarBpmn.Persistence
+  @impl Rodar.Persistence
   def delete(instance_id) do
     :ets.delete(@table, instance_id)
     :ok
   end
 
   @doc "Returns a list of all stored instance IDs."
-  @impl RodarBpmn.Persistence
+  @impl Rodar.Persistence
   def list do
     :ets.tab2list(@table)
     |> Enum.map(fn {id, _binary} -> id end)

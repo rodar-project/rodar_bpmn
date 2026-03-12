@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Process do
+defmodule Rodar.Process do
   @moduledoc """
   Process lifecycle management for BPMN process instances.
 
@@ -17,14 +17,14 @@ defmodule RodarBpmn.Process do
   use GenServer
   require Logger
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Persistence
-  alias RodarBpmn.Persistence.Serializer
-  alias RodarBpmn.Registry
-  alias RodarBpmn.Telemetry
-  alias RodarBpmn.Token
-  alias RodarBpmn.Validation
+  alias Rodar.Context
+  alias Rodar.Event.Bus
+  alias Rodar.Persistence
+  alias Rodar.Persistence.Serializer
+  alias Rodar.Registry
+  alias Rodar.Telemetry
+  alias Rodar.Token
+  alias Rodar.Validation
 
   @type status :: :created | :running | :suspended | :completed | :terminated | :error
 
@@ -33,7 +33,7 @@ defmodule RodarBpmn.Process do
   @doc """
   Start a process instance from a registered definition.
 
-  Looks up the process definition in `RodarBpmn.Registry`, creates a supervised
+  Looks up the process definition in `Rodar.Registry`, creates a supervised
   context, and sets status to `:created`.
   """
   @spec start_link({String.t(), map()} | {:restore, map(), pid()} | String.t(), map()) ::
@@ -51,12 +51,12 @@ defmodule RodarBpmn.Process do
   end
 
   @doc """
-  Create a process instance under the `RodarBpmn.ProcessSupervisor` and activate it.
+  Create a process instance under the `Rodar.ProcessSupervisor` and activate it.
   """
   @spec create_and_run(String.t(), map()) :: {:ok, pid()} | {:error, any()}
   def create_and_run(process_id, init_data \\ %{}) do
     case DynamicSupervisor.start_child(
-           RodarBpmn.ProcessSupervisor,
+           Rodar.ProcessSupervisor,
            {__MODULE__, {process_id, init_data}}
          ) do
       {:ok, pid} ->
@@ -143,7 +143,7 @@ defmodule RodarBpmn.Process do
   @doc """
   Update the definition version tracked by this process instance.
 
-  Used internally by `RodarBpmn.Migration` after swapping the process definition
+  Used internally by `Rodar.Migration` after swapping the process definition
   in the context.
   """
   @spec update_definition_version(pid(), pos_integer()) :: :ok
@@ -185,7 +185,7 @@ defmodule RodarBpmn.Process do
          },
          {:ok, pid} <-
            DynamicSupervisor.start_child(
-             RodarBpmn.ProcessSupervisor,
+             Rodar.ProcessSupervisor,
              {__MODULE__, {:restore, restore_data, context}}
            ) do
       resubscribe_events(deserialized_state, process_map, context)
@@ -200,8 +200,8 @@ defmodule RodarBpmn.Process do
   @impl true
   def init({:restore, restore_data, context}) do
     Logger.metadata(
-      rodar_bpmn_instance_id: restore_data.instance_id,
-      rodar_bpmn_process_id: restore_data.process_id
+      rodar_instance_id: restore_data.instance_id,
+      rodar_process_id: restore_data.process_id
     )
 
     {:ok,
@@ -227,8 +227,8 @@ defmodule RodarBpmn.Process do
             instance_id = generate_instance_id()
 
             Logger.metadata(
-              rodar_bpmn_instance_id: instance_id,
-              rodar_bpmn_process_id: process_id
+              rodar_instance_id: instance_id,
+              rodar_process_id: process_id
             )
 
             {:ok,
@@ -287,7 +287,7 @@ defmodule RodarBpmn.Process do
 
   def handle_call(:terminate, _from, state) do
     if Process.alive?(state.context) do
-      DynamicSupervisor.terminate_child(RodarBpmn.ContextSupervisor, state.context)
+      DynamicSupervisor.terminate_child(Rodar.ContextSupervisor, state.context)
     end
 
     {:reply, :ok, %{state | status: :terminated}}
@@ -344,7 +344,7 @@ defmodule RodarBpmn.Process do
     start_time = System.monotonic_time()
     Telemetry.process_started(state.instance_id, state.process_id)
 
-    result = RodarBpmn.execute(start_event, state.context, token)
+    result = Rodar.execute(start_event, state.context, token)
 
     state =
       case result do
@@ -374,7 +374,7 @@ defmodule RodarBpmn.Process do
   end
 
   defp maybe_validate(process_map) do
-    if Application.get_env(:rodar_bpmn, :validate_on_activate, false) do
+    if Application.get_env(:rodar, :validate_on_activate, false) do
       case Validation.validate(process_map) do
         {:ok, _} -> :ok
         {:error, _} = err -> err

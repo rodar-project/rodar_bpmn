@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.CorrelationTest do
+defmodule Rodar.Event.CorrelationTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{
+  alias Rodar.{
     Context,
     Event.Boundary,
     Event.Bus,

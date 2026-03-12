@@ -1,8 +1,8 @@
-defmodule RodarBpmn.ScaffoldTest do
+defmodule Rodar.ScaffoldTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Scaffold
+  alias Rodar.Engine.Diagram
+  alias Rodar.Scaffold
 
   describe "extract_tasks/1" do
     test "extracts generic tasks" do
@@ -89,7 +89,7 @@ defmodule RodarBpmn.ScaffoldTest do
       assert mod == "CheckInventory"
       assert file == "check_inventory.ex"
       assert content =~ "defmodule MyApp.Handlers.CheckInventory do"
-      assert content =~ "@behaviour RodarBpmn.Activity.Task.Service.Handler"
+      assert content =~ "@behaviour Rodar.Activity.Task.Service.Handler"
       assert content =~ "def execute(_attrs, _data) do"
       assert content =~ "{:ok, %{}}"
     end
@@ -101,7 +101,7 @@ defmodule RodarBpmn.ScaffoldTest do
       assert mod == "ReviewOrder"
       assert file == "review_order.ex"
       assert content =~ "defmodule MyApp.Handlers.ReviewOrder do"
-      assert content =~ "@behaviour RodarBpmn.TaskHandler"
+      assert content =~ "@behaviour Rodar.TaskHandler"
       assert content =~ "def token_in(_element, _context) do"
       assert content =~ "{:ok, nil}"
     end
@@ -111,7 +111,7 @@ defmodule RodarBpmn.ScaffoldTest do
       {mod, _file, content} = Scaffold.generate_module(task, "MyApp.Handlers")
 
       assert mod == "TaskA"
-      assert content =~ "@behaviour RodarBpmn.TaskHandler"
+      assert content =~ "@behaviour Rodar.TaskHandler"
     end
 
     test "uses id when name is nil" do
@@ -141,14 +141,14 @@ defmodule RodarBpmn.ScaffoldTest do
   describe "behaviour_for_type/1" do
     test "returns Service.Handler for service tasks" do
       {mod, callback, _sig} = Scaffold.behaviour_for_type(:bpmn_activity_task_service)
-      assert mod == RodarBpmn.Activity.Task.Service.Handler
+      assert mod == Rodar.Activity.Task.Service.Handler
       assert callback == :execute
     end
 
     test "returns TaskHandler for other task types" do
       for type <- [:bpmn_activity_task_user, :bpmn_activity_task_send, :bpmn_activity_task] do
         {mod, callback, _sig} = Scaffold.behaviour_for_type(type)
-        assert mod == RodarBpmn.TaskHandler
+        assert mod == Rodar.TaskHandler
         assert callback == :token_in
       end
     end

@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.RodarBpmn.Export do
+defmodule Mix.Tasks.Rodar.Export do
   @moduledoc """
   Export a BPMN 2.0 XML file from its parsed representation.
 
@@ -13,7 +13,7 @@ defmodule Mix.Tasks.RodarBpmn.Export do
 
   use Mix.Task
 
-  alias RodarBpmn.Engine.Diagram
+  alias Rodar.Engine.Diagram
 
   @shortdoc "Export a BPMN file as normalized BPMN 2.0 XML"
 

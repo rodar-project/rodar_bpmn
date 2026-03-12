@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Gateway.Exclusive do
+defmodule Rodar.Gateway.Exclusive do
   @moduledoc """
   Handle passing the token through an exclusive gateway element.
 
@@ -25,8 +25,8 @@ defmodule RodarBpmn.Gateway.Exclusive do
       iex> flow_no = {:bpmn_sequence_flow, %{id: "flow_no", sourceRef: "gw", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> gateway = {:bpmn_gateway_exclusive, %{id: "gw", incoming: ["in"], outgoing: ["flow_yes", "flow_no"], default: "flow_no"}}
       iex> process = %{"flow_yes" => flow_yes, "flow_no" => flow_no, "end" => end_event}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(process, %{})
-      iex> {:ok, ^context} = RodarBpmn.Gateway.Exclusive.token_in(gateway, context)
+      iex> {:ok, context} = Rodar.Context.start_link(process, %{})
+      iex> {:ok, ^context} = Rodar.Gateway.Exclusive.token_in(gateway, context)
       iex> true
       true
 
@@ -35,7 +35,7 @@ defmodule RodarBpmn.Gateway.Exclusive do
   @doc """
   Receive the token for the element and route it through the gateway.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(elem, context), do: execute(elem, context)
 
   @doc """
@@ -46,9 +46,9 @@ defmodule RodarBpmn.Gateway.Exclusive do
 
   For converging gateways (single outgoing), passes the token through.
   """
-  @spec execute(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec execute(Rodar.element(), Rodar.context()) :: Rodar.result()
   def execute({:bpmn_gateway_exclusive, %{outgoing: outgoing} = attrs}, context) do
-    process = RodarBpmn.Context.get(context, :process)
+    process = Rodar.Context.get(context, :process)
     default_flow = Map.get(attrs, :default)
 
     result =
@@ -60,13 +60,13 @@ defmodule RodarBpmn.Gateway.Exclusive do
 
     case result do
       nil when is_binary(default_flow) ->
-        RodarBpmn.release_token(default_flow, context)
+        Rodar.release_token(default_flow, context)
 
       nil ->
         {:error, "Exclusive gateway: no matching condition and no default flow"}
 
       matched_flow_id ->
-        RodarBpmn.release_token(matched_flow_id, context)
+        Rodar.release_token(matched_flow_id, context)
     end
   end
 
@@ -79,7 +79,7 @@ defmodule RodarBpmn.Gateway.Exclusive do
          context
        )
        when not is_nil(condition) do
-    case RodarBpmn.Expression.execute(condition, context) do
+    case Rodar.Expression.execute(condition, context) do
       {:ok, true} -> {:halt, flow_id}
       {:ok, false} -> {:cont, nil}
     end

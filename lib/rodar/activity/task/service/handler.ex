@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Task.Service.Handler do
+defmodule Rodar.Activity.Task.Service.Handler do
   @moduledoc """
   Behaviour for service task handlers.
 

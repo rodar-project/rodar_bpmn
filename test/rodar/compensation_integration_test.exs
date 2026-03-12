@@ -1,7 +1,7 @@
-defmodule RodarBpmn.CompensationIntegrationTest do
+defmodule Rodar.CompensationIntegrationTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{Context, Event.Boundary}
+  alias Rodar.{Context, Event.Boundary}
 
   # Builds a process with:
   # start -> task1 -> task2 -> compensate_throw -> end
@@ -164,7 +164,7 @@ defmodule RodarBpmn.CompensationIntegrationTest do
       {:ok, context} = Context.start_link(process, %{})
 
       start = Map.get(process, "start")
-      {:ok, _} = RodarBpmn.execute(start, context)
+      {:ok, _} = Rodar.execute(start, context)
 
       # Both handlers executed
       assert Context.get_data(context, :comp1_executed) == "task1_compensated"
@@ -184,7 +184,7 @@ defmodule RodarBpmn.CompensationIntegrationTest do
       {:ok, context} = Context.start_link(process, %{})
 
       start = Map.get(process, "start")
-      {:ok, _} = RodarBpmn.execute(start, context)
+      {:ok, _} = Rodar.execute(start, context)
 
       assert Context.get_data(context, :comp1_executed) == "task1_compensated"
       assert Context.get_data(context, :comp2_executed) == nil
@@ -268,7 +268,7 @@ defmodule RodarBpmn.CompensationIntegrationTest do
 
       {:ok, context} = Context.start_link(process, %{})
       start = Map.get(process, "start")
-      {:ok, _} = RodarBpmn.execute(start, context)
+      {:ok, _} = Rodar.execute(start, context)
 
       assert Context.get_data(context, :comp_result) == "compensated"
     end

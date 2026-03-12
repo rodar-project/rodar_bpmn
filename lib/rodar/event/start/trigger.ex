@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Start.Trigger do
+defmodule Rodar.Event.Start.Trigger do
   @moduledoc """
   Auto-instantiation of BPMN processes via signal/message-triggered start events.
 
@@ -10,7 +10,7 @@ defmodule RodarBpmn.Event.Start.Trigger do
 
       # Register a process with a message start event
       Registry.register("order-process", process_definition)
-      RodarBpmn.Event.Start.Trigger.register("order-process")
+      Rodar.Event.Start.Trigger.register("order-process")
 
       # Publishing a message now auto-creates a process instance
       Bus.publish(:message, "new_order", %{data: %{"item" => "widget"}})
@@ -20,9 +20,9 @@ defmodule RodarBpmn.Event.Start.Trigger do
 
   use GenServer
 
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Process, as: BpmnProcess
-  alias RodarBpmn.Registry
+  alias Rodar.Event.Bus
+  alias Rodar.Process, as: BpmnProcess
+  alias Rodar.Registry
 
   # --- Client API ---
 

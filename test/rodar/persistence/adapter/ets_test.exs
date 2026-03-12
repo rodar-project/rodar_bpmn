@@ -1,12 +1,12 @@
-defmodule RodarBpmn.Persistence.Adapter.ETSTest do
+defmodule Rodar.Persistence.Adapter.ETSTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Persistence.Adapter.ETS
+  alias Rodar.Persistence.Adapter.ETS
 
   setup do
     # The ETS adapter is started by the application supervision tree via config.
     # Clear table between tests.
-    :ets.delete_all_objects(:rodar_bpmn_persistence)
+    :ets.delete_all_objects(:rodar_persistence)
     :ok
   end
 

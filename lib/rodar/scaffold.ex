@@ -1,14 +1,14 @@
-defmodule RodarBpmn.Scaffold do
+defmodule Rodar.Scaffold do
   @moduledoc """
   Core scaffolding logic for generating BPMN handler modules.
 
   Extracts actionable tasks from parsed BPMN diagrams and generates
   handler module source code with the correct behaviour and callbacks.
-  Service tasks get `RodarBpmn.Activity.Task.Service.Handler` with `execute/2`,
-  while all other task types get `RodarBpmn.TaskHandler` with `token_in/2`.
+  Service tasks get `Rodar.Activity.Task.Service.Handler` with `execute/2`,
+  while all other task types get `Rodar.TaskHandler` with `token_in/2`.
 
   This module also provides naming conventions used by both the scaffold Mix
-  task and the convention-based auto-discovery system (`RodarBpmn.Scaffold.Discovery`):
+  task and the convention-based auto-discovery system (`Rodar.Scaffold.Discovery`):
 
     * `bpmn_base_name/1` — derives a PascalCase name from a BPMN file path
     * `default_module_prefix/2` — builds the canonical handler namespace
@@ -21,12 +21,12 @@ defmodule RodarBpmn.Scaffold do
 
   The namespace segment (default `"Workflow"`) is configurable via application config:
 
-      config :rodar_bpmn, :scaffold_namespace, "Workflow"
+      config :rodar, :scaffold_namespace, "Workflow"
 
   ## See Also
 
-    * `Mix.Tasks.RodarBpmn.Scaffold` — CLI entry point for handler generation
-    * `RodarBpmn.Scaffold.Discovery` — auto-discovers handlers at conventional paths
+    * `Mix.Tasks.Rodar.Scaffold` — CLI entry point for handler generation
+    * `Rodar.Scaffold.Discovery` — auto-discovers handlers at conventional paths
   """
 
   @task_types [
@@ -80,13 +80,13 @@ defmodule RodarBpmn.Scaffold do
 
   ## Examples
 
-      iex> RodarBpmn.Scaffold.module_name_from_element("Check Inventory")
+      iex> Rodar.Scaffold.module_name_from_element("Check Inventory")
       "CheckInventory"
 
-      iex> RodarBpmn.Scaffold.module_name_from_element("Activity_0abc")
+      iex> Rodar.Scaffold.module_name_from_element("Activity_0abc")
       "Activity0abc"
 
-      iex> RodarBpmn.Scaffold.module_name_from_element("send-email-task")
+      iex> Rodar.Scaffold.module_name_from_element("send-email-task")
       "SendEmailTask"
 
   """
@@ -103,10 +103,10 @@ defmodule RodarBpmn.Scaffold do
 
   ## Examples
 
-      iex> RodarBpmn.Scaffold.file_name_from_module("CheckInventory")
+      iex> Rodar.Scaffold.file_name_from_module("CheckInventory")
       "check_inventory.ex"
 
-      iex> RodarBpmn.Scaffold.file_name_from_module("Activity0abc")
+      iex> Rodar.Scaffold.file_name_from_module("Activity0abc")
       "activity0abc.ex"
 
   """
@@ -145,18 +145,18 @@ defmodule RodarBpmn.Scaffold do
   """
   @spec behaviour_for_type(atom()) :: {module(), atom(), String.t()}
   def behaviour_for_type(:bpmn_activity_task_service) do
-    {RodarBpmn.Activity.Task.Service.Handler, :execute, "execute(_attrs, _data)"}
+    {Rodar.Activity.Task.Service.Handler, :execute, "execute(_attrs, _data)"}
   end
 
   def behaviour_for_type(_type) do
-    {RodarBpmn.TaskHandler, :token_in, "token_in(_element, _context)"}
+    {Rodar.TaskHandler, :token_in, "token_in(_element, _context)"}
   end
 
   @doc """
   Returns the registration function name for a given BPMN type.
 
   Service tasks use `handler_map` with `Diagram.load/2`, while other
-  task types use `RodarBpmn.TaskRegistry.register/2`.
+  task types use `Rodar.TaskRegistry.register/2`.
   """
   @spec registration_type(atom()) :: :handler_map | :task_registry
   def registration_type(:bpmn_activity_task_service), do: :handler_map
@@ -170,10 +170,10 @@ defmodule RodarBpmn.Scaffold do
 
   ## Examples
 
-      iex> RodarBpmn.Scaffold.bpmn_base_name("path/to/order_processing.bpmn")
+      iex> Rodar.Scaffold.bpmn_base_name("path/to/order_processing.bpmn")
       "OrderProcessing"
 
-      iex> RodarBpmn.Scaffold.bpmn_base_name("my-workflow.bpmn2")
+      iex> Rodar.Scaffold.bpmn_base_name("my-workflow.bpmn2")
       "MyWorkflow"
 
   """
@@ -191,17 +191,17 @@ defmodule RodarBpmn.Scaffold do
   The namespace segment between the app name and the BPMN name defaults to
   `"Workflow"` and can be configured via:
 
-      config :rodar_bpmn, :scaffold_namespace, "CustomNamespace"
+      config :rodar, :scaffold_namespace, "CustomNamespace"
 
   ## Examples
 
-      iex> RodarBpmn.Scaffold.default_module_prefix("MyApp", "OrderProcessing")
+      iex> Rodar.Scaffold.default_module_prefix("MyApp", "OrderProcessing")
       "MyApp.Workflow.OrderProcessing.Handlers"
 
   """
   @spec default_module_prefix(String.t(), String.t()) :: String.t()
   def default_module_prefix(app_name, bpmn_name) do
-    namespace = Application.get_env(:rodar_bpmn, :scaffold_namespace, "Workflow")
+    namespace = Application.get_env(:rodar, :scaffold_namespace, "Workflow")
     "#{app_name}.#{namespace}.#{bpmn_name}.Handlers"
   end
 
@@ -212,7 +212,7 @@ defmodule RodarBpmn.Scaffold do
     defmodule #{full_module} do
       @moduledoc false
 
-      @behaviour RodarBpmn.Activity.Task.Service.Handler
+      @behaviour Rodar.Activity.Task.Service.Handler
 
       @impl true
       def execute(_attrs, _data) do
@@ -228,7 +228,7 @@ defmodule RodarBpmn.Scaffold do
     defmodule #{full_module} do
       @moduledoc false
 
-      @behaviour RodarBpmn.TaskHandler
+      @behaviour Rodar.TaskHandler
 
       @impl true
       def token_in(_element, _context) do

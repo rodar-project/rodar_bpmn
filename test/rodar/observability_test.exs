@@ -1,15 +1,15 @@
-defmodule RodarBpmn.ObservabilityTest do
+defmodule Rodar.ObservabilityTest do
   use ExUnit.Case, async: false
 
   setup do
     # Ensure supervision tree is fully started
-    _ = Application.ensure_all_started(:rodar_bpmn)
+    _ = Application.ensure_all_started(:rodar)
     :ok
   end
 
   describe "health/0" do
     test "returns map with expected keys" do
-      health = RodarBpmn.Observability.health()
+      health = Rodar.Observability.health()
 
       assert is_map(health)
       assert health.supervisor_alive == true
@@ -22,7 +22,7 @@ defmodule RodarBpmn.ObservabilityTest do
 
   describe "running_instances/0" do
     test "returns empty list when no processes running" do
-      instances = RodarBpmn.Observability.running_instances()
+      instances = Rodar.Observability.running_instances()
       assert is_list(instances)
     end
 
@@ -38,18 +38,18 @@ defmodule RodarBpmn.ObservabilityTest do
            {:bpmn_event_end, %{id: "end", incoming: ["user_task"]}}
          ]}
 
-      RodarBpmn.Registry.register(process_id, definition)
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id)
+      Rodar.Registry.register(process_id, definition)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id)
 
-      instances = RodarBpmn.Observability.running_instances()
+      instances = Rodar.Observability.running_instances()
       instance = Enum.find(instances, &(&1.pid == pid))
 
       assert instance != nil
       assert instance.status == :suspended
       assert is_binary(instance.instance_id)
 
-      RodarBpmn.Process.terminate(pid)
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Process.terminate(pid)
+      Rodar.Registry.unregister(process_id)
     end
   end
 
@@ -66,17 +66,17 @@ defmodule RodarBpmn.ObservabilityTest do
            {:bpmn_event_end, %{id: "end", incoming: ["user_task"]}}
          ]}
 
-      RodarBpmn.Registry.register(process_id, definition)
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id)
+      Rodar.Registry.register(process_id, definition)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id)
 
-      waiting = RodarBpmn.Observability.waiting_instances()
+      waiting = Rodar.Observability.waiting_instances()
       instance = Enum.find(waiting, &(&1.pid == pid))
 
       assert instance != nil
       assert instance.status == :suspended
 
-      RodarBpmn.Process.terminate(pid)
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Process.terminate(pid)
+      Rodar.Registry.unregister(process_id)
     end
   end
 
@@ -93,24 +93,24 @@ defmodule RodarBpmn.ObservabilityTest do
            {:bpmn_event_end, %{id: "end", incoming: ["user_task"]}}
          ]}
 
-      RodarBpmn.Registry.register(process_id, definition)
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id)
+      Rodar.Registry.register(process_id, definition)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id)
 
-      instances = RodarBpmn.Observability.instances_by_version(process_id)
+      instances = Rodar.Observability.instances_by_version(process_id)
       assert instances != []
       instance = Enum.find(instances, &(&1.pid == pid))
       assert instance.process_id == process_id
       assert instance.definition_version == 1
 
       # Filter by specific version
-      v1_instances = RodarBpmn.Observability.instances_by_version(process_id, 1)
+      v1_instances = Rodar.Observability.instances_by_version(process_id, 1)
       assert Enum.any?(v1_instances, &(&1.pid == pid))
 
-      v2_instances = RodarBpmn.Observability.instances_by_version(process_id, 2)
+      v2_instances = Rodar.Observability.instances_by_version(process_id, 2)
       refute Enum.any?(v2_instances, &(&1.pid == pid))
 
-      RodarBpmn.Process.terminate(pid)
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Process.terminate(pid)
+      Rodar.Registry.unregister(process_id)
     end
   end
 
@@ -127,18 +127,18 @@ defmodule RodarBpmn.ObservabilityTest do
            {:bpmn_event_end, %{id: "end", incoming: ["user_task"]}}
          ]}
 
-      RodarBpmn.Registry.register(process_id, definition)
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id)
+      Rodar.Registry.register(process_id, definition)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id)
 
-      instances = RodarBpmn.Observability.running_instances()
+      instances = Rodar.Observability.running_instances()
       instance = Enum.find(instances, &(&1.pid == pid))
 
       assert instance != nil
       assert instance.process_id == process_id
       assert instance.definition_version == 1
 
-      RodarBpmn.Process.terminate(pid)
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Process.terminate(pid)
+      Rodar.Registry.unregister(process_id)
     end
   end
 
@@ -153,15 +153,15 @@ defmodule RodarBpmn.ObservabilityTest do
            {:bpmn_event_end, %{id: "end", incoming: ["start"]}}
          ]}
 
-      RodarBpmn.Registry.register(process_id, definition)
-      {:ok, pid} = RodarBpmn.Process.create_and_run(process_id)
+      Rodar.Registry.register(process_id, definition)
+      {:ok, pid} = Rodar.Process.create_and_run(process_id)
 
-      history = RodarBpmn.Observability.execution_history(pid)
+      history = Rodar.Observability.execution_history(pid)
       assert is_list(history)
       assert history != []
 
-      RodarBpmn.Process.terminate(pid)
-      RodarBpmn.Registry.unregister(process_id)
+      Rodar.Process.terminate(pid)
+      Rodar.Registry.unregister(process_id)
     end
   end
 end

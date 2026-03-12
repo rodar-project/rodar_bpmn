@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Intermediate.Throw do
+defmodule Rodar.Event.Intermediate.Throw do
   @moduledoc """
   Handle passing the token through an intermediate throw event element.
 
@@ -11,42 +11,42 @@ defmodule RodarBpmn.Event.Intermediate.Throw do
       iex> end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
       iex> flow_out = {:bpmn_sequence_flow, %{id: "flow_out", sourceRef: "throw1", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> process = %{"flow_out" => flow_out, "end" => end_event}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(process, %{})
       iex> elem = {:bpmn_event_intermediate_throw, %{id: "throw1", outgoing: ["flow_out"], messageEventDefinition: nil, signalEventDefinition: nil, escalationEventDefinition: nil}}
-      iex> {:ok, ^context} = RodarBpmn.Event.Intermediate.Throw.token_in(elem, context)
+      iex> {:ok, ^context} = Rodar.Event.Intermediate.Throw.token_in(elem, context)
       iex> true
       true
 
   """
 
-  alias RodarBpmn.Compensation
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
+  alias Rodar.Compensation
+  alias Rodar.Context
+  alias Rodar.Event.Bus
 
   @doc """
   Receive the token for the element and handle the throw event.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in({:bpmn_event_intermediate_throw, %{id: id, outgoing: outgoing} = attrs}, context) do
     cond do
       has_message?(attrs) ->
         publish_message(id, attrs, context)
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
 
       has_signal?(attrs) ->
         publish_signal(id, attrs, context)
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
 
       has_escalation?(attrs) ->
         publish_escalation(id, attrs, context)
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
 
       has_compensate?(attrs) ->
         handle_compensate(attrs, outgoing, context)
 
       true ->
         # None/link — pass through
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
     end
   end
 
@@ -97,10 +97,10 @@ defmodule RodarBpmn.Event.Intermediate.Throw do
 
     if wait == "false" do
       spawn(run_compensation)
-      RodarBpmn.release_token(outgoing, context)
+      Rodar.release_token(outgoing, context)
     else
       run_compensation.()
-      RodarBpmn.release_token(outgoing, context)
+      Rodar.release_token(outgoing, context)
     end
   end
 

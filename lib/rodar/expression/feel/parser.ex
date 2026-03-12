@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Expression.Feel.Parser do
+defmodule Rodar.Expression.Feel.Parser do
   @moduledoc """
   NimbleParsec-based parser for FEEL (Friendly Enough Expression Language).
 
   Produces an AST of tagged tuples suitable for evaluation by
-  `RodarBpmn.Expression.Feel.Evaluator`.
+  `Rodar.Expression.Feel.Evaluator`.
 
   ## Grammar precedence (low to high)
 
@@ -31,13 +31,13 @@ defmodule RodarBpmn.Expression.Feel.Parser do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Feel.Parser.parse("1 + 2")
+      iex> Rodar.Expression.Feel.Parser.parse("1 + 2")
       {:ok, {:binop, :+, {:literal, 1}, {:literal, 2}}}
 
-      iex> RodarBpmn.Expression.Feel.Parser.parse("true and false")
+      iex> Rodar.Expression.Feel.Parser.parse("true and false")
       {:ok, {:binop, :and, {:literal, true}, {:literal, false}}}
 
-      iex> RodarBpmn.Expression.Feel.Parser.parse("null")
+      iex> Rodar.Expression.Feel.Parser.parse("null")
       {:ok, {:literal, nil}}
 
   """
@@ -341,10 +341,10 @@ defmodule RodarBpmn.Expression.Feel.Parser do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.Feel.Parser.parse("42")
+      iex> Rodar.Expression.Feel.Parser.parse("42")
       {:ok, {:literal, 42}}
 
-      iex> RodarBpmn.Expression.Feel.Parser.parse("x + 1")
+      iex> Rodar.Expression.Feel.Parser.parse("x + 1")
       {:ok, {:binop, :+, {:path, ["x"]}, {:literal, 1}}}
 
   """

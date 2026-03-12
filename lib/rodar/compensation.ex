@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Compensation do
+defmodule Rodar.Compensation do
   @moduledoc """
   Compensation handler tracking and execution.
 
@@ -31,7 +31,7 @@ defmodule RodarBpmn.Compensation do
       registered_at: :erlang.unique_integer([:monotonic])
     }
 
-    RodarBpmn.Context.put_meta(context, :compensation_handlers, current ++ [entry])
+    Rodar.Context.put_meta(context, :compensation_handlers, current ++ [entry])
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule RodarBpmn.Compensation do
   Returns `{:ok, context}` if the handler executes successfully,
   or `{:error, reason}` if no handler is registered for the activity.
   """
-  @spec compensate_activity(pid(), String.t()) :: RodarBpmn.result()
+  @spec compensate_activity(pid(), String.t()) :: Rodar.result()
   def compensate_activity(context, activity_id) do
     case Enum.find(handlers(context), &(&1.activity_id == activity_id)) do
       nil ->
@@ -57,7 +57,7 @@ defmodule RodarBpmn.Compensation do
   Returns `{:ok, context}` after all handlers have executed.
   If no handlers are registered, returns `{:ok, context}` immediately.
   """
-  @spec compensate_all(pid()) :: RodarBpmn.result()
+  @spec compensate_all(pid()) :: Rodar.result()
   def compensate_all(context) do
     context
     |> handlers()
@@ -78,7 +78,7 @@ defmodule RodarBpmn.Compensation do
   @spec remove_handlers(pid(), String.t()) :: :ok
   def remove_handlers(context, activity_id) do
     updated = Enum.reject(handlers(context), &(&1.activity_id == activity_id))
-    RodarBpmn.Context.put_meta(context, :compensation_handlers, updated)
+    Rodar.Context.put_meta(context, :compensation_handlers, updated)
   end
 
   @doc """
@@ -86,15 +86,15 @@ defmodule RodarBpmn.Compensation do
   """
   @spec handlers(pid()) :: [map()]
   def handlers(context) do
-    RodarBpmn.Context.get_meta(context, :compensation_handlers) || []
+    Rodar.Context.get_meta(context, :compensation_handlers) || []
   end
 
   defp execute_handler(context, %{handler_id: handler_id}) do
-    process = RodarBpmn.Context.get(context, :process)
+    process = Rodar.Context.get(context, :process)
 
     case Map.get(process, handler_id) do
       nil -> {:error, "Compensation handler '#{handler_id}' not found in process"}
-      elem -> RodarBpmn.execute(elem, context)
+      elem -> Rodar.execute(elem, context)
     end
   end
 end

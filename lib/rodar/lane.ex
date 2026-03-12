@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Lane do
+defmodule Rodar.Lane do
   @moduledoc """
   Stateless utility functions for querying BPMN lane assignments.
 
@@ -17,14 +17,14 @@ defmodule RodarBpmn.Lane do
       ...>     %{id: "lane1", name: "HR", flow_node_refs: ["task1", "task2"], child_lane_set: nil}
       ...>   ]
       ...> }
-      iex> {:ok, lane} = RodarBpmn.Lane.find_lane_for_node(lane_set, "task1")
+      iex> {:ok, lane} = Rodar.Lane.find_lane_for_node(lane_set, "task1")
       iex> lane.name
       "HR"
 
   ## See Also
 
-  - `RodarBpmn.Engine.Diagram` -- parser that extracts lane sets from BPMN XML
-  - `RodarBpmn.Validation.validate_lanes/2` -- validates lane referential integrity
+  - `Rodar.Engine.Diagram` -- parser that extracts lane sets from BPMN XML
+  - `Rodar.Validation.validate_lanes/2` -- validates lane referential integrity
 
   """
 
@@ -41,11 +41,11 @@ defmodule RodarBpmn.Lane do
       iex> lane_set = %{id: "ls1", lanes: [
       ...>   %{id: "l1", name: "A", flow_node_refs: ["n1"], child_lane_set: nil}
       ...> ]}
-      iex> {:ok, lane} = RodarBpmn.Lane.find_lane_for_node(lane_set, "n1")
+      iex> {:ok, lane} = Rodar.Lane.find_lane_for_node(lane_set, "n1")
       iex> lane.id
       "l1"
 
-      iex> RodarBpmn.Lane.find_lane_for_node(nil, "n1")
+      iex> Rodar.Lane.find_lane_for_node(nil, "n1")
       :error
 
   """
@@ -91,13 +91,13 @@ defmodule RodarBpmn.Lane do
       ...>   %{id: "l1", name: "A", flow_node_refs: ["n1", "n2"], child_lane_set: nil},
       ...>   %{id: "l2", name: "B", flow_node_refs: ["n3"], child_lane_set: nil}
       ...> ]}
-      iex> map = RodarBpmn.Lane.node_lane_map(lane_set)
+      iex> map = Rodar.Lane.node_lane_map(lane_set)
       iex> map["n1"].id
       "l1"
       iex> map["n3"].id
       "l2"
 
-      iex> RodarBpmn.Lane.node_lane_map(nil)
+      iex> Rodar.Lane.node_lane_map(nil)
       %{}
 
   """
@@ -132,13 +132,13 @@ defmodule RodarBpmn.Lane do
       ...>   }},
       ...>   %{id: "l2", name: "B", flow_node_refs: ["n2"], child_lane_set: nil}
       ...> ]}
-      iex> lanes = RodarBpmn.Lane.all_lanes(lane_set)
+      iex> lanes = Rodar.Lane.all_lanes(lane_set)
       iex> length(lanes)
       3
       iex> Enum.map(lanes, & &1.id) |> Enum.sort()
       ["l1", "l1a", "l2"]
 
-      iex> RodarBpmn.Lane.all_lanes(nil)
+      iex> Rodar.Lane.all_lanes(nil)
       []
 
   """

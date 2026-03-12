@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Expression.TestHelpers do
+defmodule Rodar.Expression.TestHelpers do
   @moduledoc """
   Testing utilities for BPMN expressions.
 
@@ -7,17 +7,17 @@ defmodule RodarBpmn.Expression.TestHelpers do
 
   ## Examples
 
-      iex> RodarBpmn.Expression.TestHelpers.eval_expression("1 + 2", %{})
+      iex> Rodar.Expression.TestHelpers.eval_expression("1 + 2", %{})
       {:ok, 3}
 
-      iex> RodarBpmn.Expression.TestHelpers.validate("1 + 2")
+      iex> Rodar.Expression.TestHelpers.validate("1 + 2")
       :ok
 
-      iex> {:error, _} = RodarBpmn.Expression.TestHelpers.validate("System.cmd(\\"ls\\", [])")
+      iex> {:error, _} = Rodar.Expression.TestHelpers.validate("System.cmd(\\"ls\\", [])")
 
   """
 
-  alias RodarBpmn.Expression.Sandbox
+  alias Rodar.Expression.Sandbox
 
   @doc """
   Evaluate an expression against sample data without a full process context.

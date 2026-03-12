@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Persistence.Serializer do
+defmodule Rodar.Persistence.Serializer do
   @moduledoc """
   Converts live process state into persistable snapshots and back.
 
@@ -47,10 +47,10 @@ defmodule RodarBpmn.Persistence.Serializer do
   @doc """
   Convert a Token struct to a plain map for serialization.
   """
-  @spec serialize_token(RodarBpmn.Token.t() | nil) :: map() | nil
+  @spec serialize_token(Rodar.Token.t() | nil) :: map() | nil
   def serialize_token(nil), do: nil
 
-  def serialize_token(%RodarBpmn.Token{} = token) do
+  def serialize_token(%Rodar.Token{} = token) do
     %{
       id: token.id,
       current_node: token.current_node,
@@ -63,11 +63,11 @@ defmodule RodarBpmn.Persistence.Serializer do
   @doc """
   Reconstruct a Token struct from a plain map.
   """
-  @spec deserialize_token(map() | nil) :: RodarBpmn.Token.t() | nil
+  @spec deserialize_token(map() | nil) :: Rodar.Token.t() | nil
   def deserialize_token(nil), do: nil
 
   def deserialize_token(map) when is_map(map) do
-    %RodarBpmn.Token{
+    %Rodar.Token{
       id: map.id,
       current_node: map.current_node,
       state: map.state,

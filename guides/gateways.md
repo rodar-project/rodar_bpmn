@@ -20,15 +20,15 @@ An exclusive gateway routes the token to exactly one outgoing path based on cond
 # <exclusiveGateway id="gw" default="flow_reject" />
 ```
 
-Condition expressions are evaluated by `RodarBpmn.Expression`, which supports both FEEL and sandboxed Elixir.
+Condition expressions are evaluated by `Rodar.Expression`, which supports both FEEL and sandboxed Elixir.
 
 ## Parallel Gateway (AND)
 
 A parallel gateway creates or synchronizes concurrent execution paths.
 
-**Fork:** releases tokens to all outgoing flows simultaneously. The dispatcher uses `RodarBpmn.release_token/3` to fork child tokens for each branch.
+**Fork:** releases tokens to all outgoing flows simultaneously. The dispatcher uses `Rodar.release_token/3` to fork child tokens for each branch.
 
-**Join:** waits until tokens have arrived on all incoming flows before releasing a single token to the outgoing flow. Token arrival is tracked via `RodarBpmn.Context.record_token/3`.
+**Join:** waits until tokens have arrived on all incoming flows before releasing a single token to the outgoing flow. Token arrival is tracked via `Rodar.Context.record_token/3`.
 
 ```elixir
 # Fork: one token in, N tokens out (one per outgoing flow)
@@ -45,7 +45,7 @@ An inclusive gateway is a hybrid of exclusive and parallel gateways.
 
 **Fork:** evaluates conditions on all outgoing flows and releases tokens to every flow whose condition is `true`. If no conditions match, the default flow is used. The set of activated flows is recorded in context for join synchronization.
 
-**Join:** waits for tokens from all flows that were activated at the corresponding fork. Uses `RodarBpmn.Context.record_activated_paths/3` to track which paths need synchronization.
+**Join:** waits for tokens from all flows that were activated at the corresponding fork. Uses `Rodar.Context.record_activated_paths/3` to track which paths need synchronization.
 
 ## Complex Gateway
 

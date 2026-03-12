@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Observability do
+defmodule Rodar.Observability do
   @moduledoc """
   Read-only query APIs for operational visibility into the BPMN engine.
 
@@ -10,11 +10,11 @@ defmodule RodarBpmn.Observability do
   List all running process instances with their status.
 
   Returns a list of maps with `:pid`, `:instance_id`, and `:status` for
-  each process managed by `RodarBpmn.ProcessSupervisor`.
+  each process managed by `Rodar.ProcessSupervisor`.
   """
   @spec running_instances() :: [map()]
   def running_instances do
-    RodarBpmn.ProcessSupervisor
+    Rodar.ProcessSupervisor
     |> DynamicSupervisor.which_children()
     |> Enum.flat_map(fn
       {:undefined, pid, :worker, _} when is_pid(pid) ->
@@ -59,15 +59,15 @@ defmodule RodarBpmn.Observability do
   """
   @spec execution_history(pid()) :: [map()]
   def execution_history(process_pid) do
-    context = RodarBpmn.Process.get_context(process_pid)
-    RodarBpmn.Context.get_history(context)
+    context = Rodar.Process.get_context(process_pid)
+    Rodar.Context.get_history(context)
   end
 
   @doc """
   Health check for the BPMN engine supervision tree.
 
   Returns a map with:
-  - `:supervisor_alive` — whether `RodarBpmn.ProcessSupervisor` is alive
+  - `:supervisor_alive` — whether `Rodar.ProcessSupervisor` is alive
   - `:process_count` — number of process instances
   - `:context_count` — number of supervised contexts
   - `:registry_definitions` — number of registered process definitions
@@ -75,11 +75,11 @@ defmodule RodarBpmn.Observability do
   """
   @spec health() :: map()
   def health do
-    supervisor_alive = Process.whereis(RodarBpmn.ProcessSupervisor) != nil
+    supervisor_alive = Process.whereis(Rodar.ProcessSupervisor) != nil
 
     process_count =
       if supervisor_alive do
-        RodarBpmn.ProcessSupervisor
+        Rodar.ProcessSupervisor
         |> DynamicSupervisor.which_children()
         |> length()
       else
@@ -87,19 +87,19 @@ defmodule RodarBpmn.Observability do
       end
 
     context_count =
-      case Process.whereis(RodarBpmn.ContextSupervisor) do
+      case Process.whereis(Rodar.ContextSupervisor) do
         nil ->
           0
 
         _pid ->
-          RodarBpmn.ContextSupervisor
+          Rodar.ContextSupervisor
           |> DynamicSupervisor.which_children()
           |> length()
       end
 
-    registry_definitions = length(RodarBpmn.Registry.list())
+    registry_definitions = length(Rodar.Registry.list())
 
-    event_subscriptions = Registry.count(RodarBpmn.EventRegistry)
+    event_subscriptions = Registry.count(Rodar.EventRegistry)
 
     %{
       supervisor_alive: supervisor_alive,
@@ -113,10 +113,10 @@ defmodule RodarBpmn.Observability do
   # --- Private helpers ---
 
   defp build_instance_info(pid) do
-    instance_id = RodarBpmn.Process.instance_id(pid)
-    status = RodarBpmn.Process.status(pid)
-    process_id = RodarBpmn.Process.process_id(pid)
-    definition_version = RodarBpmn.Process.definition_version(pid)
+    instance_id = Rodar.Process.instance_id(pid)
+    status = Rodar.Process.status(pid)
+    process_id = Rodar.Process.process_id(pid)
+    definition_version = Rodar.Process.definition_version(pid)
 
     %{
       pid: pid,

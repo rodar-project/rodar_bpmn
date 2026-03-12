@@ -1,6 +1,6 @@
-defmodule RodarBpmn do
+defmodule Rodar do
   @moduledoc """
-  Main dispatcher for the Rodar BPMN execution engine.
+  Main dispatcher for the Rodar Workflow execution engine.
 
   Routes BPMN elements to their handler modules based on element type. Each node
   in a parsed BPMN process is represented as a `{:bpmn_node_type, %{...}}` tuple,
@@ -9,9 +9,9 @@ defmodule RodarBpmn do
   ## Execution Modes
 
   - `execute/2` — Simple dispatch, returns the handler result directly.
-  - `execute/3` — Token-aware dispatch via `RodarBpmn.Token`, records execution
-    history in `RodarBpmn.Context`, notifies `RodarBpmn.Hooks`, and emits
-    `RodarBpmn.Telemetry` events.
+  - `execute/3` — Token-aware dispatch via `Rodar.Token`, records execution
+    history in `Rodar.Context`, notifies `Rodar.Hooks`, and emits
+    `Rodar.Telemetry` events.
 
   ## Token Flow
 
@@ -40,32 +40,32 @@ defmodule RodarBpmn do
 
   require Logger
 
-  alias RodarBpmn.Activity.Subprocess
-  alias RodarBpmn.Activity.Subprocess.Embedded, as: SubprocessEmbedded
-  alias RodarBpmn.Activity.Task.Manual
-  alias RodarBpmn.Activity.Task.Receive, as: TaskReceive
-  alias RodarBpmn.Activity.Task.Script
-  alias RodarBpmn.Activity.Task.Send, as: TaskSend
-  alias RodarBpmn.Activity.Task.Service
-  alias RodarBpmn.Activity.Task.User
-  alias RodarBpmn.Compensation
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Boundary
-  alias RodarBpmn.Event.End
-  alias RodarBpmn.Event.Intermediate
-  alias RodarBpmn.Event.Intermediate.Catch, as: IntermediateCatch
-  alias RodarBpmn.Event.Intermediate.Throw, as: IntermediateThrow
-  alias RodarBpmn.Event.Start
-  alias RodarBpmn.Gateway.Complex
-  alias RodarBpmn.Gateway.Exclusive
-  alias RodarBpmn.Gateway.Exclusive.Event, as: ExclusiveEvent
-  alias RodarBpmn.Gateway.Inclusive
-  alias RodarBpmn.Gateway.Parallel
-  alias RodarBpmn.Hooks
-  alias RodarBpmn.SequenceFlow
-  alias RodarBpmn.TaskRegistry
-  alias RodarBpmn.Telemetry
-  alias RodarBpmn.Token
+  alias Rodar.Activity.Subprocess
+  alias Rodar.Activity.Subprocess.Embedded, as: SubprocessEmbedded
+  alias Rodar.Activity.Task.Manual
+  alias Rodar.Activity.Task.Receive, as: TaskReceive
+  alias Rodar.Activity.Task.Script
+  alias Rodar.Activity.Task.Send, as: TaskSend
+  alias Rodar.Activity.Task.Service
+  alias Rodar.Activity.Task.User
+  alias Rodar.Compensation
+  alias Rodar.Context
+  alias Rodar.Event.Boundary
+  alias Rodar.Event.End
+  alias Rodar.Event.Intermediate
+  alias Rodar.Event.Intermediate.Catch, as: IntermediateCatch
+  alias Rodar.Event.Intermediate.Throw, as: IntermediateThrow
+  alias Rodar.Event.Start
+  alias Rodar.Gateway.Complex
+  alias Rodar.Gateway.Exclusive
+  alias Rodar.Gateway.Exclusive.Event, as: ExclusiveEvent
+  alias Rodar.Gateway.Inclusive
+  alias Rodar.Gateway.Parallel
+  alias Rodar.Hooks
+  alias Rodar.SequenceFlow
+  alias Rodar.TaskRegistry
+  alias Rodar.Telemetry
+  alias Rodar.Token
 
   @typedoc "A BPMN element represented as a tagged tuple with a map of attributes"
   @type element :: {atom(), map()}
@@ -122,12 +122,12 @@ defmodule RodarBpmn do
   end
 
   @doc """
-  Release token to another target node, threading a `RodarBpmn.Token` through execution.
+  Release token to another target node, threading a `Rodar.Token` through execution.
 
-  When `targets` is a list (parallel fork), creates child tokens via `RodarBpmn.Token.fork/1`
+  When `targets` is a list (parallel fork), creates child tokens via `Rodar.Token.fork/1`
   for each branch.
   """
-  @spec release_token(String.t() | [String.t()], context(), RodarBpmn.Token.t()) :: result()
+  @spec release_token(String.t() | [String.t()], context(), Rodar.Token.t()) :: result()
   def release_token(targets, context, %Token{} = token) when is_list(targets) do
     mark_token_released(context)
 
@@ -179,9 +179,9 @@ defmodule RodarBpmn do
     })
 
     Logger.metadata(
-      rodar_bpmn_node_id: id,
-      rodar_bpmn_node_type: type,
-      rodar_bpmn_token_id: token.id
+      rodar_node_id: id,
+      rodar_node_type: type,
+      rodar_token_id: token.id
     )
 
     span_metadata = %{node_id: id, node_type: type, token_id: token.id}

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.ConditionalIntegrationTest do
+defmodule Rodar.Event.ConditionalIntegrationTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{Context, Event.Boundary}
+  alias Rodar.{Context, Event.Boundary}
 
   defp build_conditional_catch_process(condition) do
     start = {:bpmn_event_start, %{id: "start", outgoing: ["f1"], incoming: []}}
@@ -79,7 +79,7 @@ defmodule RodarBpmn.Event.ConditionalIntegrationTest do
       {:ok, context} = Context.start_link(process, %{})
 
       # Execute process — should pause at catch1
-      result = RodarBpmn.execute(process["start"], context)
+      result = Rodar.execute(process["start"], context)
       assert {:manual, task_data} = result
       assert task_data.id == "catch1"
       assert task_data.type == :conditional_catch
@@ -109,7 +109,7 @@ defmodule RodarBpmn.Event.ConditionalIntegrationTest do
       Context.put_data(context, "approved", true)
 
       # Execute process — should pass through catch1 immediately
-      result = RodarBpmn.execute(process["start"], context)
+      result = Rodar.execute(process["start"], context)
       assert {:ok, ^context} = result
     end
 
@@ -118,7 +118,7 @@ defmodule RodarBpmn.Event.ConditionalIntegrationTest do
       {:ok, context} = Context.start_link(process, %{})
       Context.put_data(context, "count", 0)
 
-      result = RodarBpmn.execute(process["start"], context)
+      result = Rodar.execute(process["start"], context)
       assert {:manual, _} = result
 
       # Set count to 3 — still shouldn't trigger

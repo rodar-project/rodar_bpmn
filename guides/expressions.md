@@ -21,8 +21,8 @@ In BPMN XML, set the `language` attribute on a `conditionExpression` element:
 You can also evaluate expressions programmatically:
 
 ```elixir
-RodarBpmn.Expression.execute({:bpmn_expression, {"feel", "amount > 1000"}}, context)
-RodarBpmn.Expression.execute({:bpmn_expression, {"elixir", "data[\"amount\"] > 1000"}}, context)
+Rodar.Expression.execute({:bpmn_expression, {"feel", "amount > 1000"}}, context)
+Rodar.Expression.execute({:bpmn_expression, {"elixir", "data[\"amount\"] > 1000"}}, context)
 ```
 
 ## Data Access
@@ -37,13 +37,13 @@ The two languages differ in how they access process data:
 FEEL supports arithmetic (`+`, `-`, `*`, `/`), comparisons (`>`, `<`, `>=`, `<=`, `=`, `!=`), boolean operators (`and`, `or`, `not`), string concatenation (`+`), path access (`order.total`), bracket access (`items[0]`), if-then-else, the `in` operator (lists and ranges), list literals, and function calls including space-separated names.
 
 ```elixir
-RodarBpmn.Expression.Feel.eval("if x > 10 then \"high\" else \"low\"", %{"x" => 15})
+Rodar.Expression.Feel.eval("if x > 10 then \"high\" else \"low\"", %{"x" => 15})
 # => {:ok, "high"}
 
-RodarBpmn.Expression.Feel.eval("x in [1, 2, 3]", %{"x" => 2})
+Rodar.Expression.Feel.eval("x in [1, 2, 3]", %{"x" => 2})
 # => {:ok, true}
 
-RodarBpmn.Expression.Feel.eval("string length(name)", %{"name" => "Alice"})
+Rodar.Expression.Feel.eval("string length(name)", %{"name" => "Alice"})
 # => {:ok, 5}
 ```
 
@@ -65,10 +65,10 @@ The Elixir evaluator parses expressions into AST and walks the tree against an a
 Dangerous operations are rejected at parse time:
 
 ```elixir
-RodarBpmn.Expression.Sandbox.eval("System.cmd(\"ls\", [])")
+Rodar.Expression.Sandbox.eval("System.cmd(\"ls\", [])")
 # => {:error, "disallowed: module call System.cmd/2"}
 
-RodarBpmn.Expression.Sandbox.eval("1 + 2")
+Rodar.Expression.Sandbox.eval("1 + 2")
 # => {:ok, 3}
 ```
 
@@ -78,11 +78,11 @@ Beyond FEEL and Elixir, you can register custom script languages for use in BPMN
 
 ### Implementing an Engine
 
-Create a module that implements the `RodarBpmn.Expression.ScriptEngine` behaviour:
+Create a module that implements the `Rodar.Expression.ScriptEngine` behaviour:
 
 ```elixir
 defmodule MyApp.LuaEngine do
-  @behaviour RodarBpmn.Expression.ScriptEngine
+  @behaviour Rodar.Expression.ScriptEngine
 
   @impl true
   def eval(script, bindings) do
@@ -96,15 +96,15 @@ defmodule MyApp.LuaEngine do
 end
 ```
 
-The `eval/2` callback receives the raw script text and a map of the current process data (the same map from `RodarBpmn.Context.get(context, :data)`).
+The `eval/2` callback receives the raw script text and a map of the current process data (the same map from `Rodar.Context.get(context, :data)`).
 
 ### Registering an Engine
 
 Register your engine at application startup so it is available before any process instance runs:
 
 ```elixir
-# In your Application.start/2 callback, after rodar_bpmn has started:
-RodarBpmn.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
+# In your Application.start/2 callback, after rodar has started:
+Rodar.Expression.ScriptRegistry.register("lua", MyApp.LuaEngine)
 ```
 
 Once registered, any BPMN script task with `scriptFormat="lua"` will delegate to your engine:
@@ -119,22 +119,22 @@ Once registered, any BPMN script task with `scriptFormat="lua"` will delegate to
 
 ```elixir
 # List all registered engines
-RodarBpmn.Expression.ScriptRegistry.list()
+Rodar.Expression.ScriptRegistry.list()
 # => [{"lua", MyApp.LuaEngine}]
 
 # Look up an engine
-{:ok, MyApp.LuaEngine} = RodarBpmn.Expression.ScriptRegistry.lookup("lua")
+{:ok, MyApp.LuaEngine} = Rodar.Expression.ScriptRegistry.lookup("lua")
 
 # Remove a registration
-RodarBpmn.Expression.ScriptRegistry.unregister("lua")
+Rodar.Expression.ScriptRegistry.unregister("lua")
 ```
 
 ### Companion Packages
 
 Ready-made engine packages are planned:
 
-- `rodar_bpmn_lua` -- Lua scripting via Luerl
-- `rodar_bpmn_python` -- Python scripting via Erlport
+- `rodar_lua` -- Lua scripting via Luerl
+- `rodar_python` -- Python scripting via Erlport
 
 ### Language Resolution
 
@@ -148,11 +148,11 @@ Once the language is determined, execution is dispatched to:
 
 1. `"elixir"` -- built-in sandboxed Elixir evaluator
 2. `"feel"` -- built-in FEEL evaluator
-3. Any other string -- looked up in `RodarBpmn.Expression.ScriptRegistry`
+3. Any other string -- looked up in `Rodar.Expression.ScriptRegistry`
 4. If no engine is found, returns `{:error, "Unsupported script language: ..."}`
 
 ## Next Steps
 
-- [Gateways](https://hexdocs.pm/rodar_bpmn/gateways.html) -- Conditional routing with expressions
-- [Events](https://hexdocs.pm/rodar_bpmn/events.html) -- Timer, conditional, and message events
+- [Gateways](https://hexdocs.pm/rodar/gateways.html) -- Conditional routing with expressions
+- [Events](https://hexdocs.pm/rodar/events.html) -- Timer, conditional, and message events
 - [Task Handlers](task_handlers.md) -- Register custom task implementations

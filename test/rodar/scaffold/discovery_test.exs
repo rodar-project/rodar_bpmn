@@ -1,8 +1,8 @@
-defmodule RodarBpmn.Scaffold.DiscoveryTest do
+defmodule Rodar.Scaffold.DiscoveryTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Scaffold.Discovery
+  alias Rodar.Engine.Diagram
+  alias Rodar.Scaffold.Discovery
 
   @service_tasks_xml """
   <?xml version="1.0" encoding="UTF-8"?>
@@ -72,11 +72,11 @@ defmodule RodarBpmn.Scaffold.DiscoveryTest do
 
       result =
         Discovery.discover(diagram,
-          module_prefix: "RodarBpmn.Scaffold.DiscoveryTest.Handlers"
+          module_prefix: "Rodar.Scaffold.DiscoveryTest.Handlers"
         )
 
       assert result.handler_map["Task_1"] ==
-               RodarBpmn.Scaffold.DiscoveryTest.Handlers.ValidateOrder
+               Rodar.Scaffold.DiscoveryTest.Handlers.ValidateOrder
 
       assert "Task_2" in result.not_found
     end
@@ -86,10 +86,10 @@ defmodule RodarBpmn.Scaffold.DiscoveryTest do
 
       result =
         Discovery.discover(diagram,
-          module_prefix: "RodarBpmn.Scaffold.DiscoveryTest.Handlers"
+          module_prefix: "Rodar.Scaffold.DiscoveryTest.Handlers"
         )
 
-      assert {"Task_User", RodarBpmn.Scaffold.DiscoveryTest.Handlers.ApproveOrder} in result.task_registry_entries
+      assert {"Task_User", Rodar.Scaffold.DiscoveryTest.Handlers.ApproveOrder} in result.task_registry_entries
     end
 
     test "skips module without correct callback" do
@@ -97,7 +97,7 @@ defmodule RodarBpmn.Scaffold.DiscoveryTest do
 
       result =
         Discovery.discover(diagram,
-          module_prefix: "RodarBpmn.Scaffold.DiscoveryTest.BadHandlers"
+          module_prefix: "Rodar.Scaffold.DiscoveryTest.BadHandlers"
         )
 
       assert "Task_1" in result.not_found
@@ -143,7 +143,7 @@ defmodule RodarBpmn.Scaffold.DiscoveryTest do
       result = %{
         handler_map: %{},
         task_registry_entries: [
-          {"test_discovery_task_1", RodarBpmn.Scaffold.DiscoveryTest.Handlers.ValidateOrder}
+          {"test_discovery_task_1", Rodar.Scaffold.DiscoveryTest.Handlers.ValidateOrder}
         ],
         not_found: []
       }
@@ -151,25 +151,25 @@ defmodule RodarBpmn.Scaffold.DiscoveryTest do
       registered = Discovery.register_discovered(result)
       assert registered == ["test_discovery_task_1"]
 
-      assert {:ok, RodarBpmn.Scaffold.DiscoveryTest.Handlers.ValidateOrder} ==
-               RodarBpmn.TaskRegistry.lookup("test_discovery_task_1")
+      assert {:ok, Rodar.Scaffold.DiscoveryTest.Handlers.ValidateOrder} ==
+               Rodar.TaskRegistry.lookup("test_discovery_task_1")
 
       # Cleanup
-      RodarBpmn.TaskRegistry.unregister("test_discovery_task_1")
+      Rodar.TaskRegistry.unregister("test_discovery_task_1")
     end
   end
 
   # --- Test handler modules ---
 
   defmodule Handlers.ValidateOrder do
-    @behaviour RodarBpmn.Activity.Task.Service.Handler
+    @behaviour Rodar.Activity.Task.Service.Handler
 
     @impl true
     def execute(_attrs, _data), do: {:ok, %{}}
   end
 
   defmodule Handlers.ApproveOrder do
-    @behaviour RodarBpmn.TaskHandler
+    @behaviour Rodar.TaskHandler
 
     @impl true
     def token_in(_element, _context), do: {:ok, nil}

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.BoundaryTest do
+defmodule Rodar.Event.BoundaryTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Event.Boundary, Event.Timer}
+  alias Rodar.{Context, Event.Boundary, Event.Timer}
 
   defp make_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow"], outgoing: []}}

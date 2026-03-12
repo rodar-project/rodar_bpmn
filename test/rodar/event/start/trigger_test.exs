@@ -1,8 +1,8 @@
-defmodule RodarBpmn.Event.Start.TriggerTest do
+defmodule Rodar.Event.Start.TriggerTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Event.Start.Trigger
+  alias Rodar.Event.Bus
+  alias Rodar.Event.Start.Trigger
 
   setup do
     # Clean up any triggers from previous tests
@@ -31,7 +31,7 @@ defmodule RodarBpmn.Event.Start.TriggerTest do
     }
 
     process = {:bpmn_process, %{id: process_id}, elements}
-    RodarBpmn.Registry.register(process_id, process)
+    Rodar.Registry.register(process_id, process)
     process
   end
 
@@ -53,7 +53,7 @@ defmodule RodarBpmn.Event.Start.TriggerTest do
     }
 
     process = {:bpmn_process, %{id: process_id}, elements}
-    RodarBpmn.Registry.register(process_id, process)
+    Rodar.Registry.register(process_id, process)
     process
   end
 
@@ -92,7 +92,7 @@ defmodule RodarBpmn.Event.Start.TriggerTest do
         "end" => {:bpmn_event_end, %{id: "end", incoming: ["f1"], outgoing: []}}
       }
 
-      RodarBpmn.Registry.register("plain-proc", {:bpmn_process, %{id: "plain-proc"}, elements})
+      Rodar.Registry.register("plain-proc", {:bpmn_process, %{id: "plain-proc"}, elements})
 
       assert {:ok, []} = Trigger.register("plain-proc")
     end
@@ -135,14 +135,14 @@ defmodule RodarBpmn.Event.Start.TriggerTest do
       Trigger.register("auto-msg-proc")
 
       # Count instances before
-      before_count = length(RodarBpmn.Observability.running_instances())
+      before_count = length(Rodar.Observability.running_instances())
 
       Bus.publish(:message, msg_name, %{data: %{"order_id" => "123"}})
 
       # Give spawned process time to create and run
       Process.sleep(200)
 
-      after_count = length(RodarBpmn.Observability.running_instances())
+      after_count = length(Rodar.Observability.running_instances())
       assert after_count > before_count
     end
 
@@ -151,13 +151,13 @@ defmodule RodarBpmn.Event.Start.TriggerTest do
       register_signal_start_process("auto-sig-proc", sig_name)
       Trigger.register("auto-sig-proc")
 
-      before_count = length(RodarBpmn.Observability.running_instances())
+      before_count = length(Rodar.Observability.running_instances())
 
       Bus.publish(:signal, sig_name, %{data: %{"alert" => "warning"}})
 
       Process.sleep(200)
 
-      after_count = length(RodarBpmn.Observability.running_instances())
+      after_count = length(Rodar.Observability.running_instances())
       assert after_count > before_count
     end
   end

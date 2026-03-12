@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
+defmodule Mix.Tasks.Rodar.ScaffoldTest do
   use ExUnit.Case, async: true
 
-  alias Mix.Tasks.RodarBpmn.Scaffold
+  alias Mix.Tasks.Rodar.Scaffold
 
   import ExUnit.CaptureIO
 
@@ -16,7 +16,7 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
         end)
 
       assert output =~ "defmodule"
-      assert output =~ "@behaviour RodarBpmn.TaskHandler"
+      assert output =~ "@behaviour Rodar.TaskHandler"
       assert output =~ "def token_in(_element, _context)"
     end
 
@@ -28,8 +28,8 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
 
       assert output =~ "ServiceTask"
       assert output =~ "UserTask"
-      assert output =~ "@behaviour RodarBpmn.Activity.Task.Service.Handler"
-      assert output =~ "@behaviour RodarBpmn.TaskHandler"
+      assert output =~ "@behaviour Rodar.Activity.Task.Service.Handler"
+      assert output =~ "@behaviour Rodar.TaskHandler"
     end
 
     test "respects --module-prefix" do
@@ -57,7 +57,7 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
 
       content = File.read!(Path.join(tmp_dir, "task_a.ex"))
       assert content =~ "defmodule"
-      assert content =~ "@behaviour RodarBpmn.TaskHandler"
+      assert content =~ "@behaviour Rodar.TaskHandler"
     end
 
     @tag :tmp_dir
@@ -70,7 +70,7 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
       assert File.exists?(service_file)
 
       content = File.read!(service_file)
-      assert content =~ "@behaviour RodarBpmn.Activity.Task.Service.Handler"
+      assert content =~ "@behaviour Rodar.Activity.Task.Service.Handler"
       assert content =~ "def execute(_attrs, _data)"
     end
 
@@ -81,7 +81,7 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
           Scaffold.run([@miwg_b10, "--output-dir", tmp_dir])
         end)
 
-      assert output =~ "RodarBpmn.TaskRegistry.register("
+      assert output =~ "Rodar.TaskRegistry.register("
       assert output =~ "handler_map"
     end
   end
@@ -105,7 +105,7 @@ defmodule Mix.Tasks.RodarBpmn.ScaffoldTest do
 
       assert output =~ "Overwritten:"
       content = File.read!(Path.join(tmp_dir, "task_a.ex"))
-      assert content =~ "@behaviour RodarBpmn.TaskHandler"
+      assert content =~ "@behaviour Rodar.TaskHandler"
     end
   end
 

@@ -7,8 +7,8 @@ The persistence layer lets you save and restore running process instances across
 Configure the persistence adapter and auto-dehydrate setting in your application config:
 
 ```elixir
-config :rodar_bpmn, :persistence,
-  adapter: RodarBpmn.Persistence.Adapter.ETS,
+config :rodar, :persistence,
+  adapter: Rodar.Persistence.Adapter.ETS,
   auto_dehydrate: true
 ```
 
@@ -20,19 +20,19 @@ Dehydration captures a full snapshot of a running process. Rehydration restores 
 
 ```elixir
 # Save a running process
-{:ok, snapshot} = RodarBpmn.Process.dehydrate(process_pid)
+{:ok, snapshot} = Rodar.Process.dehydrate(process_pid)
 
 # Later, restore it
-{:ok, restored_pid} = RodarBpmn.Process.rehydrate(snapshot)
-RodarBpmn.Process.status(restored_pid)
+{:ok, restored_pid} = Rodar.Process.rehydrate(snapshot)
+Rodar.Process.status(restored_pid)
 # => :suspended
 ```
 
-Rehydrated processes resume in `:suspended` status. Call `RodarBpmn.Process.resume/1` to continue execution.
+Rehydrated processes resume in `:suspended` status. Call `Rodar.Process.resume/1` to continue execution.
 
 ## Snapshot Contents
 
-The `RodarBpmn.Persistence.Serializer` handles converting live process state to a persistable format:
+The `Rodar.Persistence.Serializer` handles converting live process state to a persistable format:
 
 - **Token structs** are converted to plain maps (and reconstructed on deserialization)
 - **MapSets** (e.g., gateway token tracking) become sorted lists
@@ -43,15 +43,15 @@ Binary serialization uses `:erlang.term_to_binary/1` with `:safe` deserializatio
 
 ## Writing a Custom Adapter
 
-Implement the `RodarBpmn.Persistence` behaviour with four callbacks:
+Implement the `Rodar.Persistence` behaviour with four callbacks:
 
 ```elixir
 defmodule MyApp.PostgresPersistence do
-  @behaviour RodarBpmn.Persistence
+  @behaviour Rodar.Persistence
 
   @impl true
   def save(instance_id, snapshot) do
-    binary = RodarBpmn.Persistence.Serializer.serialize(snapshot)
+    binary = Rodar.Persistence.Serializer.serialize(snapshot)
     # Store binary in your database
     :ok
   end
@@ -60,7 +60,7 @@ defmodule MyApp.PostgresPersistence do
   def load(instance_id) do
     # Fetch binary from your database
     case fetch_from_db(instance_id) do
-      {:ok, binary} -> {:ok, RodarBpmn.Persistence.Serializer.deserialize(binary)}
+      {:ok, binary} -> {:ok, Rodar.Persistence.Serializer.deserialize(binary)}
       nil -> {:error, :not_found}
     end
   end
@@ -82,14 +82,14 @@ end
 Then configure your adapter:
 
 ```elixir
-config :rodar_bpmn, :persistence, adapter: MyApp.PostgresPersistence
+config :rodar, :persistence, adapter: MyApp.PostgresPersistence
 ```
 
 ## ETS Adapter
 
-The built-in `RodarBpmn.Persistence.Adapter.ETS` stores snapshots in a named ETS table (`:rodar_bpmn_persistence`). It is started automatically by the supervision tree when persistence is configured. Suitable for development and testing -- data is lost on application restart.
+The built-in `Rodar.Persistence.Adapter.ETS` stores snapshots in a named ETS table (`:rodar_persistence`). It is started automatically by the supervision tree when persistence is configured. Suitable for development and testing -- data is lost on application restart.
 
 ## Next Steps
 
-- [Process Lifecycle](https://hexdocs.pm/rodar_bpmn/process_lifecycle.html) -- Process states, suspension, and termination
+- [Process Lifecycle](https://hexdocs.pm/rodar/process_lifecycle.html) -- Process states, suspension, and termination
 - [Versioning and Migration](versioning.md) -- Versioned definitions and instance migration

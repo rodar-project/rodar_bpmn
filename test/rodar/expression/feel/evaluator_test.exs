@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Expression.Feel.EvaluatorTest do
+defmodule Rodar.Expression.Feel.EvaluatorTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.Feel.Evaluator
+  alias Rodar.Expression.Feel.Evaluator
 
   describe "null propagation" do
     test "nil + number returns nil" do

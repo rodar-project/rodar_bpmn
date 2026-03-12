@@ -1,13 +1,13 @@
-defmodule RodarBpmn.Workflow.ServerTest do
+defmodule Rodar.Workflow.ServerTest do
   use ExUnit.Case, async: false
 
   defmodule TestServer do
-    use RodarBpmn.Workflow.Server,
+    use Rodar.Workflow.Server,
       bpmn_file: Path.join([__DIR__, "..", "..", "fixtures", "run_user_task.bpmn"]),
       process_id: "server-test-process",
       app_name: nil
 
-    @impl RodarBpmn.Workflow.Server
+    @impl Rodar.Workflow.Server
     def init_data(params, instance_id) do
       %{
         "customer" => Map.get(params, "customer", "test"),
@@ -17,12 +17,12 @@ defmodule RodarBpmn.Workflow.ServerTest do
   end
 
   defmodule TestServerWithMapStatus do
-    use RodarBpmn.Workflow.Server,
+    use Rodar.Workflow.Server,
       bpmn_file: Path.join([__DIR__, "..", "..", "fixtures", "run_user_task.bpmn"]),
       process_id: "server-map-status-process",
       app_name: nil
 
-    @impl RodarBpmn.Workflow.Server
+    @impl Rodar.Workflow.Server
     def init_data(params, instance_id) do
       %{
         "customer" => Map.get(params, "customer", "test"),
@@ -30,7 +30,7 @@ defmodule RodarBpmn.Workflow.ServerTest do
       }
     end
 
-    @impl RodarBpmn.Workflow.Server
+    @impl Rodar.Workflow.Server
     def map_status(:suspended), do: :pending_approval
     def map_status(:completed), do: :fulfilled
     def map_status(other), do: other
@@ -88,7 +88,7 @@ defmodule RodarBpmn.Workflow.ServerTest do
       {:ok, _} = TestServer.start_link()
 
       {:ok, instance} = TestServer.create_instance(%{"customer" => "Bob"})
-      data = RodarBpmn.Workflow.process_data(instance.process_pid)
+      data = Rodar.Workflow.process_data(instance.process_pid)
       assert data["order_id"] == 1
       assert data["customer"] == "Bob"
     end

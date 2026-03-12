@@ -1,6 +1,6 @@
-defmodule RodarBpmn.Activity.Task.Service.TestHandler do
+defmodule Rodar.Activity.Task.Service.TestHandler do
   @moduledoc false
-  @behaviour RodarBpmn.Activity.Task.Service.Handler
+  @behaviour Rodar.Activity.Task.Service.Handler
 
   @impl true
   def execute(_attrs, _data) do

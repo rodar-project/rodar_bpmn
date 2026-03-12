@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.EndTest do
+defmodule Rodar.Event.EndTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Event.End}
+  alias Rodar.{Context, Event.End}
 
   describe "plain end event" do
     test "returns {:ok, context} for a plain end event" do

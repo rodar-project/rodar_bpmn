@@ -8,11 +8,11 @@ import Config
 
 # You can configure for your application as:
 #
-#     config :rodar_bpmn, key: :value
+#     config :rodar, key: :value
 #
 # And access this configuration in your application as:
 #
-#     Application.get_env(:rodar_bpmn, :key)
+#     Application.get_env(:rodar, :key)
 #
 # Or configure a 3rd-party app:
 #
@@ -29,13 +29,13 @@ import Config
 
 config :logger, :default_formatter,
   metadata: [
-    :rodar_bpmn_node_id,
-    :rodar_bpmn_node_type,
-    :rodar_bpmn_token_id,
-    :rodar_bpmn_instance_id,
-    :rodar_bpmn_process_id
+    :rodar_node_id,
+    :rodar_node_type,
+    :rodar_token_id,
+    :rodar_instance_id,
+    :rodar_process_id
   ]
 
-config :rodar_bpmn, :persistence,
-  adapter: RodarBpmn.Persistence.Adapter.ETS,
+config :rodar, :persistence,
+  adapter: Rodar.Persistence.Adapter.ETS,
   auto_dehydrate: true

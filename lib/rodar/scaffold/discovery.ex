@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Scaffold.Discovery do
+defmodule Rodar.Scaffold.Discovery do
   @moduledoc """
   Convention-based handler auto-discovery for BPMN tasks.
 
   After scaffolding generates handler modules at predictable paths
-  (via `Mix.Tasks.RodarBpmn.Scaffold`), this module discovers them at runtime
+  (via `Mix.Tasks.Rodar.Scaffold`), this module discovers them at runtime
   by checking whether a module exists at the expected namespace and implements
   the correct callback.
 
@@ -13,13 +13,13 @@ defmodule RodarBpmn.Scaffold.Discovery do
 
   The namespace segment (default `"Workflow"`) is configurable via:
 
-      config :rodar_bpmn, :scaffold_namespace, "Workflow"
+      config :rodar, :scaffold_namespace, "Workflow"
 
   Discovery verifies each module:
     * Exists on the BEAM (`Code.ensure_loaded/1`)
     * Exports the correct callback — `execute/2` for service tasks
-      (`RodarBpmn.Activity.Task.Service.Handler`) or `token_in/2` for all
-      others (`RodarBpmn.TaskHandler`)
+      (`Rodar.Activity.Task.Service.Handler`) or `token_in/2` for all
+      others (`Rodar.TaskHandler`)
 
   Results are partitioned into three groups:
     * `:handler_map` — service task handlers (inject into diagram via `apply_handlers/2`)
@@ -28,9 +28,9 @@ defmodule RodarBpmn.Scaffold.Discovery do
 
   ## Integration with `Diagram.load/2`
 
-  The easiest way to use discovery is through `RodarBpmn.Engine.Diagram.load/2`:
+  The easiest way to use discovery is through `Rodar.Engine.Diagram.load/2`:
 
-      diagram = RodarBpmn.Engine.Diagram.load(xml,
+      diagram = Rodar.Engine.Diagram.load(xml,
         bpmn_file: "order_processing.bpmn",
         app_name: "MyApp"
       )
@@ -50,12 +50,12 @@ defmodule RodarBpmn.Scaffold.Discovery do
 
   ## See Also
 
-    * `RodarBpmn.Scaffold` — naming conventions and code generation
-    * `RodarBpmn.Engine.Diagram` — `load/2` integrates discovery automatically
-    * `Mix.Tasks.RodarBpmn.Scaffold` — CLI for generating handler stubs
+    * `Rodar.Scaffold` — naming conventions and code generation
+    * `Rodar.Engine.Diagram` — `load/2` integrates discovery automatically
+    * `Mix.Tasks.Rodar.Scaffold` — CLI for generating handler stubs
   """
 
-  alias RodarBpmn.Scaffold
+  alias Rodar.Scaffold
 
   @type discovery_result :: %{
           handler_map: %{String.t() => module()},
@@ -129,14 +129,14 @@ defmodule RodarBpmn.Scaffold.Discovery do
   end
 
   @doc """
-  Registers discovered non-service task handlers in `RodarBpmn.TaskRegistry`.
+  Registers discovered non-service task handlers in `Rodar.TaskRegistry`.
 
   Returns the list of task IDs that were registered.
   """
   @spec register_discovered(discovery_result()) :: [String.t()]
   def register_discovered(%{task_registry_entries: entries}) do
     Enum.map(entries, fn {task_id, module} ->
-      RodarBpmn.TaskRegistry.register(task_id, module)
+      Rodar.TaskRegistry.register(task_id, module)
       task_id
     end)
   end

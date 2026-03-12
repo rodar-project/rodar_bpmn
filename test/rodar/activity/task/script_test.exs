@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Activity.Task.ScriptTest do
+defmodule Rodar.Activity.Task.ScriptTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Task.Script, Context}
+  alias Rodar.{Activity.Task.Script, Context}
 
-  doctest RodarBpmn.Activity.Task.Script
+  doctest Rodar.Activity.Task.Script
 
   defp build_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}

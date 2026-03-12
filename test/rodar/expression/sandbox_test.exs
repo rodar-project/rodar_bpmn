@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Expression.SandboxTest do
+defmodule Rodar.Expression.SandboxTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.Sandbox
+  alias Rodar.Expression.Sandbox
 
-  doctest RodarBpmn.Expression.Sandbox
+  doctest Rodar.Expression.Sandbox
 
   describe "safe expressions" do
     test "evaluates arithmetic" do

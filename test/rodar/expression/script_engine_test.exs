@@ -1,12 +1,12 @@
-defmodule RodarBpmn.Expression.ScriptEngineTest do
+defmodule Rodar.Expression.ScriptEngineTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Activity.Task.Script
-  alias RodarBpmn.Context
-  alias RodarBpmn.Expression.ScriptRegistry
+  alias Rodar.Activity.Task.Script
+  alias Rodar.Context
+  alias Rodar.Expression.ScriptRegistry
 
   defmodule MockEngine do
-    @behaviour RodarBpmn.Expression.ScriptEngine
+    @behaviour Rodar.Expression.ScriptEngine
 
     @impl true
     def eval("return_42", _bindings), do: {:ok, 42}

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Expression.ScriptRegistryTest do
+defmodule Rodar.Expression.ScriptRegistryTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Expression.ScriptRegistry
+  alias Rodar.Expression.ScriptRegistry
 
   setup do
     on_exit(fn ->

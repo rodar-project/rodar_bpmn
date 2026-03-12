@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Expression.FeelTest do
+defmodule Rodar.Expression.FeelTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.Feel
+  alias Rodar.Expression.Feel
 
   describe "end-to-end evaluation" do
     test "simple arithmetic" do
@@ -136,29 +136,29 @@ defmodule RodarBpmn.Expression.FeelTest do
     end
   end
 
-  describe "integration with RodarBpmn.Expression" do
+  describe "integration with Rodar.Expression" do
     test "FEEL via expression execute" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      RodarBpmn.Context.put_data(context, "count", 4)
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      Rodar.Context.put_data(context, "count", 4)
 
       assert {:ok, true} =
-               RodarBpmn.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
+               Rodar.Expression.execute({:bpmn_expression, {"feel", "count = 4"}}, context)
     end
 
     test "FEEL comparison via expression execute" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      RodarBpmn.Context.put_data(context, "amount", 1500)
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      Rodar.Context.put_data(context, "amount", 1500)
 
       assert {:ok, true} =
-               RodarBpmn.Expression.execute(
+               Rodar.Expression.execute(
                  {:bpmn_expression, {"feel", "amount > 1000"}},
                  context
                )
     end
 
     test "empty FEEL expression returns true" do
-      {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
-      assert {:ok, true} = RodarBpmn.Expression.execute({:bpmn_expression, {"feel", ""}}, context)
+      {:ok, context} = Rodar.Context.start_link(%{}, %{})
+      assert {:ok, true} = Rodar.Expression.execute({:bpmn_expression, {"feel", ""}}, context)
     end
   end
 

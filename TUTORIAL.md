@@ -1,6 +1,6 @@
-# Rodar BPMN Tutorial
+# Rodar Workflow Tutorial
 
-Rodar BPMN is an Elixir execution engine for BPMN 2.0 process definitions. It parses BPMN XML files into Elixir data structures and executes them by passing tokens through process nodes.
+Rodar Workflow is an Elixir execution engine for BPMN 2.0 process definitions. It parses BPMN XML files into Elixir data structures and executes them by passing tokens through process nodes.
 
 ## BPMN Primer for Elixir Developers
 

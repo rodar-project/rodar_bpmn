@@ -1,7 +1,7 @@
-defmodule RodarBpmn.RegistryTest do
+defmodule Rodar.RegistryTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Registry
+  alias Rodar.Registry
 
   setup do
     # Clean up any registered processes between tests

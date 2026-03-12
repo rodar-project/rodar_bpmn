@@ -1,8 +1,8 @@
-defmodule RodarBpmn.Engine.Diagram.Export do
+defmodule Rodar.Engine.Diagram.Export do
   @moduledoc """
   Exports a parsed BPMN diagram map back to BPMN 2.0 XML.
 
-  This is the inverse of `RodarBpmn.Engine.Diagram.load/1`. Given a diagram map
+  This is the inverse of `Rodar.Engine.Diagram.load/1`. Given a diagram map
   produced by the parser, it generates normalized BPMN 2.0 XML using IO lists
   for efficient string building.
 
@@ -13,13 +13,13 @@ defmodule RodarBpmn.Engine.Diagram.Export do
 
   ## See Also
 
-  - `RodarBpmn.Engine.Diagram` -- the parser (inverse of this module)
+  - `Rodar.Engine.Diagram` -- the parser (inverse of this module)
 
   ## Example
 
       iex> xml = File.read!("./test/fixtures/simple.bpmn")
-      iex> diagram = RodarBpmn.Engine.Diagram.load(xml)
-      iex> exported = RodarBpmn.Engine.Diagram.Export.to_xml(diagram)
+      iex> diagram = Rodar.Engine.Diagram.load(xml)
+      iex> exported = Rodar.Engine.Diagram.Export.to_xml(diagram)
       iex> String.contains?(exported, "bpmn2:startEvent")
       true
 
@@ -67,7 +67,7 @@ defmodule RodarBpmn.Engine.Diagram.Export do
 
   ## Parameters
 
-    * `diagram` - A diagram map as returned by `RodarBpmn.Engine.Diagram.load/1`
+    * `diagram` - A diagram map as returned by `Rodar.Engine.Diagram.load/1`
 
   ## Returns
 

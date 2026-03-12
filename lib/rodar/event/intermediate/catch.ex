@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Event.Intermediate.Catch do
+defmodule Rodar.Event.Intermediate.Catch do
   @moduledoc """
   Handle passing the token through an intermediate catch event element.
 
@@ -8,24 +8,24 @@ defmodule RodarBpmn.Event.Intermediate.Catch do
 
   ## Examples
 
-      iex> {:ok, context} = RodarBpmn.Context.start_link(%{}, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(%{}, %{})
       iex> elem = {:bpmn_event_intermediate_catch, %{id: "catch1", outgoing: ["flow_out"], messageEventDefinition: {:bpmn_event_definition_message, %{messageRef: "msg1"}}, signalEventDefinition: nil, timerEventDefinition: nil}}
-      iex> {:manual, task_data} = RodarBpmn.Event.Intermediate.Catch.token_in(elem, context)
+      iex> {:manual, task_data} = Rodar.Event.Intermediate.Catch.token_in(elem, context)
       iex> task_data.id
       "catch1"
 
   """
 
-  alias RodarBpmn.Context
-  alias RodarBpmn.Event.Bus
-  alias RodarBpmn.Event.Timer
-  alias RodarBpmn.Expression.Feel
-  alias RodarBpmn.Expression.Sandbox
+  alias Rodar.Context
+  alias Rodar.Event.Bus
+  alias Rodar.Event.Timer
+  alias Rodar.Expression.Feel
+  alias Rodar.Expression.Sandbox
 
   @doc """
   Receive the token for the element and handle the catch event.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in({:bpmn_event_intermediate_catch, %{id: id, outgoing: outgoing} = attrs}, context) do
     cond do
       has_message?(attrs) ->
@@ -48,7 +48,7 @@ defmodule RodarBpmn.Event.Intermediate.Catch do
   @doc """
   Resume execution of a paused catch event with the provided data.
   """
-  @spec resume(RodarBpmn.element(), RodarBpmn.context(), map()) :: RodarBpmn.result()
+  @spec resume(Rodar.element(), Rodar.context(), map()) :: Rodar.result()
   def resume({:bpmn_event_intermediate_catch, %{id: id, outgoing: outgoing}}, context, input)
       when is_map(input) do
     Enum.each(input, fn {key, value} ->
@@ -56,7 +56,7 @@ defmodule RodarBpmn.Event.Intermediate.Catch do
     end)
 
     Context.put_meta(context, id, %{active: false, completed: true, type: :catch_event})
-    RodarBpmn.release_token(outgoing, context)
+    Rodar.release_token(outgoing, context)
   end
 
   defp has_message?(attrs) do
@@ -175,7 +175,7 @@ defmodule RodarBpmn.Event.Intermediate.Catch do
     case result do
       {:ok, true} ->
         Context.put_meta(context, id, %{active: false, completed: true, type: :catch_event})
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
 
       _ ->
         Context.put_meta(context, id, %{active: true, completed: false, type: :catch_event})

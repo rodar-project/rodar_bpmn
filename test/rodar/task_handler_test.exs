@@ -1,24 +1,24 @@
-defmodule RodarBpmn.TaskHandlerTest do
+defmodule Rodar.TaskHandlerTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.TaskRegistry
+  alias Rodar.TaskRegistry
 
   defmodule CountingHandler do
-    @behaviour RodarBpmn.TaskHandler
+    @behaviour Rodar.TaskHandler
 
     @impl true
     def token_in({_type, %{id: id}}, context) do
-      RodarBpmn.Context.put_data(context, "handled_by", id)
+      Rodar.Context.put_data(context, "handled_by", id)
       {:ok, context}
     end
   end
 
   defmodule TypeHandler do
-    @behaviour RodarBpmn.TaskHandler
+    @behaviour Rodar.TaskHandler
 
     @impl true
     def token_in({type, _attrs}, context) do
-      RodarBpmn.Context.put_data(context, "handler_type", Atom.to_string(type))
+      Rodar.Context.put_data(context, "handler_type", Atom.to_string(type))
       {:ok, context}
     end
   end
@@ -49,11 +49,11 @@ defmodule RodarBpmn.TaskHandlerTest do
     test "handler is invoked for registered type" do
       TaskRegistry.register(:my_custom_task, TypeHandler)
       process = build_process(:my_custom_task, "task_1")
-      {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      {:ok, context} = Rodar.Context.start_link(process, %{})
       start = process["start"]
 
-      {:ok, ^context} = RodarBpmn.execute(start, context)
-      assert RodarBpmn.Context.get_data(context, "handler_type") == "my_custom_task"
+      {:ok, ^context} = Rodar.execute(start, context)
+      assert Rodar.Context.get_data(context, "handler_type") == "my_custom_task"
     end
   end
 
@@ -61,34 +61,34 @@ defmodule RodarBpmn.TaskHandlerTest do
     test "handler is invoked for registered task ID" do
       TaskRegistry.register("specific_task", CountingHandler)
       process = build_process(:some_unknown_type, "specific_task")
-      {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      {:ok, context} = Rodar.Context.start_link(process, %{})
       start = process["start"]
 
-      {:ok, ^context} = RodarBpmn.execute(start, context)
-      assert RodarBpmn.Context.get_data(context, "handled_by") == "specific_task"
+      {:ok, ^context} = Rodar.execute(start, context)
+      assert Rodar.Context.get_data(context, "handled_by") == "specific_task"
     end
 
     test "task ID takes priority over type registration" do
       TaskRegistry.register(:my_custom_task, TypeHandler)
       TaskRegistry.register("priority_task", CountingHandler)
       process = build_process(:my_custom_task, "priority_task")
-      {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      {:ok, context} = Rodar.Context.start_link(process, %{})
       start = process["start"]
 
-      {:ok, ^context} = RodarBpmn.execute(start, context)
+      {:ok, ^context} = Rodar.execute(start, context)
       # CountingHandler sets "handled_by", TypeHandler sets "handler_type"
-      assert RodarBpmn.Context.get_data(context, "handled_by") == "priority_task"
-      assert RodarBpmn.Context.get_data(context, "handler_type") == nil
+      assert Rodar.Context.get_data(context, "handled_by") == "priority_task"
+      assert Rodar.Context.get_data(context, "handler_type") == nil
     end
   end
 
   describe "unregistered types" do
     test "unregistered types return nil (existing behavior)" do
       process = build_process(:totally_unknown, "unknown_task")
-      {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      {:ok, context} = Rodar.Context.start_link(process, %{})
 
       # Dispatch directly — should return nil for unknown type
-      result = RodarBpmn.execute({:totally_unknown, %{id: "unknown_task"}}, context)
+      result = Rodar.execute({:totally_unknown, %{id: "unknown_task"}}, context)
       # nil result from dispatch means no handler matched
       assert result == nil
     end

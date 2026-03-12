@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Activity.Task.ReceiveTest do
+defmodule Rodar.Activity.Task.ReceiveTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Task.Receive, Context}
+  alias Rodar.{Activity.Task.Receive, Context}
 
-  doctest RodarBpmn.Activity.Task.Receive
+  doctest Rodar.Activity.Task.Receive
 
   defp build_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}

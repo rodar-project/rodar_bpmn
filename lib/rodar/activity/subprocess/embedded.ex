@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Activity.Subprocess.Embedded do
+defmodule Rodar.Activity.Subprocess.Embedded do
   @moduledoc """
   Handle passing the token through an embedded subprocess element.
 
@@ -23,9 +23,9 @@ defmodule RodarBpmn.Activity.Subprocess.Embedded do
       iex> outer_end = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
       iex> flow_out = {:bpmn_sequence_flow, %{id: "flow_out", sourceRef: "sub", targetRef: "end", conditionExpression: nil, isImmediate: nil}}
       iex> process = %{"flow_out" => flow_out, "end" => outer_end}
-      iex> {:ok, context} = RodarBpmn.Context.start_link(process, %{})
+      iex> {:ok, context} = Rodar.Context.start_link(process, %{})
       iex> elem = {:bpmn_activity_subprocess_embeded, %{id: "sub", outgoing: ["flow_out"], elements: nested}}
-      iex> {:ok, ^context} = RodarBpmn.Activity.Subprocess.Embedded.token_in(elem, context)
+      iex> {:ok, ^context} = Rodar.Activity.Subprocess.Embedded.token_in(elem, context)
       iex> true
       true
 
@@ -34,14 +34,14 @@ defmodule RodarBpmn.Activity.Subprocess.Embedded do
   @doc """
   Receive the token for the element and execute the nested subprocess.
   """
-  @spec token_in(RodarBpmn.element(), RodarBpmn.context()) :: RodarBpmn.result()
+  @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(
         {:bpmn_activity_subprocess_embeded, %{id: id, outgoing: outgoing, elements: elements}},
         context
       ) do
-    RodarBpmn.Context.put_meta(context, id, %{active: true, completed: false, type: :subprocess})
+    Rodar.Context.put_meta(context, id, %{active: true, completed: false, type: :subprocess})
 
-    old_process = RodarBpmn.Context.swap_process(context, elements)
+    old_process = Rodar.Context.swap_process(context, elements)
 
     result =
       case find_start_event(elements) do
@@ -49,20 +49,20 @@ defmodule RodarBpmn.Activity.Subprocess.Embedded do
           {:error, "Embedded subprocess '#{id}': no start event found"}
 
         start_event ->
-          RodarBpmn.execute(start_event, context)
+          Rodar.execute(start_event, context)
       end
 
-    RodarBpmn.Context.swap_process(context, old_process)
+    Rodar.Context.swap_process(context, old_process)
 
     case result do
       {:ok, _} ->
-        RodarBpmn.Context.put_meta(context, id, %{
+        Rodar.Context.put_meta(context, id, %{
           active: false,
           completed: true,
           type: :subprocess
         })
 
-        RodarBpmn.release_token(outgoing, context)
+        Rodar.release_token(outgoing, context)
 
       {:error, _} = error ->
         case find_error_boundary(old_process, id) do
@@ -70,14 +70,14 @@ defmodule RodarBpmn.Activity.Subprocess.Embedded do
             error
 
           {:bpmn_event_boundary, %{outgoing: boundary_outgoing}} ->
-            RodarBpmn.Context.put_meta(context, id, %{
+            Rodar.Context.put_meta(context, id, %{
               active: false,
               completed: false,
               type: :subprocess,
               error: true
             })
 
-            RodarBpmn.release_token(boundary_outgoing, context)
+            Rodar.release_token(boundary_outgoing, context)
         end
 
       other ->

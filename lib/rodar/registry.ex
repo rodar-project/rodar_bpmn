@@ -1,4 +1,4 @@
-defmodule RodarBpmn.Registry do
+defmodule Rodar.Registry do
   @moduledoc """
   Process definition registry for BPMN processes with version support.
 
@@ -64,7 +64,7 @@ defmodule RodarBpmn.Registry do
   """
   @spec lookup(String.t()) :: {:ok, any()} | :error
   def lookup(process_id) do
-    case Registry.lookup(RodarBpmn.ProcessRegistry, process_id) do
+    case Registry.lookup(Rodar.ProcessRegistry, process_id) do
       [{_pid, definition}] -> {:ok, definition}
       [] -> :error
     end
@@ -187,7 +187,7 @@ defmodule RodarBpmn.Registry do
   end
 
   def handle_call({:unregister, process_id}, _from, state) do
-    Registry.unregister(RodarBpmn.ProcessRegistry, process_id)
+    Registry.unregister(Rodar.ProcessRegistry, process_id)
     {:reply, :ok, Map.delete(state, process_id)}
   end
 
@@ -203,8 +203,8 @@ defmodule RodarBpmn.Registry do
 
   defp update_process_registry(process_id, definition, version, latest) do
     if version >= latest do
-      Registry.unregister(RodarBpmn.ProcessRegistry, process_id)
-      {:ok, _} = Registry.register(RodarBpmn.ProcessRegistry, process_id, definition)
+      Registry.unregister(Rodar.ProcessRegistry, process_id)
+      {:ok, _} = Registry.register(Rodar.ProcessRegistry, process_id, definition)
     end
   end
 

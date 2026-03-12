@@ -1,7 +1,7 @@
-defmodule RodarBpmn.CollaborationTest do
+defmodule Rodar.CollaborationTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.{Collaboration, Registry}
+  alias Rodar.{Collaboration, Registry}
 
   setup do
     for id <- Registry.list() do
@@ -49,8 +49,8 @@ defmodule RodarBpmn.CollaborationTest do
       assert result.collaboration_id == "collab_1"
       assert map_size(result.instances) == 2
 
-      assert RodarBpmn.Process.status(result.instances["ProcessA"]) == :completed
-      assert RodarBpmn.Process.status(result.instances["ProcessB"]) == :completed
+      assert Rodar.Process.status(result.instances["ProcessA"]) == :completed
+      assert Rodar.Process.status(result.instances["ProcessB"]) == :completed
     end
 
     test "returns error when participant processRef doesn't match any process" do
@@ -112,7 +112,7 @@ defmodule RodarBpmn.CollaborationTest do
       assert Process.alive?(pid)
 
       Collaboration.stop(result)
-      assert RodarBpmn.Process.status(pid) == :terminated
+      assert Rodar.Process.status(pid) == :terminated
     end
   end
 
@@ -185,11 +185,11 @@ defmodule RodarBpmn.CollaborationTest do
 
       # Both processes should complete — the message throw in A
       # triggers the catch in B via pre-wired event bus subscription
-      assert RodarBpmn.Process.status(result.instances["ProcSender"]) == :completed
+      assert Rodar.Process.status(result.instances["ProcSender"]) == :completed
       # Process B catch will have been pre-subscribed, so when A throws the message,
       # B's catch should receive it. However, since processes activate sequentially
       # and B's catch event returns {:manual, _}, B may be suspended.
-      status_b = RodarBpmn.Process.status(result.instances["ProcReceiver"])
+      status_b = Rodar.Process.status(result.instances["ProcReceiver"])
       assert status_b in [:completed, :suspended]
     end
   end

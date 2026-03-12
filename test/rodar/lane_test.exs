@@ -1,9 +1,9 @@
-defmodule RodarBpmn.LaneTest do
+defmodule Rodar.LaneTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Lane
+  alias Rodar.Lane
 
-  doctest RodarBpmn.Lane
+  doctest Rodar.Lane
 
   defp sample_lane_set do
     %{

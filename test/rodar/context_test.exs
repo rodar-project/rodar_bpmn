@@ -1,8 +1,8 @@
-defmodule RodarBpmn.ContextTest do
+defmodule Rodar.ContextTest do
   use ExUnit.Case, async: true
-  alias RodarBpmn.Context
+  alias Rodar.Context
 
-  doctest RodarBpmn.Context
+  doctest Rodar.Context
 
   setup do
     {:ok, context} =

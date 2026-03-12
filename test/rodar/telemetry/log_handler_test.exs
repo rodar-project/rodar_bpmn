@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Telemetry.LogHandlerTest do
+defmodule Rodar.Telemetry.LogHandlerTest do
   use ExUnit.Case, async: false
 
-  alias RodarBpmn.Telemetry.LogHandler
+  alias Rodar.Telemetry.LogHandler
 
   describe "attach/0 and detach/0" do
     test "attach and detach work without error" do
@@ -30,7 +30,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles node start event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :node, :start],
+                 [:rodar, :node, :start],
                  %{system_time: System.system_time()},
                  %{node_id: "task_1", node_type: :bpmn_activity_task_user, token_id: "tok-1"},
                  nil
@@ -40,7 +40,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles node stop event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :node, :stop],
+                 [:rodar, :node, :stop],
                  %{duration: 1000},
                  %{
                    node_id: "task_1",
@@ -55,7 +55,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles node exception event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :node, :exception],
+                 [:rodar, :node, :exception],
                  %{duration: 500},
                  %{
                    node_id: "task_1",
@@ -71,7 +71,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles process start event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :process, :start],
+                 [:rodar, :process, :start],
                  %{system_time: System.system_time()},
                  %{instance_id: "inst-1", process_id: "proc-1"},
                  nil
@@ -81,7 +81,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles process stop event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :process, :stop],
+                 [:rodar, :process, :stop],
                  %{duration: 5000},
                  %{instance_id: "inst-1", process_id: "proc-1", status: :completed},
                  nil
@@ -91,7 +91,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles token create event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :token, :create],
+                 [:rodar, :token, :create],
                  %{system_time: System.system_time()},
                  %{token_id: "tok-1", parent_id: nil, node_id: nil},
                  nil
@@ -101,7 +101,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles event bus publish event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :event_bus, :publish],
+                 [:rodar, :event_bus, :publish],
                  %{system_time: System.system_time()},
                  %{event_type: :signal, event_name: "test", subscriber_count: 2},
                  nil
@@ -111,7 +111,7 @@ defmodule RodarBpmn.Telemetry.LogHandlerTest do
     test "handles event bus subscribe event" do
       assert :ok =
                LogHandler.handle_event(
-                 [:rodar_bpmn, :event_bus, :subscribe],
+                 [:rodar, :event_bus, :subscribe],
                  %{system_time: System.system_time()},
                  %{event_type: :message, event_name: "test", node_id: "catch_1"},
                  nil

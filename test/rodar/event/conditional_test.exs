@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.ConditionalTest do
+defmodule Rodar.Event.ConditionalTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Event.Boundary, Event.Intermediate.Catch}
+  alias Rodar.{Context, Event.Boundary, Event.Intermediate.Catch}
 
   defp make_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow"], outgoing: []}}

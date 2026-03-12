@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Expression.Feel.ParserTest do
+defmodule Rodar.Expression.Feel.ParserTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Expression.Feel.Parser
+  alias Rodar.Expression.Feel.Parser
 
   describe "literals" do
     test "parses integers" do

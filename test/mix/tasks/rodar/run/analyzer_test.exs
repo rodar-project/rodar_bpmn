@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.RodarBpmn.Run.AnalyzerTest do
+defmodule Mix.Tasks.Rodar.Run.AnalyzerTest do
   use ExUnit.Case, async: true
 
-  alias Mix.Tasks.RodarBpmn.Run.Analyzer
+  alias Mix.Tasks.Rodar.Run.Analyzer
 
   describe "extract_data_keys/1" do
     test "extracts keys from Elixir condition expressions" do

@@ -1,7 +1,7 @@
-defmodule RodarBpmn.Event.Intermediate.ThrowTest do
+defmodule Rodar.Event.Intermediate.ThrowTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Context, Event.Bus, Event.Intermediate.Throw}
+  alias Rodar.{Context, Event.Bus, Event.Intermediate.Throw}
 
   setup do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
@@ -102,7 +102,7 @@ defmodule RodarBpmn.Event.Intermediate.ThrowTest do
     end
   end
 
-  describe "dispatch via RodarBpmn.execute/2" do
+  describe "dispatch via Rodar.execute/2" do
     test "dispatches intermediate throw events correctly", %{context: context} do
       elem =
         {:bpmn_event_intermediate_throw,
@@ -114,7 +114,7 @@ defmodule RodarBpmn.Event.Intermediate.ThrowTest do
            escalationEventDefinition: nil
          }}
 
-      assert {:ok, ^context} = RodarBpmn.execute(elem, context)
+      assert {:ok, ^context} = Rodar.execute(elem, context)
     end
   end
 end

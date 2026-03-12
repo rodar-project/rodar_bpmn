@@ -1,4 +1,4 @@
-defmodule RodarBpmn.ExpressionTest do
+defmodule Rodar.ExpressionTest do
   use ExUnit.Case, async: true
-  doctest RodarBpmn.Expression
+  doctest Rodar.Expression
 end

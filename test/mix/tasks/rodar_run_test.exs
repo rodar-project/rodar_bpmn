@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.RodarBpmn.RunTest do
+defmodule Mix.Tasks.Rodar.RunTest do
   use ExUnit.Case, async: false
 
-  alias Mix.Tasks.RodarBpmn.Run
+  alias Mix.Tasks.Rodar.Run
 
   import ExUnit.CaptureIO
 
@@ -59,7 +59,7 @@ defmodule Mix.Tasks.RodarBpmn.RunTest do
       assert output =~ "[PASS]"
       assert output =~ "Status: completed"
       assert output =~ "passthrough"
-      assert output =~ "mix rodar_bpmn.scaffold"
+      assert output =~ "mix rodar.scaffold"
     end
 
     test "cleans up TaskRegistry entries after run" do
@@ -67,8 +67,8 @@ defmodule Mix.Tasks.RodarBpmn.RunTest do
         Run.run(["test/fixtures/run_service_tasks.bpmn"])
       end)
 
-      assert RodarBpmn.TaskRegistry.lookup("Task_Validate") == :error
-      assert RodarBpmn.TaskRegistry.lookup("Task_Fulfill") == :error
+      assert Rodar.TaskRegistry.lookup("Task_Validate") == :error
+      assert Rodar.TaskRegistry.lookup("Task_Fulfill") == :error
     end
   end
 

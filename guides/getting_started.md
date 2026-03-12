@@ -2,11 +2,11 @@
 
 ## Installation
 
-Add `rodar_bpmn` to your list of dependencies in `mix.exs`:
+Add `rodar` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:rodar_bpmn, github: "rodar-project/rodar_bpmn"}]
+  [{:rodar, github: "rodar-project/rodar"}]
 end
 ```
 
@@ -17,15 +17,15 @@ Requires Elixir ~> 1.16 and OTP 27+.
 ### 1. Load and Parse a BPMN Diagram
 
 ```elixir
-diagram = RodarBpmn.Engine.Diagram.load(File.read!("my_process.bpmn"))
+diagram = Rodar.Engine.Diagram.load(File.read!("my_process.bpmn"))
 {:bpmn_process, _attrs, _elements} = process = hd(diagram.processes)
 ```
 
-You can also wire service task handlers at parse time. The easiest way is convention-based auto-discovery — scaffold handlers with `mix rodar_bpmn.scaffold`, then load with the file path:
+You can also wire service task handlers at parse time. The easiest way is convention-based auto-discovery — scaffold handlers with `mix rodar.scaffold`, then load with the file path:
 
 ```elixir
 # Auto-discovers handlers at MyApp.Workflow.MyProcess.Handlers.*
-diagram = RodarBpmn.Engine.Diagram.load(xml,
+diagram = Rodar.Engine.Diagram.load(xml,
   bpmn_file: "my_process.bpmn",
   app_name: "MyApp"
 )
@@ -34,7 +34,7 @@ diagram = RodarBpmn.Engine.Diagram.load(xml,
 Or wire handlers explicitly with `handler_map`:
 
 ```elixir
-diagram = RodarBpmn.Engine.Diagram.load(xml, handler_map: %{
+diagram = Rodar.Engine.Diagram.load(xml, handler_map: %{
   "Task_check" => MyApp.CheckInventory
 })
 ```
@@ -44,29 +44,29 @@ See the [Task Handlers](task_handlers.md) guide for details on handler discovery
 ### 2. Register and Run
 
 ```elixir
-RodarBpmn.Registry.register("my-process", process)
-{:ok, pid} = RodarBpmn.Process.create_and_run("my-process", %{"username" => "alice"})
+Rodar.Registry.register("my-process", process)
+{:ok, pid} = Rodar.Process.create_and_run("my-process", %{"username" => "alice"})
 ```
 
 ### 3. Check Results
 
 ```elixir
-RodarBpmn.Process.status(pid)
+Rodar.Process.status(pid)
 # => :completed
 
-context = RodarBpmn.Process.get_context(pid)
-RodarBpmn.Context.get_data(context, "result")
+context = Rodar.Process.get_context(pid)
+Rodar.Context.get_data(context, "result")
 ```
 
 ## Basic Concepts
 
 ### Token-Based Execution
 
-The engine uses a token-based model. A `RodarBpmn.Token` struct tracks the execution pointer (current node, state, parent token for forks). Each BPMN node implements `token_in/2` to receive a token and routes it to the next node(s) via `RodarBpmn.release_token/2`.
+The engine uses a token-based model. A `Rodar.Token` struct tracks the execution pointer (current node, state, parent token for forks). Each BPMN node implements `token_in/2` to receive a token and routes it to the next node(s) via `Rodar.release_token/2`.
 
 ### Context
 
-`RodarBpmn.Context` is a GenServer that holds the process state: initial data, current data, process definition, node metadata, and execution history.
+`Rodar.Context` is a GenServer that holds the process state: initial data, current data, process definition, node metadata, and execution history.
 
 ### Result Types
 
@@ -80,11 +80,11 @@ Node execution returns one of:
 
 ### Lanes
 
-Lanes assign flow nodes to roles, groups, or departments. They do not affect execution — the engine treats them as read-only annotations. Use `RodarBpmn.Lane` to query lane assignments:
+Lanes assign flow nodes to roles, groups, or departments. They do not affect execution — the engine treats them as read-only annotations. Use `Rodar.Lane` to query lane assignments:
 
 ```elixir
 {:bpmn_process, attrs, _elements} = hd(diagram.processes)
-{:ok, lane} = RodarBpmn.Lane.find_lane_for_node(attrs.lane_set, "UserTask_1")
+{:ok, lane} = Rodar.Lane.find_lane_for_node(attrs.lane_set, "UserTask_1")
 lane.name
 # => "HR Department"
 ```
@@ -94,7 +94,7 @@ lane.name
 Validate your BPMN diagrams before execution:
 
 ```elixir
-case RodarBpmn.Validation.validate(elements) do
+case Rodar.Validation.validate(elements) do
   {:ok, _} -> IO.puts("Valid!")
   {:error, issues} -> Enum.each(issues, &IO.puts(&1.message))
 end
@@ -103,7 +103,7 @@ end
 Or from the command line:
 
 ```shell
-mix rodar_bpmn.validate my_process.bpmn
+mix rodar.validate my_process.bpmn
 ```
 
 ## Next Steps

@@ -1,9 +1,9 @@
-defmodule RodarBpmn.TokenTest do
+defmodule Rodar.TokenTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Token
+  alias Rodar.Token
 
-  doctest RodarBpmn.Token
+  doctest Rodar.Token
 
   describe "new/1" do
     test "generates unique IDs" do

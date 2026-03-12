@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.RodarBpmn.Run.Analyzer do
+defmodule Mix.Tasks.Rodar.Run.Analyzer do
   @moduledoc """
   Pre-execution analysis of a BPMN process map.
 
   Scans the process map for data keys referenced in condition expressions,
-  service tasks without handlers, and user tasks. Used by `Mix.Tasks.RodarBpmn.Run`
+  service tasks without handlers, and user tasks. Used by `Mix.Tasks.Rodar.Run`
   to provide informative output before execution begins.
   """
 

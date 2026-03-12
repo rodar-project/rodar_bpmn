@@ -1,8 +1,8 @@
-defmodule RodarBpmn.Persistence.SerializerTest do
+defmodule Rodar.Persistence.SerializerTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.Persistence.Serializer
-  alias RodarBpmn.Token
+  alias Rodar.Persistence.Serializer
+  alias Rodar.Token
 
   describe "serialize_token/1 and deserialize_token/1" do
     test "roundtrips a token" do

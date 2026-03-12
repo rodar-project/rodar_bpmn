@@ -1,9 +1,9 @@
-defmodule RodarBpmn.Activity.Task.ServiceTest do
+defmodule Rodar.Activity.Task.ServiceTest do
   use ExUnit.Case, async: true
 
-  alias RodarBpmn.{Activity.Task.Service, Context}
+  alias Rodar.{Activity.Task.Service, Context}
 
-  doctest RodarBpmn.Activity.Task.Service
+  doctest Rodar.Activity.Task.Service
 
   defp build_process do
     end_event = {:bpmn_event_end, %{id: "end", incoming: ["flow_out"], outgoing: []}}
@@ -66,7 +66,7 @@ defmodule RodarBpmn.Activity.Task.ServiceTest do
       process = build_process()
       {:ok, context} = Context.start_link(process, %{})
 
-      RodarBpmn.TaskRegistry.register("task", Service.TestHandler)
+      Rodar.TaskRegistry.register("task", Service.TestHandler)
 
       elem =
         {:bpmn_activity_task_service, %{id: "task", outgoing: ["flow_out"]}}
@@ -74,7 +74,7 @@ defmodule RodarBpmn.Activity.Task.ServiceTest do
       assert {:ok, ^context} = Service.token_in(elem, context)
       assert Context.get_data(context, :result) == "handled"
 
-      RodarBpmn.TaskRegistry.unregister("task")
+      Rodar.TaskRegistry.unregister("task")
     end
 
     test "returns {:not_implemented} when no handler and no registry entry" do
