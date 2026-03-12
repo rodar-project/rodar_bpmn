@@ -1,12 +1,12 @@
-defmodule Mix.Tasks.RodarBpmn.Run do
+defmodule Mix.Tasks.Rodar.Run do
   @moduledoc """
   Execute a BPMN process from an XML file with step-by-step output.
 
   ## Usage
 
-      mix rodar_bpmn.run path/to/process.bpmn
-      mix rodar_bpmn.run path/to/process.bpmn --data '{"username": "alice"}'
-      mix rodar_bpmn.run path/to/process.bpmn --non-interactive
+      mix rodar.run path/to/process.bpmn
+      mix rodar.run path/to/process.bpmn --data '{"username": "alice"}'
+      mix rodar.run path/to/process.bpmn --non-interactive
 
   Parses the BPMN file, analyzes the process for service tasks and data keys,
   registers passthrough handlers for unhandled service tasks, and drives
@@ -20,15 +20,15 @@ defmodule Mix.Tasks.RodarBpmn.Run do
 
   use Mix.Task
 
-  alias Mix.Tasks.RodarBpmn.Run.Analyzer
-  alias Mix.Tasks.RodarBpmn.Run.PassthroughHandler
-  alias RodarBpmn.Activity.Task.User
-  alias RodarBpmn.Context
-  alias RodarBpmn.Engine.Diagram
-  alias RodarBpmn.Hooks
-  alias RodarBpmn.Scaffold.Discovery
-  alias RodarBpmn.TaskRegistry
-  alias RodarBpmn.Token
+  alias Mix.Tasks.Rodar.Run.Analyzer
+  alias Mix.Tasks.Rodar.Run.PassthroughHandler
+  alias Rodar.Activity.Task.User
+  alias Rodar.Context
+  alias Rodar.Engine.Diagram
+  alias Rodar.Hooks
+  alias Rodar.Scaffold.Discovery
+  alias Rodar.TaskRegistry
+  alias Rodar.Token
 
   @shortdoc "Execute a BPMN process from an XML file"
 
@@ -97,7 +97,7 @@ defmodule Mix.Tasks.RodarBpmn.Run do
         if start_event do
           IO.puts("\n--- Execution ---\n")
           token = Token.new()
-          result = RodarBpmn.execute(start_event, context, token)
+          result = Rodar.execute(start_event, context, token)
 
           result =
             maybe_interactive_loop(
@@ -120,9 +120,7 @@ defmodule Mix.Tasks.RodarBpmn.Run do
   end
 
   def run(_) do
-    Mix.shell().error(
-      "Usage: mix rodar_bpmn.run <file.bpmn> [--data '{...}'] [--non-interactive]"
-    )
+    Mix.shell().error("Usage: mix rodar.run <file.bpmn> [--data '{...}'] [--non-interactive]")
   end
 
   # --- Argument parsing ---
@@ -476,7 +474,7 @@ defmodule Mix.Tasks.RodarBpmn.Run do
 
     IO.puts(
       "\n  TIP: #{count} service task(s) used passthrough handlers." <>
-        "\n  Generate real handlers with: mix rodar_bpmn.scaffold #{file_path}"
+        "\n  Generate real handlers with: mix rodar.scaffold #{file_path}"
     )
   end
 end
