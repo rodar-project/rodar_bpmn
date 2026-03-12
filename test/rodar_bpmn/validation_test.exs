@@ -282,6 +282,91 @@ defmodule RodarBpmn.ValidationTest do
     end
   end
 
+  describe "validate_lanes/2" do
+    test "valid lanes pass" do
+      lane_set = %{
+        id: "ls1",
+        lanes: [
+          %{id: "l1", name: "A", flow_node_refs: ["start_1", "end_1"], child_lane_set: nil}
+        ]
+      }
+
+      {:ok, ^lane_set} = Validation.validate_lanes(lane_set, valid_process_map())
+    end
+
+    test "nil lane_set passes" do
+      {:ok, nil} = Validation.validate_lanes(nil, valid_process_map())
+    end
+
+    test "error when flowNodeRef references non-existent element" do
+      lane_set = %{
+        id: "ls1",
+        lanes: [
+          %{id: "l1", name: "A", flow_node_refs: ["nonexistent"], child_lane_set: nil}
+        ]
+      }
+
+      {:error, issues} = Validation.validate_lanes(lane_set, valid_process_map())
+      assert Enum.any?(issues, &(&1.rule == :lane_flow_node_ref))
+    end
+
+    test "error when node appears in multiple lanes at the same level" do
+      lane_set = %{
+        id: "ls1",
+        lanes: [
+          %{id: "l1", name: "A", flow_node_refs: ["start_1"], child_lane_set: nil},
+          %{id: "l2", name: "B", flow_node_refs: ["start_1"], child_lane_set: nil}
+        ]
+      }
+
+      {:error, issues} = Validation.validate_lanes(lane_set, valid_process_map())
+      assert Enum.any?(issues, &(&1.rule == :lane_duplicate_ref))
+    end
+
+    test "same node in parent and child lane is allowed" do
+      lane_set = %{
+        id: "ls1",
+        lanes: [
+          %{
+            id: "l1",
+            name: "A",
+            flow_node_refs: ["start_1"],
+            child_lane_set: %{
+              id: "cls1",
+              lanes: [
+                %{id: "l1a", name: "A1", flow_node_refs: ["start_1"], child_lane_set: nil}
+              ]
+            }
+          }
+        ]
+      }
+
+      {:ok, ^lane_set} = Validation.validate_lanes(lane_set, valid_process_map())
+    end
+
+    test "validates refs in nested child lane sets" do
+      lane_set = %{
+        id: "ls1",
+        lanes: [
+          %{
+            id: "l1",
+            name: "A",
+            flow_node_refs: ["start_1"],
+            child_lane_set: %{
+              id: "cls1",
+              lanes: [
+                %{id: "l1a", name: "A1", flow_node_refs: ["ghost"], child_lane_set: nil}
+              ]
+            }
+          }
+        ]
+      }
+
+      {:error, issues} = Validation.validate_lanes(lane_set, valid_process_map())
+      assert Enum.any?(issues, &(&1.rule == :lane_flow_node_ref))
+    end
+  end
+
   describe "validate_collaboration/2" do
     defp sample_processes do
       elements_a = %{

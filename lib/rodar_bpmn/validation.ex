@@ -6,6 +6,19 @@ defmodule RodarBpmn.Validation do
   structural rules before execution. Returns accumulated errors so users
   see all issues at once.
 
+  ## Validation Functions
+
+  - `validate/1` -- 9 structural rules for a single process map
+  - `validate!/1` -- raising variant of `validate/1`
+  - `validate_lanes/2` -- lane referential integrity (`:lane_flow_node_ref`,
+    `:lane_duplicate_ref`)
+  - `validate_collaboration/2` -- cross-process participant and message flow checks
+
+  ## See Also
+
+  - `RodarBpmn.Lane` -- lane assignment queries
+  - `RodarBpmn.Engine.Diagram` -- parser that produces the maps this module validates
+
   ## Examples
 
       iex> start = {:bpmn_event_start, %{id: "s", incoming: [], outgoing: ["f1"]}}
@@ -68,6 +81,45 @@ defmodule RodarBpmn.Validation do
     case validate(process_map) do
       {:ok, map} -> map
       {:error, issues} -> raise "Validation failed: #{inspect(issues)}"
+    end
+  end
+
+  @doc """
+  Validate lane referential integrity for a process.
+
+  Checks that all `flowNodeRef` entries in the lane set reference existing
+  elements in the process map, and that no node appears in multiple lanes
+  at the same nesting level.
+
+  ## Examples
+
+      iex> lane_set = %{id: "ls1", lanes: [
+      ...>   %{id: "l1", name: "A", flow_node_refs: ["start_1"], child_lane_set: nil}
+      ...> ]}
+      iex> process_map = %{
+      ...>   "start_1" => {:bpmn_event_start, %{id: "start_1", incoming: [], outgoing: ["f1"]}},
+      ...>   "end_1" => {:bpmn_event_end, %{id: "end_1", incoming: ["f1"], outgoing: []}},
+      ...>   "f1" => {:bpmn_sequence_flow, %{id: "f1", sourceRef: "start_1", targetRef: "end_1", conditionExpression: nil}}
+      ...> }
+      iex> {:ok, ^lane_set} = RodarBpmn.Validation.validate_lanes(lane_set, process_map)
+      iex> true
+      true
+
+  """
+  @spec validate_lanes(map() | nil, map()) :: {:ok, map() | nil} | {:error, [issue()]}
+  def validate_lanes(nil, _process_map), do: {:ok, nil}
+
+  def validate_lanes(lane_set, process_map) do
+    issues =
+      validate_lane_flow_node_refs(lane_set, process_map) ++
+        validate_lane_duplicate_refs(lane_set)
+
+    errors = Enum.filter(issues, &(&1.severity == :error))
+
+    if errors == [] do
+      {:ok, lane_set}
+    else
+      {:error, issues}
     end
   end
 
@@ -460,6 +512,80 @@ defmodule RodarBpmn.Validation do
       Enum.map(Map.keys(elements), fn elem_id -> {elem_id, process_id} end)
     end)
     |> Map.new()
+  end
+
+  # --- Lane validation rules ---
+
+  defp validate_lane_flow_node_refs(lane_set, process_map) do
+    collect_all_lane_refs(lane_set.lanes)
+    |> Enum.flat_map(fn {ref, lane_id} ->
+      if Map.has_key?(process_map, ref) do
+        []
+      else
+        [
+          %{
+            rule: :lane_flow_node_ref,
+            node_id: lane_id,
+            message: "Lane '#{lane_id}' references non-existent flow node '#{ref}'",
+            severity: :error
+          }
+        ]
+      end
+    end)
+  end
+
+  defp validate_lane_duplicate_refs(lane_set) do
+    check_duplicate_refs_at_level(lane_set.lanes)
+  end
+
+  defp check_duplicate_refs_at_level(lanes) do
+    # Check for duplicates at this nesting level
+    level_issues =
+      lanes
+      |> Enum.flat_map(fn lane ->
+        Enum.map(lane.flow_node_refs, fn ref -> {ref, lane.id} end)
+      end)
+      |> Enum.group_by(fn {ref, _} -> ref end, fn {_, lane_id} -> lane_id end)
+      |> Enum.flat_map(fn {ref, lane_ids} ->
+        if length(lane_ids) > 1 do
+          [
+            %{
+              rule: :lane_duplicate_ref,
+              node_id: ref,
+              message:
+                "Node '#{ref}' appears in multiple lanes at the same level: #{Enum.join(Enum.uniq(lane_ids), ", ")}",
+              severity: :error
+            }
+          ]
+        else
+          []
+        end
+      end)
+
+    # Recurse into child lane sets
+    child_issues =
+      Enum.flat_map(lanes, fn lane ->
+        case lane[:child_lane_set] do
+          %{lanes: child_lanes} -> check_duplicate_refs_at_level(child_lanes)
+          nil -> []
+        end
+      end)
+
+    level_issues ++ child_issues
+  end
+
+  defp collect_all_lane_refs(lanes) do
+    Enum.flat_map(lanes, fn lane ->
+      own_refs = Enum.map(lane.flow_node_refs, fn ref -> {ref, lane.id} end)
+
+      child_refs =
+        case lane[:child_lane_set] do
+          %{lanes: child_lanes} -> collect_all_lane_refs(child_lanes)
+          nil -> []
+        end
+
+      own_refs ++ child_refs
+    end)
   end
 
   defp empty_list?([]), do: true

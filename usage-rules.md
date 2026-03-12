@@ -369,3 +369,42 @@ case RodarBpmn.Process.status(pid) do
   :error -> :handle_error
 end
 ```
+
+## Lanes (Role/Group Assignment)
+
+Lanes are structural metadata that assign flow nodes to roles, groups, or
+departments. They do not affect execution — the engine treats them as read-only
+annotations stored in the process attrs (`:lane_set` key).
+
+```elixir
+# GOOD: Query lane assignment for a node (e.g., route a manual task)
+%{processes: [process | _]} = RodarBpmn.Engine.Diagram.load(xml)
+{:bpmn_process, attrs, _elements} = process
+
+# Find which lane a specific node belongs to
+{:ok, lane} = RodarBpmn.Lane.find_lane_for_node(attrs.lane_set, "UserTask_1")
+lane.name  # => "HR Department"
+
+# Build a lookup map for all nodes
+node_map = RodarBpmn.Lane.node_lane_map(attrs.lane_set)
+node_map["UserTask_1"].name  # => "HR Department"
+
+# Get a flat list of all lanes (including nested)
+all = RodarBpmn.Lane.all_lanes(attrs.lane_set)
+
+# Validate lane refs against the process
+{:ok, _} = RodarBpmn.Validation.validate_lanes(attrs.lane_set, elements)
+
+# BAD: Trying to access lane_set from the elements map
+# Lane set is in the process *attrs*, not in the elements map
+elements["LaneSet_1"]  # => nil — lanes are not elements
+
+# BAD: Assuming lane_set is always present
+# lane_set is nil when the BPMN has no lanes
+attrs.lane_set.lanes  # => KeyError if no lanes in the process
+
+# GOOD: Handle nil gracefully (all Lane functions accept nil)
+RodarBpmn.Lane.find_lane_for_node(nil, "task1")  # => :error
+RodarBpmn.Lane.node_lane_map(nil)                 # => %{}
+RodarBpmn.Lane.all_lanes(nil)                      # => []
+```

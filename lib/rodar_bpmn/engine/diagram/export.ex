@@ -6,6 +6,15 @@ defmodule RodarBpmn.Engine.Diagram.Export do
   produced by the parser, it generates normalized BPMN 2.0 XML using IO lists
   for efficient string building.
 
+  Supports all element types including lane sets (with nested child lane sets),
+  collaboration elements, event definitions, and item definitions. Vendor-specific
+  attributes and internal keys (like `_elems` and `lane_set`) are stripped from
+  XML attributes and handled structurally instead.
+
+  ## See Also
+
+  - `RodarBpmn.Engine.Diagram` -- the parser (inverse of this module)
+
   ## Example
 
       iex> xml = File.read!("./test/fixtures/simple.bpmn")
@@ -50,6 +59,7 @@ defmodule RodarBpmn.Engine.Diagram.Export do
     timerEventDefinition conditionalEventDefinition
     timeDuration timeCycle timeDate
     condition condition_language
+    lane_set
   )a
 
   @doc """
@@ -162,7 +172,10 @@ defmodule RodarBpmn.Engine.Diagram.Export do
       |> sort_attrs()
       |> build_attrs()
 
-    children = build_process_elements(elements, depth + 1)
+    children = [
+      build_lane_set(Map.get(attrs, :lane_set), depth + 1),
+      build_process_elements(elements, depth + 1)
+    ]
 
     tag("bpmn2:process", xml_attrs, children, depth)
   end
@@ -460,6 +473,40 @@ defmodule RodarBpmn.Engine.Diagram.Export do
 
         text_tag("bpmn2:condition", lang_attr, condition, depth)
     end
+  end
+
+  # --- Lane Set ---
+
+  defp build_lane_set(nil, _depth), do: []
+
+  defp build_lane_set(lane_set, depth) do
+    attrs = build_attrs([{"id", non_empty(lane_set[:id])}])
+    children = Enum.map(lane_set.lanes, &build_lane(&1, depth + 1))
+    tag("bpmn2:laneSet", attrs, children, depth)
+  end
+
+  defp build_lane(lane, depth) do
+    attrs =
+      [
+        {"id", lane.id},
+        {"name", non_empty(lane[:name])}
+      ]
+      |> build_attrs()
+
+    children = [
+      Enum.map(lane.flow_node_refs, &text_tag("bpmn2:flowNodeRef", "", &1, depth + 1)),
+      build_child_lane_set(lane[:child_lane_set], depth + 1)
+    ]
+
+    tag("bpmn2:lane", attrs, children, depth)
+  end
+
+  defp build_child_lane_set(nil, _depth), do: []
+
+  defp build_child_lane_set(child_lane_set, depth) do
+    attrs = build_attrs([{"id", non_empty(child_lane_set[:id])}])
+    children = Enum.map(child_lane_set.lanes, &build_lane(&1, depth + 1))
+    tag("bpmn2:childLaneSet", attrs, children, depth)
   end
 
   # --- Gateways ---

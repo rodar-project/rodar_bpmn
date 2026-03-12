@@ -541,6 +541,97 @@ defmodule RodarBpmn.Engine.Diagram.ExportTest do
     end
   end
 
+  describe "to_xml/1 lane set" do
+    test "exports lane set with lanes and flowNodeRefs" do
+      diagram = %{
+        id: "defs1",
+        expression_language: "",
+        type_language: "",
+        processes: [
+          {:bpmn_process,
+           %{
+             id: "p1",
+             lane_set: %{
+               id: "ls1",
+               lanes: [
+                 %{id: "l1", name: "HR", flow_node_refs: ["task1", "task2"], child_lane_set: nil},
+                 %{id: "l2", name: "IT", flow_node_refs: ["task3"], child_lane_set: nil}
+               ]
+             }
+           }, %{}}
+        ],
+        item_definitions: %{},
+        collaboration: nil
+      }
+
+      xml = Export.to_xml(diagram)
+      assert xml =~ "<bpmn2:laneSet"
+      assert xml =~ ~s(id="ls1")
+      assert xml =~ "<bpmn2:lane"
+      assert xml =~ ~s(name="HR")
+      assert xml =~ "<bpmn2:flowNodeRef>task1</bpmn2:flowNodeRef>"
+      assert xml =~ "<bpmn2:flowNodeRef>task2</bpmn2:flowNodeRef>"
+      assert xml =~ ~s(name="IT")
+    end
+
+    test "exports nested childLaneSet" do
+      diagram = %{
+        id: "defs1",
+        expression_language: "",
+        type_language: "",
+        processes: [
+          {:bpmn_process,
+           %{
+             id: "p1",
+             lane_set: %{
+               id: "ls1",
+               lanes: [
+                 %{
+                   id: "l1",
+                   name: "Mgr",
+                   flow_node_refs: ["task1"],
+                   child_lane_set: %{
+                     id: "cls1",
+                     lanes: [
+                       %{
+                         id: "l1a",
+                         name: "Senior",
+                         flow_node_refs: ["task1"],
+                         child_lane_set: nil
+                       }
+                     ]
+                   }
+                 }
+               ]
+             }
+           }, %{}}
+        ],
+        item_definitions: %{},
+        collaboration: nil
+      }
+
+      xml = Export.to_xml(diagram)
+      assert xml =~ "<bpmn2:childLaneSet"
+      assert xml =~ ~s(id="cls1")
+      assert xml =~ ~s(name="Senior")
+    end
+
+    test "does not emit laneSet when nil" do
+      diagram = %{
+        id: "defs1",
+        expression_language: "",
+        type_language: "",
+        processes: [{:bpmn_process, %{id: "p1", lane_set: nil}, %{}}],
+        item_definitions: %{},
+        collaboration: nil
+      }
+
+      xml = Export.to_xml(diagram)
+      refute xml =~ "laneSet"
+      refute xml =~ "lane"
+    end
+  end
+
   # --- Round-trip tests ---
 
   describe "round-trip: simple.bpmn" do
@@ -568,6 +659,20 @@ defmodule RodarBpmn.Engine.Diagram.ExportTest do
     test "load -> export -> load produces equivalent structure" do
       xml = File.read!("priv/bpmn/examples/hiring/hiring.bpmn2")
       assert_round_trip(xml)
+    end
+  end
+
+  describe "round-trip: lanes.bpmn" do
+    test "load -> export -> load preserves lane_set structure" do
+      xml = File.read!("test/fixtures/lanes.bpmn")
+      d1 = Diagram.load(xml)
+      xml2 = Export.to_xml(d1)
+      d2 = Diagram.load(xml2)
+
+      {:bpmn_process, attrs1, _} = hd(d1.processes)
+      {:bpmn_process, attrs2, _} = hd(d2.processes)
+
+      assert attrs1.lane_set == attrs2.lane_set
     end
   end
 

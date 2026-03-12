@@ -12,12 +12,23 @@ defmodule RodarBpmn.Engine.Diagram do
   `:bpmn_event_intermediate_catch`). Condition expressions are emitted as
   `{:bpmn_expression, {language, expression}}` tuples.
 
+  Lane sets (`laneSet`, `lane`, `flowNodeRef`, `childLaneSet`) are extracted from
+  process elements and stored in the process attrs under the `:lane_set` key. When
+  a process has no lanes, `:lane_set` is `nil`. Use `RodarBpmn.Lane` to query lane
+  assignments at runtime.
+
   `export/1` delegates to `RodarBpmn.Engine.Diagram.Export.to_xml/1` for the
   inverse operation.
 
   `load/2` accepts options for post-parse transformations. The `:handler_map`
   option injects handler modules into service task elements, enabling handler
   wiring at parse time instead of at runtime via `RodarBpmn.TaskRegistry`.
+
+  ## See Also
+
+  - `RodarBpmn.Lane` -- lane assignment queries
+  - `RodarBpmn.Engine.Diagram.Export` -- inverse XML export
+  - `RodarBpmn.Validation` -- structural validation including lane integrity
 
   ## Examples
 
@@ -176,7 +187,9 @@ defmodule RodarBpmn.Engine.Diagram do
   end
 
   defp load_process("bpmn2:process", attrs, elems) do
-    {:bpmn_process, format_attributes(attrs), map_process_elements(elems)}
+    proc_attrs = format_attributes(attrs)
+    lane_set = load_lane_set(elems)
+    {:bpmn_process, Map.put(proc_attrs, :lane_set, lane_set), map_process_elements(elems)}
   end
 
   defp map_process_elements(elems) do
@@ -562,6 +575,64 @@ defmodule RodarBpmn.Engine.Diagram do
     do: {:bpmn_extension_elements, Map.merge(attrs, %{_elems: elems})}
 
   defp load_element(_type, _attrs, _elems), do: nil
+
+  # --- Lane parsing ---
+
+  defp load_lane_set(elems) do
+    Enum.find_value(elems, fn
+      {"bpmn2:laneSet", attrs, children} ->
+        attrs = format_attributes(attrs)
+
+        %{
+          id: (attrs[:id] || "") |> to_string(),
+          lanes: load_lanes(children)
+        }
+
+      _ ->
+        nil
+    end)
+  end
+
+  defp load_lanes(elems) do
+    Enum.flat_map(elems, fn
+      {"bpmn2:lane", attrs, children} ->
+        attrs = format_attributes(attrs)
+
+        [
+          %{
+            id: attrs[:id] |> to_string(),
+            name: (attrs[:name] || "") |> to_string(),
+            flow_node_refs: load_flow_node_refs(children),
+            child_lane_set: load_child_lane_set(children)
+          }
+        ]
+
+      _ ->
+        []
+    end)
+  end
+
+  defp load_flow_node_refs(elems) do
+    Enum.flat_map(elems, fn
+      {"bpmn2:flowNodeRef", _, [ref]} -> [to_string(ref)]
+      _ -> []
+    end)
+  end
+
+  defp load_child_lane_set(elems) do
+    Enum.find_value(elems, fn
+      {"bpmn2:childLaneSet", attrs, children} ->
+        attrs = format_attributes(attrs)
+
+        %{
+          id: (attrs[:id] || "") |> to_string(),
+          lanes: load_lanes(children)
+        }
+
+      _ ->
+        nil
+    end)
+  end
 
   # --- Collaboration parsing ---
 

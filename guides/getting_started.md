@@ -68,6 +68,17 @@ Node execution returns one of:
 - `{:fatal, reason}` — fatal error
 - `{:not_implemented}` — unimplemented node type
 
+### Lanes
+
+Lanes assign flow nodes to roles, groups, or departments. They do not affect execution — the engine treats them as read-only annotations. Use `RodarBpmn.Lane` to query lane assignments:
+
+```elixir
+{:bpmn_process, attrs, _elements} = hd(diagram.processes)
+{:ok, lane} = RodarBpmn.Lane.find_lane_for_node(attrs.lane_set, "UserTask_1")
+lane.name
+# => "HR Department"
+```
+
 ### Validation
 
 Validate your BPMN diagrams before execution:

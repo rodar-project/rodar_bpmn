@@ -91,7 +91,8 @@ defmodule RodarBpmn.MixProject do
           RodarBpmn.Context,
           RodarBpmn.Process,
           RodarBpmn.Registry,
-          RodarBpmn.Migration
+          RodarBpmn.Migration,
+          RodarBpmn.Lane
         ],
         Events: [
           RodarBpmn.Event.Start,

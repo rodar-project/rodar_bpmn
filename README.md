@@ -243,7 +243,8 @@ Handler resolution priority: inline `:handler` attribute first, then `TaskRegist
 | Timer                      | Implemented | ISO 8601 duration (`PT5S`, `PT1H30M`) and cycle parsing (`R3/PT10S`, `R/PT1M`), `Process.send_after` scheduling |
 | Telemetry                  | Implemented | `:telemetry` events for node execution, process lifecycle, token creation, event bus                            |
 | Observability              | Implemented | Query APIs for running/waiting instances, execution history, health checks                                      |
-| Validation                 | Implemented | 9 structural rules + collaboration validation; opt-in at `activate/1`                                           |
+| Lanes                      | Implemented | Parsed into process attrs; query via `RodarBpmn.Lane`; supports nested child lane sets                         |
+| Validation                 | Implemented | 9 process rules + lane referential integrity + collaboration validation; opt-in at `activate/1`                 |
 | Collaboration              | Implemented | Multi-pool/multi-participant orchestration with message flow wiring                                             |
 
 ## Task Handlers
@@ -304,13 +305,14 @@ The engine uses a **token-based execution model**. A `RodarBpmn.Token` struct tr
 - **`RodarBpmn.Expression`** — Evaluates condition expressions on sequence flows. Routes to the Elixir sandbox or FEEL evaluator based on language.
 - **`RodarBpmn.Expression.Sandbox`** — AST-restricted Elixir expression evaluator (replaces `Code.eval_string`).
 - **`RodarBpmn.Expression.Feel`** — FEEL (Friendly Enough Expression Language) evaluator. NimbleParsec-based parser with null propagation, three-valued boolean logic, and built-in functions.
-- **`RodarBpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`. `load/2` accepts a `:handler_map` option to inject service task handlers at parse time.
+- **`RodarBpmn.Engine.Diagram`** — Parses BPMN 2.0 XML via `erlsom`. Extracts lane sets into process attrs (`:lane_set`). `load/2` accepts a `:handler_map` option to inject service task handlers at parse time.
 - **`RodarBpmn.Event.Bus`** — Registry-based pub/sub for BPMN events (message, signal, escalation).
 - **`RodarBpmn.Event.Timer`** — ISO 8601 duration parsing and timer scheduling.
 - **`RodarBpmn.Telemetry`** — Telemetry event definitions and helpers; wraps node execution with `:telemetry.span/3`.
 - **`RodarBpmn.Telemetry.LogHandler`** — Default handler that converts telemetry events to structured `Logger` output.
 - **`RodarBpmn.Observability`** — Read-only query APIs for running instances, waiting tasks, execution history, and health checks.
-- **`RodarBpmn.Validation`** — Structural validation for process maps. 9 rules + collaboration validation. Opt-in via config.
+- **`RodarBpmn.Lane`** — Stateless utility module for querying lane assignments. Find a node's lane, build a node-to-lane map, or list all lanes (including nested).
+- **`RodarBpmn.Validation`** — Structural validation for process maps. 9 process rules + lane referential integrity + collaboration validation. Opt-in via config.
 - **`RodarBpmn.Collaboration`** — Multi-participant orchestration. Starts processes, wires message flows, activates all.
 - **`RodarBpmn.TaskHandler`** — Behaviour for custom task handlers. Register by type atom or task ID string via `RodarBpmn.TaskRegistry`.
 - **`RodarBpmn.Hooks`** — Per-context hook system for observing execution (before/after node, on error, on complete).
@@ -350,6 +352,13 @@ config :rodar_bpmn, :validate_on_activate, true
 ```
 
 Checks 9 rules: start/end event existence and connectivity, sequence flow ref integrity, orphan nodes, gateway outgoing counts, exclusive gateway defaults (warning), and boundary event attachment.
+
+For lane referential integrity (refs must exist, no duplicates at the same nesting level):
+
+```elixir
+{:bpmn_process, attrs, elements} = hd(diagram.processes)
+RodarBpmn.Validation.validate_lanes(attrs.lane_set, elements)
+```
 
 For collaboration diagrams, validate cross-process constraints:
 

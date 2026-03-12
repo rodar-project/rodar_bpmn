@@ -320,6 +320,81 @@ defmodule RodarBpmn.Engine.DiagramTest do
     end
   end
 
+  describe "parser support for lanes" do
+    test "parses laneSet with lanes and flowNodeRefs" do
+      diagram = Diagram.load(File.read!("./test/fixtures/lanes.bpmn"))
+      {:bpmn_process, attrs, _elements} = hd(diagram.processes)
+
+      assert attrs.lane_set != nil
+      assert attrs.lane_set.id == "LaneSet_1"
+      assert length(attrs.lane_set.lanes) == 2
+
+      [hr_lane, mgr_lane] = attrs.lane_set.lanes
+      assert hr_lane.id == "Lane_HR"
+      assert hr_lane.name == "HR"
+      assert hr_lane.flow_node_refs == ["Start_1", "Task_1"]
+      assert hr_lane.child_lane_set == nil
+
+      assert mgr_lane.id == "Lane_Manager"
+      assert mgr_lane.flow_node_refs == ["Task_2", "End_1"]
+    end
+
+    test "parses nested childLaneSet" do
+      diagram = Diagram.load(File.read!("./test/fixtures/lanes.bpmn"))
+      {:bpmn_process, attrs, _elements} = hd(diagram.processes)
+
+      mgr_lane = Enum.at(attrs.lane_set.lanes, 1)
+      assert mgr_lane.child_lane_set != nil
+      assert mgr_lane.child_lane_set.id == "ChildLaneSet_1"
+      assert length(mgr_lane.child_lane_set.lanes) == 1
+
+      [senior] = mgr_lane.child_lane_set.lanes
+      assert senior.id == "Lane_Senior"
+      assert senior.name == "Senior Manager"
+      assert senior.flow_node_refs == ["Task_2"]
+    end
+
+    test "lane_set is nil when no lanes present" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:startEvent id="Start_1">
+            <bpmn:outgoing>Flow_1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, attrs, _} = process
+      assert attrs.lane_set == nil
+    end
+
+    test "parses lane with empty flowNodeRefs" do
+      xml = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
+        <bpmn:process id="Process_1" isExecutable="true">
+          <bpmn:laneSet id="LS1">
+            <bpmn:lane id="Lane_Empty" name="Empty Lane" />
+          </bpmn:laneSet>
+          <bpmn:startEvent id="Start_1">
+            <bpmn:outgoing>Flow_1</bpmn:outgoing>
+          </bpmn:startEvent>
+        </bpmn:process>
+      </bpmn:definitions>
+      """
+
+      %{processes: [process]} = Diagram.load(xml)
+      {:bpmn_process, attrs, _} = process
+
+      assert attrs.lane_set.lanes == [
+               %{id: "Lane_Empty", name: "Empty Lane", flow_node_refs: [], child_lane_set: nil}
+             ]
+    end
+  end
+
   defp load_elements do
     Diagram.load(File.read!("./priv/bpmn/examples/elements.bpmn"))
   end
