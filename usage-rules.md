@@ -471,6 +471,131 @@ diagram = RodarBpmn.Engine.Diagram.load(xml, bpmn_file: "f.bpmn", app_name: "MyA
 # Discovery.register_discovered(diagram.discovery)  # Don't forget this!
 ```
 
+## Workflow DSL
+
+The Workflow modules provide two layers of abstraction over the low-level engine
+API. **Layer 1** (`RodarBpmn.Workflow`) is a functional API with a `use` macro.
+**Layer 2** (`RodarBpmn.Workflow.Server`) adds a GenServer with instance tracking.
+
+### Layer 1: Functional API / `use` macro
+
+```elixir
+# GOOD: Use the macro to eliminate boilerplate
+defmodule MyApp.OrderWorkflow do
+  use RodarBpmn.Workflow,
+    bpmn_file: "priv/bpmn/order_processing.bpmn",
+    process_id: "order_processing",
+    otp_app: :my_app,        # optional — resolves path via Application.app_dir
+    app_name: "MyApp"        # optional — enables handler auto-discovery
+end
+
+# Then call the injected functions:
+MyApp.OrderWorkflow.setup()
+{:ok, pid} = MyApp.OrderWorkflow.start_process(%{"item" => "widget"})
+:suspended = MyApp.OrderWorkflow.process_status(pid)
+MyApp.OrderWorkflow.resume_user_task(pid, "Task_Approval", %{"approved" => true})
+data = MyApp.OrderWorkflow.process_data(pid)
+
+# GOOD: Use the functional API directly (without the macro)
+RodarBpmn.Workflow.setup(
+  bpmn_file: "priv/bpmn/order.bpmn",
+  process_id: "order"
+)
+{:ok, pid} = RodarBpmn.Workflow.start_process("order", %{"item" => "widget"})
+:suspended = RodarBpmn.Workflow.process_status(pid)
+
+# GOOD: start_process sets data BEFORE activation (unlike create_and_run)
+# This matters when service tasks need data during the initial execution
+{:ok, pid} = RodarBpmn.Workflow.start_process("order", %{"customer" => "Acme"})
+
+# BAD: Forgetting to call setup before start_process
+# setup registers the BPMN definition — without it, start_process fails
+{:ok, pid} = MyApp.OrderWorkflow.start_process(%{"item" => "widget"})
+# => {:error, ...} because "order_processing" is not in the Registry
+
+# BAD: Passing a process_id to the macro's start_process
+# The macro bakes in the process_id from options — just pass data
+{:ok, pid} = MyApp.OrderWorkflow.start_process("order_processing", %{})
+# => Wrong arity — the injected start_process/1 only takes a data map
+
+# BAD: Using resume_user_task on a non-user task
+RodarBpmn.Workflow.resume_user_task(pid, "ServiceTask_1", %{})
+# => {:error, "Task 'ServiceTask_1' is :bpmn_activity_task_service, not a user task"}
+```
+
+### Layer 2: GenServer with instance tracking
+
+```elixir
+# GOOD: Use Workflow.Server for stateful workflow management
+defmodule MyApp.OrderManager do
+  use RodarBpmn.Workflow.Server,
+    bpmn_file: "priv/bpmn/order_processing.bpmn",
+    process_id: "order_processing",
+    otp_app: :my_app,
+    app_name: "MyApp"
+
+  @impl RodarBpmn.Workflow.Server
+  def init_data(params, instance_id) do
+    %{
+      "customer" => params["customer"],
+      "order_id" => instance_id
+    }
+  end
+
+  # Optional: translate BPMN statuses to domain terms
+  @impl RodarBpmn.Workflow.Server
+  def map_status(:suspended), do: :pending_approval
+  def map_status(other), do: other
+
+  # Expose domain-specific API on top of the injected functions
+  def create_order(params), do: create_instance(params)
+  def approve(id), do: complete_task(id, "Task_Approval", %{"approved" => true})
+end
+
+# Start in your supervision tree
+children = [MyApp.OrderManager]
+
+# Then use the domain API:
+{:ok, instance} = MyApp.OrderManager.create_order(%{"customer" => "Acme"})
+instance.id       # => 1 (sequential integer)
+instance.status   # => :pending_approval (mapped from :suspended)
+
+{:ok, updated} = MyApp.OrderManager.approve(1)
+updated.status    # => :completed
+
+instances = MyApp.OrderManager.list_instances()  # newest first
+{:ok, inst} = MyApp.OrderManager.get_instance(1)
+
+# GOOD: init_data/2 receives the sequential instance_id — use it for correlation
+def init_data(params, instance_id) do
+  %{"order_id" => "ORD-#{instance_id}", "items" => params["items"]}
+end
+
+# BAD: Forgetting to implement init_data/2 — it is a required callback
+defmodule MyApp.BadManager do
+  use RodarBpmn.Workflow.Server,
+    bpmn_file: "priv/bpmn/order.bpmn",
+    process_id: "order"
+
+  # Missing init_data/2 — compilation warning, runtime crash on create_instance
+end
+
+# BAD: Returning non-map from init_data/2
+def init_data(_params, _id), do: "not a map"
+# => Context.put_data expects string keys and values
+
+# BAD: Using GenServer.call with plain atoms — use the injected functions
+GenServer.call(MyApp.OrderManager, :create_instance)
+# => No match — internal messages use {:__workflow__, action, ...} tuples
+# Use MyApp.OrderManager.create_instance/1 instead
+
+# BAD: Starting Workflow.Server without it being in the supervision tree
+# The GenServer calls setup() in init/1, which needs Registry and other
+# OTP processes to be running
+MyApp.OrderManager.start_link()
+# => May fail if RodarBpmn.Application hasn't started
+```
+
 ## Lanes (Role/Group Assignment)
 
 Lanes are structural metadata that assign flow nodes to roles, groups, or
