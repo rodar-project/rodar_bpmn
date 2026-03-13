@@ -69,7 +69,7 @@ defmodule Rodar.Conformance.ExecutionTest do
       {result, context} = TestHelper.execute_from_start(elements)
 
       assert {:ok, _} = result
-      TestHelper.assert_visited(context, ["Task_A", "Task_B", "PGW_Join"])
+      TestHelper.assert_visited(context, ["Task_A", "Task_B", "PGW_Join", "End_1"])
     end
   end
 

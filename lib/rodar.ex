@@ -272,14 +272,20 @@ defmodule Rodar do
   defp dispatch({:bpmn_gateway_exclusive_event, _} = elem, context),
     do: ExclusiveEvent.token_in(elem, context)
 
-  defp dispatch({:bpmn_gateway_parallel, _} = elem, context),
-    do: Parallel.token_in(elem, context)
+  defp dispatch({:bpmn_gateway_parallel, _} = elem, context) do
+    from_flow = pop_from_flow()
+    Parallel.token_in(elem, context, from_flow)
+  end
 
-  defp dispatch({:bpmn_gateway_inclusive, _} = elem, context),
-    do: Inclusive.token_in(elem, context)
+  defp dispatch({:bpmn_gateway_inclusive, _} = elem, context) do
+    from_flow = pop_from_flow()
+    Inclusive.token_in(elem, context, from_flow)
+  end
 
-  defp dispatch({:bpmn_gateway_complex, _} = elem, context),
-    do: Complex.token_in(elem, context)
+  defp dispatch({:bpmn_gateway_complex, _} = elem, context) do
+    from_flow = pop_from_flow()
+    Complex.token_in(elem, context, from_flow)
+  end
 
   defp dispatch({:bpmn_sequence_flow, _} = elem, context),
     do: SequenceFlow.token_in(elem, context)
@@ -323,6 +329,13 @@ defmodule Rodar do
   defp classify_result(_, _context, _id), do: :unknown
 
   defp activity_type?(type), do: type in @activity_types
+
+  defp pop_from_flow do
+    case Process.delete(:_rodar_from_flow) do
+      :undefined -> nil
+      value -> value
+    end
+  end
 
   defp mark_token_released(context) do
     case Context.get_meta(context, :current_token) do

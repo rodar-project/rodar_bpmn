@@ -24,6 +24,11 @@ defmodule Rodar.SequenceFlow do
   @spec token_in(Rodar.element(), Rodar.context()) :: Rodar.result()
   def token_in(elem, context), do: execute(elem, context)
 
+  defp token_out({:bpmn_sequence_flow, %{id: id, targetRef: target}}, context) do
+    Process.put(:_rodar_from_flow, id)
+    Rodar.release_token(target, context)
+  end
+
   defp token_out({:bpmn_sequence_flow, %{targetRef: target}}, context),
     do: Rodar.release_token(target, context)
 
